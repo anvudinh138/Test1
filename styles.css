@@ -1,0 +1,42 @@
+.test2-container {
+    width: 60%;
+    border: 1px solid;
+    margin: auto;
+    padding: 1em 2em;
+    user-select: none;
+}
+
+.test2-container input {
+    margin: 1.5%;
+    width: 25%;
+    text-align: center;
+}
+
+.square-container {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-start;
+
+
+}
+
+.square-container div {
+    width: 30%;
+    padding-bottom: 30%;
+    margin: 1.5%;
+    border: 1px solid;
+    position: relative;
+}
+
+.square-container div:hover {
+    cursor: pointer;
+}
+
+.square-container div span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    top: 45%;
+    font-size: 1vw;
+}
