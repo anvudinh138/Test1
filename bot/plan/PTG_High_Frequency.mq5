@@ -14,22 +14,25 @@ input bool     UseVWAPFilter      = false;             // Use VWAP trend filter
 input int      LookbackPeriod     = 10;                // REDUCED lookback (was 20)
 
 input group "=== AGGRESSIVE PUSH PARAMETERS ==="
-input double   PushRangePercent   = 0.25;              // Range >= 25% (was 60%)
-input double   ClosePercent       = 0.35;              // Close position 35% (was 60%)
-input double   OppWickPercent     = 0.75;              // Opposite wick <= 75% (was 40%)
-input double   VolHighMultiplier  = 0.8;               // Volume >= 80% (was 120%)
+input double   PushRangePercent   = 0.35;              // Range >= 35% (tuned for better quality)
+input double   ClosePercent       = 0.45;              // Close position 45% (more selective)
+input double   OppWickPercent     = 0.65;              // Opposite wick <= 65% (more strict)
+input double   VolHighMultiplier  = 1.0;               // Volume >= 100% (stronger confirmation)
 
 input group "=== AGGRESSIVE TEST PARAMETERS ==="
 input int      TestBars           = 10;                // Allow TEST within 10 bars (was 5)
+input int      PendingTimeout     = 5;                 // Remove pending orders after N bars (4-7 recommended)
 input double   PullbackMax        = 0.85;              // Pullback <= 85% (was 50%)
 input double   VolLowMultiplier   = 2.0;               // Volume TEST <= 200% (was 100%)
 
 input group "=== RISK MANAGEMENT ==="
-input double   EntryBufferPips    = 0.1;               // Entry buffer (pips)
-input double   SLBufferPips       = 0.1;               // Stop loss buffer (pips)
+input double   EntryBufferPips    = 0.5;               // Entry buffer (pips)
+input double   SLBufferPips       = 0.5;               // Stop loss buffer (pips)
 input double   TPMultiplier       = 1.5;               // TP multiplier (REDUCED for more wins)
-input double   RiskPercent        = 1.0;               // Risk per trade (REDUCED)
-input double   MaxSpreadPips      = 15.0;              // Maximum spread (high tolerance)
+input bool     UseTrailingStop    = true;              // Enable trailing stop
+input double   TrailingStopPips   = 15.0;             // Trailing stop distance (pips)
+input double   RiskPercent        = 0.5;               // Risk per trade (SAFE for testing)
+input double   MaxSpreadPips      = 50.0;              // Maximum spread for Gold (points, not pips)
 
 input group "=== TRADING HOURS ==="
 input bool     UseTimeFilter      = false;             // Disable for 24/7 trading
@@ -54,6 +57,8 @@ double         test_high = 0, test_low = 0;
 datetime       last_trade_time = 0;
 int            total_signals = 0;
 int            total_trades = 0;
+int            last_order_ticket = 0;
+datetime       order_place_time = 0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -62,15 +67,15 @@ int OnInit()
 {
     string symbol = Symbol();
     
-    // Set pip size
-    if(StringFind(symbol, "USD") >= 0 && StringFind(symbol, "JPY") < 0)
-        pip_size = 0.0001;
-    else if(StringFind(symbol, "XAU") >= 0 || StringFind(symbol, "GOLD") >= 0)
-        pip_size = 0.01;
+    // Set pip size correctly
+    if(StringFind(symbol, "XAU") >= 0 || StringFind(symbol, "GOLD") >= 0)
+        pip_size = 0.01;  // Gold: 1 pip = 0.01
     else if(StringFind(symbol, "JPY") >= 0)
-        pip_size = 0.01;
+        pip_size = 0.01;  // JPY pairs: 1 pip = 0.01
+    else if(StringFind(symbol, "USD") >= 0)
+        pip_size = 0.0001;  // Major pairs: 1 pip = 0.0001
     else
-        pip_size = 0.00001;
+        pip_size = 0.00001;  // 5-digit brokers
         
     // Initialize indicators
     ema34_handle = iMA(symbol, PERIOD_CURRENT, 34, 0, MODE_EMA, PRICE_CLOSE);
@@ -129,6 +134,13 @@ void OnTick()
         
     if(!IsTradingAllowed())
         return;
+    
+    // Check pending order timeout
+    CheckPendingOrderTimeout();
+    
+    // Handle trailing stop (only during backtest for performance)
+    if(UseTrailingStop && MQLInfoInteger(MQL_TESTER))
+        ManageTrailingStop();
         
     PTG_HighFrequency_Logic();
 }
@@ -166,17 +178,132 @@ double GetVolumeSMA(int period, int shift = 1)
 }
 
 //+------------------------------------------------------------------+
+//| Check and remove expired pending orders                          |
+//+------------------------------------------------------------------+
+void CheckPendingOrderTimeout()
+{
+    if(last_order_ticket <= 0 || order_place_time == 0)
+        return;
+    
+    datetime current_time = iTime(Symbol(), PERIOD_CURRENT, 0);
+    int bars_elapsed = Bars(Symbol(), PERIOD_CURRENT, order_place_time, current_time) - 1;
+    
+    if(bars_elapsed >= PendingTimeout)
+    {
+        // Try to delete the pending order
+        MqlTradeRequest request = {};
+        MqlTradeResult result = {};
+        
+        request.action = TRADE_ACTION_REMOVE;
+        request.order = last_order_ticket;
+        
+        if(OrderSend(request, result))
+        {
+            if(EnableDebugLogs)
+                Print("⏰ TIMEOUT: Removed pending order #", last_order_ticket, " after ", bars_elapsed, " bars");
+        }
+        
+        // Reset tracking
+        last_order_ticket = 0;
+        order_place_time = 0;
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Manage trailing stop for open positions                          |
+//+------------------------------------------------------------------+
+void ManageTrailingStop()
+{
+    string symbol = Symbol();
+    int positions = PositionsTotal();
+    
+    if(EnableDebugLogs && positions > 0)
+        Print("🔍 TRAILING CHECK: ", positions, " positions found");
+    
+    for(int i = 0; i < positions; i++)
+    {
+        if(PositionGetSymbol(i) != symbol) continue;
+        if(PositionGetInteger(POSITION_MAGIC) != 77777) continue;
+        
+        if(EnableDebugLogs)
+            Print("📊 POSITION #", i, ": Type=", PositionGetInteger(POSITION_TYPE), " Magic=", PositionGetInteger(POSITION_MAGIC));
+        
+        double current_price;
+        double current_sl = PositionGetDouble(POSITION_SL);
+        double trailing_distance = TrailingStopPips * pip_size;
+        
+        if(PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY)
+        {
+            current_price = SymbolInfoDouble(symbol, SYMBOL_BID);
+            double new_sl = current_price - trailing_distance;
+            
+            // Only move SL up (never down)
+            if(new_sl > current_sl + pip_size)
+            {
+                MqlTradeRequest request = {};
+                MqlTradeResult result = {};
+                
+                request.action = TRADE_ACTION_SLTP;
+                request.symbol = symbol;
+                request.position = PositionGetInteger(POSITION_TICKET);
+                request.sl = NormalizeDouble(new_sl, Digits());
+                request.tp = PositionGetDouble(POSITION_TP);
+                
+                if(OrderSend(request, result))
+                {
+                    if(EnableDebugLogs)
+                        Print("📈 TRAILING: Long SL moved to ", new_sl, " (was ", current_sl, ")");
+                }
+            }
+        }
+        else if(PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL)
+        {
+            current_price = SymbolInfoDouble(symbol, SYMBOL_ASK);
+            double new_sl = current_price + trailing_distance;
+            
+            // Only move SL down (never up)
+            if(new_sl < current_sl - pip_size || current_sl == 0)
+            {
+                MqlTradeRequest request = {};
+                MqlTradeResult result = {};
+                
+                request.action = TRADE_ACTION_SLTP;
+                request.symbol = symbol;
+                request.position = PositionGetInteger(POSITION_TICKET);
+                request.sl = NormalizeDouble(new_sl, Digits());
+                request.tp = PositionGetDouble(POSITION_TP);
+                
+                if(OrderSend(request, result))
+                {
+                    if(EnableDebugLogs)
+                        Print("📉 TRAILING: Short SL moved to ", new_sl, " (was ", current_sl, ")");
+                }
+            }
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
 //| Check if trading is allowed (more permissive)                    |
 //+------------------------------------------------------------------+
 bool IsTradingAllowed()
 {
-    // Check spread
+    // Check spread (convert to points for Gold)
     double current_ask = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
     double current_bid = SymbolInfoDouble(Symbol(), SYMBOL_BID);
-    double spread = (current_ask - current_bid) / pip_size;
+    double spread_points = (current_ask - current_bid) * MathPow(10, Digits());
     
-    if(spread > MaxSpreadPips)
+    if(EnableDebugLogs && (spread_points > MaxSpreadPips * 0.8)) // Log when spread is high
+    {
+        Print("SPREAD CHECK: ", DoubleToString(spread_points, 0), " points (max: ", MaxSpreadPips, ")");
+    }
+    
+    if(spread_points > MaxSpreadPips)
+    {
+        if(EnableDebugLogs)
+            Print("SPREAD TOO HIGH: ", DoubleToString(spread_points, 0), " > ", MaxSpreadPips, " points");
         return false;
+    }
     
     // Time filter (usually disabled)
     if(UseTimeFilter)
@@ -336,7 +463,7 @@ void PTG_HighFrequency_Logic()
                     tp_level = entry_level + ((entry_level - sl_level) * TPMultiplier);
                     
                     if(EnableDebugLogs)
-                        Print("🚀 LONG SIGNAL #", total_signals, " → TRADE #", total_trades + 1);
+                        Print("🚀 LONG SIGNAL #", total_signals, " → TRADE #", total_trades + 1, " PENDING ORDER");
                     
                     ExecuteTrade(ORDER_TYPE_BUY_STOP, entry_level, sl_level, tp_level, "PTG HF Long");
                 }
@@ -347,7 +474,7 @@ void PTG_HighFrequency_Logic()
                     tp_level = entry_level - ((sl_level - entry_level) * TPMultiplier);
                     
                     if(EnableDebugLogs)
-                        Print("🔻 SHORT SIGNAL #", total_signals, " → TRADE #", total_trades + 1);
+                        Print("🔻 SHORT SIGNAL #", total_signals, " → TRADE #", total_trades + 1, " PENDING ORDER");
                     
                     ExecuteTrade(ORDER_TYPE_SELL_STOP, entry_level, sl_level, tp_level, "PTG HF Short");
                 }
@@ -385,8 +512,23 @@ void ExecuteTrade(ENUM_ORDER_TYPE order_type, double entry_price, double sl_pric
         return;
     }
     
-    double pip_value = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
-    if(pip_value <= 0) pip_value = 1.0;
+    // Fix pip value calculation for Gold
+    double pip_value;
+    if(StringFind(symbol, "XAU") >= 0 || StringFind(symbol, "GOLD") >= 0)
+    {
+        pip_value = 10.0; // For Gold: 1 pip = $10 per lot
+    }
+    else
+    {
+        pip_value = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
+        if(pip_value <= 0) pip_value = 1.0;
+    }
+    
+    if(EnableDebugLogs)
+    {
+        Print("RISK CALC: Balance=$", account_balance, " | Risk%=", RiskPercent, " | RiskAmt=$", risk_amount);
+        Print("PIP RISK: Entry=", entry_price, " | SL=", sl_price, " | PipRisk=", pip_risk, "p | PipValue=$", pip_value);
+    }
         
     double lot_size = risk_amount / (pip_risk * pip_value);
     
@@ -396,6 +538,9 @@ void ExecuteTrade(ENUM_ORDER_TYPE order_type, double entry_price, double sl_pric
     double lot_step = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
     
     lot_size = MathMax(min_lot, MathMin(max_lot, MathFloor(lot_size / lot_step) * lot_step));
+    
+    // Safety cap: Max 1.0 lot for testing
+    lot_size = MathMin(lot_size, 1.0);
     
     // Prepare trade request
     MqlTradeRequest request = {};
@@ -414,13 +559,16 @@ void ExecuteTrade(ENUM_ORDER_TYPE order_type, double entry_price, double sl_pric
     
     if(OrderSend(request, result))
     {
-        string msg = StringFormat("✅ TRADE #%d: %s %.2f lots | Risk: %.1fp | S/T: %d/%d",
+        string msg = StringFormat("✅ PENDING #%d: %s %.2f lots | Risk: %.1fp | Timeout: %d bars",
                                  total_trades,
                                  order_type == ORDER_TYPE_BUY_STOP ? "LONG" : "SHORT",
-                                 lot_size, pip_risk, total_signals, total_trades);
+                                 lot_size, pip_risk, PendingTimeout);
         Print(msg);
         if(EnableAlerts) Alert(msg);
         
+        // Track for timeout
+        last_order_ticket = (int)result.order;
+        order_place_time = TimeCurrent();
         last_trade_time = TimeCurrent();
     }
     else
@@ -437,15 +585,51 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
                        const MqlTradeRequest& request,
                        const MqlTradeResult& result)
 {
+    static double last_entry_price = 0;
+    static bool is_position_open = false;
+    
+    if(EnableDebugLogs)
+        Print("📋 TRANSACTION: Type=", trans.type, " | Deal=", trans.deal_type, " | Price=", trans.price);
+    
     if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
     {
         if(trans.deal_type == DEAL_TYPE_BUY || trans.deal_type == DEAL_TYPE_SELL)
         {
-            string msg = StringFormat("🎯 EXECUTED: %s %.2f lots at %.5f",
-                                    trans.deal_type == DEAL_TYPE_BUY ? "BUY" : "SELL",
-                                    trans.volume, trans.price);
-            Print(msg);
-            if(EnableAlerts) Alert(msg);
+            if(!is_position_open)
+            {
+                // Entry
+                last_entry_price = trans.price;
+                is_position_open = true;
+                
+                string msg = StringFormat("🎯 ENTRY: %s %.2f lots at %.5f",
+                                        trans.deal_type == DEAL_TYPE_BUY ? "LONG" : "SHORT",
+                                        trans.volume, trans.price);
+                Print(msg);
+                if(EnableAlerts) Alert(msg);
+            }
+            else
+            {
+                // Exit
+                double exit_price = trans.price;
+                double profit_pips = (exit_price - last_entry_price) / pip_size;
+                
+                // For short positions, profit calculation is reversed
+                if(trans.deal_type == DEAL_TYPE_BUY && last_entry_price > exit_price)
+                    profit_pips = (last_entry_price - exit_price) / pip_size;
+                
+                string exit_type = profit_pips > 0 ? "TP" : "SL";
+                string profit_sign = profit_pips >= 0 ? "+" : "";
+                
+                string msg = StringFormat("💰 EXIT %s: %s%.1f pips | Entry: %.5f | Exit: %.5f",
+                                        exit_type, profit_sign, profit_pips,
+                                        last_entry_price, exit_price);
+                Print(msg);
+                if(EnableAlerts) Alert(msg);
+                
+                // Reset
+                last_entry_price = 0;
+                is_position_open = false;
+            }
         }
     }
 }
