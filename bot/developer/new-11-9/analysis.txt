@@ -1,0 +1,125 @@
+Làm gì để Scalp có PF dương (ưu tiên thực chiến M1/M5)?
+
+Goal: để PF≥1, với số liệu hiện tại bạn chỉ cần Avg Win ≳ 2–3$ (2–3 pip) ở M1/M5.
+
+Đẩy lệnh ở lại lâu hơn trước khi BE
+
+Tăng BreakevenPips từ 3 → 5–6 hoặc chỉ BE sau đóng nến / sau N giây trên mức đó.
+
+Tuỳ chọn: BE = entry +0.5p thay vì = entry, để loại “win $0”.
+
+Hạ TP để dễ chạm QuickExit
+
+Thử QuickExitPips = 8–12 (trên M5, hòa vốn yêu cầu ~2.1$ ⇒ TP 8–10p là hợp lý hơn 14–18p).
+
+Giữ TrailStepPips=10, MinProfitPips=3.
+
+Giới hạn rủi ro 1 lệnh (cắt SL “quá rộng”)
+
+Thêm tham số MaxRiskPips (ví dụ 10–12p). Nếu SL tính theo test bar > MaxRiskPips ⇒ bỏ lệnh.
+
+Việc này sẽ giảm Avg Loss từ −18/−29$ về khoảng −8..−12$, PF sẽ nhảy mạnh.
+
+Hybrid partial-take-profit
+
+50% khối lượng take @ +10p, 50% còn lại trail (Runner).
+
+Kết quả thường: Avg Win tăng rõ, win-rate vẫn cao.
+
+Time-stop cho lệnh đang chạy
+
+Nếu sau N bars không đạt BE hoặc MFE < Xp ⇒ đóng (cắt “dead trade”).
+
+Thông số mình khuyến nghị để bạn test tiếp
+Scalp “có lãi”
+
+BreakevenPips = 5
+
+QuickExitPips = 10 và thử thêm 8/12
+
+TrailStepPips = 10, MinProfitPips = 3
+
+Thêm MaxRiskPips = 12 (bỏ lệnh nếu SL > 12p)
+
+Hybrid (TP1 + Runner)
+
+TP1: +10p đóng 50%, dời SL về entry +1p
+
+Phần còn lại: TrailStepPips = 12–14, MinProfitPips = 4–5
+
+BreakevenPips = 5
+
+Runner “ổn định hơn”
+
+UseQuickExit = false
+
+BreakevenPips = 4–5
+
+TrailStepPips = 12–16
+
+MinProfitPips = 4–5
+
+Bắt buộc OOS nhiều tháng + kill-switch (ngưng trade khi equity giảm X%).
+
+Code gợi ý (3 điểm nhỏ giúp PF tăng ngay)
+
+(1) Giới hạn rủi ro/lọc lệnh SL quá rộng
+
+input double MaxRiskPips = 12.0; // NEW
+
+bool RiskOk(double entry_price, double sl_price){
+   double risk_pips = MathAbs(entry_price - sl_price) / pip_size;
+   return (risk_pips <= MaxRiskPips);
+}
+// Trước khi OrderSend trong ExecuteYoloTrade(...):
+if(!RiskOk(entry_price, sl_price)) { if(EnableDebugLogs) Print("Skip: risk ", risk_pips, "p > ", MaxRiskPips); return; }
+
+(2) BE “có đệm” + chỉ BE sau khi đóng nến
+input bool  BEOnBarClose = true;   // NEW
+input double BEOffsetPips = 0.5;   // NEW
+
+void MoveSLToEntry(string reason)
+{
+   if(BEOnBarClose && iTime(Symbol(), PERIOD_CURRENT, 0) == iTime(Symbol(), PERIOD_CURRENT, 0)) {/* chờ close */}
+   if(!PositionSelectByTicket(active_position_ticket)) return;
+
+   bool is_long = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY);
+   double be_price = original_entry_price + (is_long ? BEOffsetPips : -BEOffsetPips) * pip_size;
+
+   MqlTradeRequest r={}; MqlTradeResult s={};
+   r.action=TRADE_ACTION_SLTP; r.symbol=Symbol(); r.position=active_position_ticket;
+   r.sl = NormalizeDouble(be_price, (int)SymbolInfoInteger(Symbol(),SYMBOL_DIGITS));
+   r.tp = PositionGetDouble(POSITION_TP);
+   if(OrderSend(r,s)){ pip_breakeven_activated=true; last_trail_level=BreakevenPips; }
+}
+
+(3) Partial TP (50%) @ +10p
+
+input double TP1Pips = 10.0;  // NEW
+input double TP1Part = 0.5;   // NEW
+
+void CheckPartialTP(double profit_pips){
+   if(!PositionSelectByTicket(active_position_ticket)) return;
+   if(profit_pips < TP1Pips) return;
+
+   double vol = PositionGetDouble(POSITION_VOLUME);
+   double step = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_STEP);
+   double minv = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_MIN);
+   double closeVol = MathMax(minv, MathFloor(vol*TP1Part/step)*step);
+
+   MqlTradeRequest r={}; MqlTradeResult s={};
+   r.action=TRADE_ACTION_DEAL; r.symbol=Symbol(); r.position=active_position_ticket;
+   r.volume=closeVol;
+   r.type = (PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY)?ORDER_TYPE_SELL:ORDER_TYPE_BUY;
+   r.deviation=10; r.comment="TP1 partial";
+   OrderSend(r,s);
+}
+// Gọi trong ManageYoloPipPosition() sau khi tính profit_pips:
+CheckPartialTP(profit_pips);
+
+TL;DR
+
+Scalp: win-rate cao nhưng AvgWin quá bé & SL quá rộng ⇒ âm. Giải pháp: trì hoãn BE, TP 8–12, cắt lệnh có SL > 12p, hoặc partial TP.
+
+Runner: đúng chất “trend following” – win-rate thấp nhưng lãi to; cần nhiều mẫu + risk control để tin cậy.
+
