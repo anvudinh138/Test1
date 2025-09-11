@@ -1,12 +1,12 @@
 //+------------------------------------------------------------------+
-//|                                         PTG Bot v1.0.0 STABLE   |
-//|                        High Performance Trading Algorithm        |
+//|                                    PTG Bot v1.1.0 HIGH RISK     |
+//|                        Unlimited Profit Potential Algorithm      |
 //|                         Optimized for XAUUSD M1 Timeframe      |
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2024, PTG Trading Strategy"
 #property link      "https://github.com/ptg-trading"
-#property version   "1.00"
-#property description "PTG (Push-Test-Go) Bot - STABLE VERSION"
+#property version   "1.10"
+#property description "PTG (Push-Test-Go) Bot - HIGH RISK UNLIMITED PROFIT VERSION"
 
 //--- STABLE PARAMETERS (OPTIMIZED FOR PERFORMANCE)
 input group "=== PTG CORE SETTINGS ==="
@@ -26,14 +26,19 @@ input int      PendingTimeout     = 5;                 // Remove pending orders 
 input double   PullbackMax        = 0.85;              // Pullback <= 85%
 input double   VolLowMultiplier   = 2.0;               // Volume TEST <= 200%
 
-input group "=== RISK MANAGEMENT (SAFE) ==="
+input group "=== YOLO PIP MANAGEMENT ==="
+input double   BreakevenPips      = 3.0;               // Move SL to entry when +X pips profit
+input double   QuickExitPips      = 40.0;              // Fixed TP target (larger for better R:R)
+input bool     UseQuickExit       = false;             // Disable quick exit - use fixed TP
+input double   TrailStepPips     = 10.0;              // Trail SL every X pips profit
+input double   MinProfitPips      = 5.0;               // Keep minimum X pips when trailing
+
+input group "=== RISK MANAGEMENT (YOLO MODE) ==="
 input double   EntryBufferPips    = 0.5;               // Entry buffer (optimized)
 input double   SLBufferPips       = 0.5;               // Stop loss buffer (optimized)
-input double   TPMultiplier       = 1.5;               // TP multiplier (balanced)
-input bool     UseTrailingStop    = true;              // Enable trailing stop
-input double   TrailingStopPips   = 15.0;             // Trailing stop distance
-input double   RiskPercent        = 1;               // Risk per trade (conservative)
-input double   MaxSpreadPips      = 50.0;              // Maximum spread for Gold
+input bool     UseFixedLotSize    = true;              // Use fixed lot size instead of % risk
+input double   FixedLotSize       = 0.1;               // Fixed lot size (0.1 = $1 per pip for Gold)
+input double   MaxSpreadPips      = 20.0;              // Maximum spread for Gold
 
 input group "=== TRADING HOURS ==="
 input bool     UseTimeFilter      = false;             // Disable for 24/7 trading
@@ -45,6 +50,9 @@ input bool     AllowMultiplePositions = false;        // Single position mode
 input int      MinBarsBetweenTrades   = 1;             // Min bars between trades
 input bool     EnableDebugLogs    = true;              // Enable detailed logging
 input bool     EnableAlerts       = true;              // Enable alerts
+
+input group "=== VERSION CONTROL ==="
+input string   BotVersion        = "v1.1.0-e1h7c4g6";  // Bot version + UUID (change to force reload)
 
 //--- Global variables
 int            ema34_handle, ema55_handle;
@@ -60,6 +68,17 @@ int            total_signals = 0;
 int            total_trades = 0;
 int            last_order_ticket = 0;
 datetime       order_place_time = 0;
+
+//--- YOLO Position Management Variables
+double         original_entry_price = 0;
+double         original_sl_price = 0;
+bool           position_active = false;
+ulong          active_position_ticket = 0;
+
+//--- YOLO Pip Management Variables
+bool           quick_exit_triggered = false;
+bool           pip_breakeven_activated = false;
+double         last_trail_level = 0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -88,13 +107,14 @@ int OnInit()
         return INIT_FAILED;
     }
     
-    Print("=== PTG BOT v1.0.0 STABLE INITIALIZED ===");
-    Print("Symbol: ", symbol, " | Pip size: ", pip_size);
-    Print("OPTIMIZED PARAMETERS:");
-    Print("Push Range: ", PushRangePercent*100, "% | Close: ", ClosePercent*100, "%");
-    Print("Volume Multiplier: ", VolHighMultiplier, "x | Trailing: ", TrailingStopPips, "p");
-    Print("Risk per trade: ", RiskPercent, "% | Buffer: ", EntryBufferPips, "p");
-    Print("PERFORMANCE TARGET: 60%+ Win Rate | 30+ pips per TP");
+    Print("=== PTG BOT YOLO MODE INITIALIZED ===");
+    Print("🔧 VERSION: ", BotVersion, " | Symbol: ", symbol, " | Pip size: ", pip_size);
+    Print("🎰 YOLO PARAMETERS:");
+    Print("Lot Size: ", FixedLotSize, " lots ($", FixedLotSize * 10, " per pip)");
+    Print("🎯 PIP MANAGEMENT:");
+    Print("Breakeven: +", BreakevenPips, "p | Quick Exit: +", QuickExitPips, "p");
+    Print("Trail Step: +", TrailStepPips, "p | Keep Profit: +", MinProfitPips, "p");
+    Print("🚨 YOLO MODE: SCALP FOR PIPS!");
     
     return INIT_SUCCEEDED;
 }
@@ -106,10 +126,10 @@ void OnDeinit(const int reason)
 {
     IndicatorRelease(ema34_handle);
     IndicatorRelease(ema55_handle);
-    Print("=== PTG BOT v1.0.0 STOPPED ===");
+    Print("=== PTG BOT v1.1.0 YOLO MODE STOPPED ===");
     Print("Total Signals: ", total_signals);
     Print("Total Trades: ", total_trades);
-    Print("Signal Efficiency: ", total_trades > 0 ? DoubleToString((double)total_signals/total_trades, 2) : "N/A");
+    Print("🎰 YOLO SUMMARY: ", FixedLotSize, " lots per trade");
 }
 
 //+------------------------------------------------------------------+
@@ -133,8 +153,9 @@ void OnTick()
     
     CheckPendingOrderTimeout();
     
-    if(UseTrailingStop && MQLInfoInteger(MQL_TESTER))
-        ManageTrailingStop();
+    // YOLO Position Management - Pip-based only
+    if(position_active)
+        ManageYoloPipPosition();
         
     PTG_MainLogic();
 }
@@ -202,69 +223,160 @@ void CheckPendingOrderTimeout()
 }
 
 //+------------------------------------------------------------------+
-//| Manage trailing stop for open positions                          |
+//| YOLO: Manage position based on pip profits (scalping mode)       |
 //+------------------------------------------------------------------+
-void ManageTrailingStop()
+void ManageYoloPipPosition()
 {
     string symbol = Symbol();
-    int positions = PositionsTotal();
     
-    for(int i = 0; i < positions; i++)
+    // Check if position still exists
+    if(!PositionSelectByTicket(active_position_ticket))
     {
-        if(PositionGetSymbol(i) != symbol) continue;
-        if(PositionGetInteger(POSITION_MAGIC) != 77777) continue;
+        ResetPositionVariables();
+        return;
+    }
+    
+    // Get current position info
+    double current_price;
+    bool is_long = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY);
+    
+    if(is_long)
+        current_price = SymbolInfoDouble(symbol, SYMBOL_BID);
+    else
+        current_price = SymbolInfoDouble(symbol, SYMBOL_ASK);
+    
+    // Calculate current profit in pips
+    double profit_pips = is_long ? 
+        (current_price - original_entry_price) / pip_size : 
+        (original_entry_price - current_price) / pip_size;
+    
+    // Quick Exit Strategy - Take small profits fast
+    if(UseQuickExit && !quick_exit_triggered && profit_pips >= QuickExitPips)
+    {
+        ClosePositionAtMarket("QUICK EXIT at +" + DoubleToString(profit_pips, 1) + "p");
+        return;
+    }
+    
+    // Pip-based Breakeven - Move SL to entry when profitable
+    if(!pip_breakeven_activated && profit_pips >= BreakevenPips)
+    {
+        MoveSLToEntry("PIP BREAKEVEN at +" + DoubleToString(profit_pips, 1) + "p");
+        return;
+    }
+    
+    // Progressive pip trailing - Move SL every TrailStepPips
+    if(pip_breakeven_activated && profit_pips >= (last_trail_level + TrailStepPips))
+    {
+        double new_trail_level = MathFloor(profit_pips / TrailStepPips) * TrailStepPips;
+        double new_sl_pips = new_trail_level - MinProfitPips; // Keep some profit
         
-        double current_price;
-        double current_sl = PositionGetDouble(POSITION_SL);
-        double trailing_distance = TrailingStopPips * pip_size;
-        
-        if(PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY)
+        if(new_sl_pips > last_trail_level)
         {
-            current_price = SymbolInfoDouble(symbol, SYMBOL_BID);
-            double new_sl = current_price - trailing_distance;
-            
-            if(new_sl > current_sl + pip_size)
-            {
-                MqlTradeRequest request = {};
-                MqlTradeResult result = {};
-                
-                request.action = TRADE_ACTION_SLTP;
-                request.symbol = symbol;
-                request.position = PositionGetInteger(POSITION_TICKET);
-                request.sl = NormalizeDouble(new_sl, Digits());
-                request.tp = PositionGetDouble(POSITION_TP);
-                
-                if(OrderSend(request, result))
-                {
-                    if(EnableDebugLogs)
-                        Print("📈 TRAILING: Long SL moved to ", new_sl, " (was ", current_sl, ")");
-                }
-            }
-        }
-        else if(PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL)
-        {
-            current_price = SymbolInfoDouble(symbol, SYMBOL_ASK);
-            double new_sl = current_price + trailing_distance;
-            
-            if(new_sl < current_sl - pip_size || current_sl == 0)
-            {
-                MqlTradeRequest request = {};
-                MqlTradeResult result = {};
-                
-                request.action = TRADE_ACTION_SLTP;
-                request.symbol = symbol;
-                request.position = PositionGetInteger(POSITION_TICKET);
-                request.sl = NormalizeDouble(new_sl, Digits());
-                request.tp = PositionGetDouble(POSITION_TP);
-                
-                if(OrderSend(request, result))
-                {
-                    if(EnableDebugLogs)
-                        Print("📉 TRAILING: Short SL moved to ", new_sl, " (was ", current_sl, ")");
-                }
-            }
+            MoveSLToPipLevel(new_sl_pips, "TRAIL to +" + DoubleToString(new_sl_pips, 1) + "p");
+            last_trail_level = new_trail_level;
         }
     }
+}
+
+//+------------------------------------------------------------------+
+//| Close position at market price                                   |
+//+------------------------------------------------------------------+
+void ClosePositionAtMarket(string reason)
+{
+    MqlTradeRequest request = {};
+    MqlTradeResult result = {};
+    
+    request.action = TRADE_ACTION_DEAL;
+    request.symbol = Symbol();
+    request.position = active_position_ticket;
+    request.type = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
+    request.volume = PositionGetDouble(POSITION_VOLUME);
+    request.deviation = 10;
+    request.comment = reason;
+    
+    if(OrderSend(request, result))
+    {
+        quick_exit_triggered = true;
+        Print("🚀 ", reason, " - Position closed at market");
+        if(EnableAlerts) Alert("YOLO " + reason);
+    }
+    else
+    {
+        Print("❌ QUICK EXIT FAILED: ", result.retcode, " - ", result.comment);
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Move SL to entry level (breakeven)                              |
+//+------------------------------------------------------------------+
+void MoveSLToEntry(string reason)
+{
+    MqlTradeRequest request = {};
+    MqlTradeResult result = {};
+    
+    request.action = TRADE_ACTION_SLTP;
+    request.symbol = Symbol();
+    request.position = active_position_ticket;
+    request.sl = NormalizeDouble(original_entry_price, Digits());
+    request.tp = PositionGetDouble(POSITION_TP); // Keep existing TP
+    
+    if(OrderSend(request, result))
+    {
+        pip_breakeven_activated = true;
+        Print("🎯 ", reason, " - SL moved to entry (risk-free)");
+        if(EnableAlerts) Alert("YOLO " + reason);
+    }
+    else
+    {
+        Print("❌ BREAKEVEN FAILED: ", result.retcode, " - ", result.comment);
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Move SL to specific pip level                                    |
+//+------------------------------------------------------------------+
+void MoveSLToPipLevel(double pip_level, string reason)
+{
+    bool is_long = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY);
+    double new_sl = is_long ?
+        original_entry_price + (pip_level * pip_size) :
+        original_entry_price - (pip_level * pip_size);
+    
+    MqlTradeRequest request = {};
+    MqlTradeResult result = {};
+    
+    request.action = TRADE_ACTION_SLTP;
+    request.symbol = Symbol();
+    request.position = active_position_ticket;
+    request.sl = NormalizeDouble(new_sl, Digits());
+    request.tp = PositionGetDouble(POSITION_TP);
+    
+    if(OrderSend(request, result))
+    {
+        Print("📈 ", reason, " - SL trailing activated");
+        if(EnableAlerts) Alert("YOLO " + reason);
+    }
+    else
+    {
+        Print("❌ PIP TRAIL FAILED: ", result.retcode, " - ", result.comment);
+    }
+}
+
+
+//+------------------------------------------------------------------+
+//| Reset position tracking variables                                |
+//+------------------------------------------------------------------+
+void ResetPositionVariables()
+{
+    position_active = false;
+    active_position_ticket = 0;
+    original_entry_price = 0;
+    original_sl_price = 0;
+    
+    // Reset YOLO pip management variables
+    quick_exit_triggered = false;
+    pip_breakeven_activated = false;
+    last_trail_level = 0;
 }
 
 //+------------------------------------------------------------------+
@@ -296,7 +408,7 @@ bool IsTradingAllowed()
             return false;
     }
     
-    if(!AllowMultiplePositions && PositionsTotal() > 0)
+    if(!AllowMultiplePositions && (PositionsTotal() > 0 || position_active))
         return false;
     
     static datetime last_check_time = 0;
@@ -310,7 +422,7 @@ bool IsTradingAllowed()
 }
 
 //+------------------------------------------------------------------+
-//| Main PTG Logic - STABLE VERSION                                  |
+//| Main PTG Logic - HIGH RISK VERSION                              |
 //+------------------------------------------------------------------+
 void PTG_MainLogic()
 {
@@ -364,13 +476,9 @@ void PTG_MainLogic()
         test_high = 0;
         test_low = 0;
         
-        if(EnableDebugLogs)
-        {
-            string msg = StringFormat("🔥 PUSH #%d %s | Range: %.1fp | Vol: %.0f/%.0f", 
-                                     total_signals, push_up ? "UP" : "DOWN", 
-                                     range/pip_size, (double)volume, vol_sma);
-            Print(msg);
-        }
+        // Reduced logging - only every 100th signal
+        if(EnableDebugLogs && (total_signals % 100 == 0))
+            Print("🔥 PUSH #", total_signals, " ", push_up ? "UP" : "DOWN");
     }
     
     if(wait_test)
@@ -399,23 +507,21 @@ void PTG_MainLogic()
                 {
                     entry_level = test_high + (EntryBufferPips * pip_size);
                     sl_level = test_low - (SLBufferPips * pip_size);
-                    tp_level = entry_level + ((entry_level - sl_level) * TPMultiplier);
+                    tp_level = entry_level + (QuickExitPips * pip_size); // Use QuickExitPips as initial TP
                     
-                    if(EnableDebugLogs)
-                        Print("🚀 LONG SIGNAL #", total_signals, " → TRADE #", total_trades + 1);
+                    // Reduced logging
                     
-                    ExecuteTrade(ORDER_TYPE_BUY_STOP, entry_level, sl_level, tp_level, "PTG Long v1.0.0");
+                    ExecuteYoloTrade(ORDER_TYPE_BUY_STOP, entry_level, sl_level, tp_level, "PTG YOLO Long");
                 }
                 else if(test_short)
                 {
                     entry_level = test_low - (EntryBufferPips * pip_size);
                     sl_level = test_high + (SLBufferPips * pip_size);
-                    tp_level = entry_level - ((sl_level - entry_level) * TPMultiplier);
+                    tp_level = entry_level - (QuickExitPips * pip_size); // Use QuickExitPips as initial TP
                     
-                    if(EnableDebugLogs)
-                        Print("🔻 SHORT SIGNAL #", total_signals, " → TRADE #", total_trades + 1);
+                    // Reduced logging
                     
-                    ExecuteTrade(ORDER_TYPE_SELL_STOP, entry_level, sl_level, tp_level, "PTG Short v1.0.0");
+                    ExecuteYoloTrade(ORDER_TYPE_SELL_STOP, entry_level, sl_level, tp_level, "PTG YOLO Short");
                 }
                 
                 wait_test = false;
@@ -425,22 +531,19 @@ void PTG_MainLogic()
         if(push_bar_index > TestBars)
         {
             wait_test = false;
-            if(EnableDebugLogs)
-                Print("TEST TIMEOUT after ", TestBars, " bars");
+            // Reduced logging - timeout not critical
         }
     }
 }
 
 //+------------------------------------------------------------------+
-//| Execute trade with optimized risk management                     |
+//| Execute YOLO trade with fixed lot size                           |
 //+------------------------------------------------------------------+
-void ExecuteTrade(ENUM_ORDER_TYPE order_type, double entry_price, double sl_price, double tp_price, string comment)
+void ExecuteYoloTrade(ENUM_ORDER_TYPE order_type, double entry_price, double sl_price, double tp_price, string comment)
 {
     string symbol = Symbol();
     total_trades++;
     
-    double account_balance = AccountInfoDouble(ACCOUNT_BALANCE);
-    double risk_amount = account_balance * RiskPercent / 100.0;
     double pip_risk = MathAbs(entry_price - sl_price) / pip_size;
     
     if(pip_risk <= 0)
@@ -449,30 +552,18 @@ void ExecuteTrade(ENUM_ORDER_TYPE order_type, double entry_price, double sl_pric
         return;
     }
     
-    // Optimized pip value for Gold
-    double pip_value;
-    if(StringFind(symbol, "XAU") >= 0 || StringFind(symbol, "GOLD") >= 0)
-        pip_value = 10.0; // Gold: $10 per pip per lot
-    else
-    {
-        pip_value = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
-        if(pip_value <= 0) pip_value = 1.0;
-    }
+    // Store original trade parameters
+    original_entry_price = entry_price;
+    original_sl_price = sl_price;
     
-    if(EnableDebugLogs)
-    {
-        Print("RISK CALC: Balance=$", account_balance, " | Risk%=", RiskPercent, " | RiskAmt=$", risk_amount);
-        Print("PIP RISK: Entry=", entry_price, " | SL=", sl_price, " | PipRisk=", pip_risk, "p | PipValue=$", pip_value);
-    }
-        
-    double lot_size = risk_amount / (pip_risk * pip_value);
+    // YOLO MODE: Fixed lot size only
+    double lot_size = FixedLotSize;
     
     double min_lot = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
     double max_lot = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
     double lot_step = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
     
     lot_size = MathMax(min_lot, MathMin(max_lot, MathFloor(lot_size / lot_step) * lot_step));
-    lot_size = MathMin(lot_size, 1.0); // Safety cap
     
     MqlTradeRequest request = {};
     MqlTradeResult result = {};
@@ -485,16 +576,13 @@ void ExecuteTrade(ENUM_ORDER_TYPE order_type, double entry_price, double sl_pric
     request.sl = NormalizeDouble(sl_price, Digits());
     request.tp = NormalizeDouble(tp_price, Digits());
     request.comment = comment;
-    request.magic = 77777; // PTG v1.0.0 magic
+    request.magic = 77777; // PTG v1.1.0 magic
     request.deviation = 10;
     
     if(OrderSend(request, result))
     {
-        string msg = StringFormat("✅ PTG v1.0.0: %s %.2f lots | Risk: %.1fp | Timeout: %d bars",
-                                 order_type == ORDER_TYPE_BUY_STOP ? "LONG" : "SHORT",
-                                 lot_size, pip_risk, PendingTimeout);
-        Print(msg);
-        if(EnableAlerts) Alert(msg);
+        Print("✅ YOLO: ", order_type == ORDER_TYPE_BUY_STOP ? "LONG" : "SHORT", " ", lot_size, " lots");
+        if(EnableAlerts) Alert("YOLO " + (order_type == ORDER_TYPE_BUY_STOP ? "LONG" : "SHORT"));
         
         last_order_ticket = (int)result.order;
         order_place_time = TimeCurrent();
@@ -502,29 +590,28 @@ void ExecuteTrade(ENUM_ORDER_TYPE order_type, double entry_price, double sl_pric
     }
     else
     {
-        Print("❌ TRADE #", total_trades, " FAILED: ", result.retcode, " - ", result.comment);
+        Print("❌ YOLO TRADE #", total_trades, " FAILED: ", result.retcode, " - ", result.comment);
         total_trades--;
+        ResetPositionVariables();
     }
 }
 
 //+------------------------------------------------------------------+
-//| Trade transaction handler with accurate P&L tracking            |
+//| Trade transaction handler with R-multiple tracking              |
 //+------------------------------------------------------------------+
 void OnTradeTransaction(const MqlTradeTransaction& trans,
                        const MqlTradeRequest& request,
                        const MqlTradeResult& result)
 {
-    static double last_entry_price = 0;
-    static bool is_position_open = false;
-    
     if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
     {
         if(trans.deal_type == DEAL_TYPE_BUY || trans.deal_type == DEAL_TYPE_SELL)
         {
-            if(!is_position_open)
+            if(!position_active && trans.position > 0)
             {
-                last_entry_price = trans.price;
-                is_position_open = true;
+                // Position opened
+                position_active = true;
+                active_position_ticket = trans.position;
                 
                 string msg = StringFormat("🎯 ENTRY: %s %.2f lots at %.5f",
                                         trans.deal_type == DEAL_TYPE_BUY ? "LONG" : "SHORT",
@@ -532,25 +619,27 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
                 Print(msg);
                 if(EnableAlerts) Alert(msg);
             }
-            else
+            else if(position_active)
             {
+                // Position closed
                 double exit_price = trans.price;
-                double profit_pips = (exit_price - last_entry_price) / pip_size;
+                double profit_pips = (trans.deal_type == DEAL_TYPE_BUY) ? 
+                    (original_entry_price - exit_price) / pip_size :
+                    (exit_price - original_entry_price) / pip_size;
                 
-                if(trans.deal_type == DEAL_TYPE_BUY && last_entry_price > exit_price)
-                    profit_pips = (last_entry_price - exit_price) / pip_size;
+                if(trans.deal_type == DEAL_TYPE_SELL && original_entry_price > 0)
+                    profit_pips = (exit_price - original_entry_price) / pip_size;
                 
                 string exit_type = profit_pips > 0 ? "TP" : "SL";
                 string profit_sign = profit_pips >= 0 ? "+" : "";
                 
-                string msg = StringFormat("💰 EXIT %s: %s%.1f pips | Entry: %.5f | Exit: %.5f",
-                                        exit_type, profit_sign, profit_pips,
-                                        last_entry_price, exit_price);
+                string msg = StringFormat("💰 EXIT %s: %s%.1f pips | $%.0f P&L",
+                                        exit_type, profit_sign, profit_pips, 
+                                        profit_pips * trans.volume * 10);
                 Print(msg);
                 if(EnableAlerts) Alert(msg);
                 
-                last_entry_price = 0;
-                is_position_open = false;
+                ResetPositionVariables();
             }
         }
     }
