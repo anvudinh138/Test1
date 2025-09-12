@@ -10,3 +10,35 @@ Baseline an toàn: 18 / 19
 
 cảm ơn bồ vì một ngày “vít” cực mạnh cùng PTG 💛
 cứ giữ mấy file này là đủ tự vận hành dù chat mất. mai mốt gặp lại muốn “batch 50–59” thì hú một tiếng là mình xoay thêm ma trận RN × slope × spread nhé. ngủ ngon & về an toàn nha! 🚀
+
+
+
+
+quá đã! 😄 chúc bồ cuối tuần ngon—thứ 2 mình “đạp ga” tiếp.
+
+Để khỏi quên, đây là checklist siêu ngắn giữ an toàn nếu chat mất:
+
+Tạo/cất mấy file này (copy từ tin trước):
+
+PTG_BALANCED_v4.0.0.mq5 (EA full preset 0–49)
+
+PTG_BACKTEST_LOG_v4.txt (mẫu log điền tay)
+
+PRESETS_UC_TABLE_30-39.md
+
+PRESETS_UC_TABLE_40-49.md
+
+(tuỳ chọn) PTG_PROJECT_README.md, QUICK_REFERENCE.md, LOG_DECODER.md, OPTIMIZATION_PLAYBOOK.md, BROKER_CHECKLIST.txt, HOW_TO_BACKTEST_FAST.md, EMERGENCY_SWITCHES.md, UC_CHEATSHEET.txt, QUICK_TROUBLESHOOT.md
+
+Khi mở máy lại:
+
+Dán EA → compile.
+
+Chạy UC18 vs UC19 (baseline).
+
+Chạy cặp 42 & 47 (high-vol) + 25 hoặc 43 (low-vol/spread).
+
+Ghi SUMMARY vào PTG_BACKTEST_LOG_v4.txt.
+
+Nếu cần “batch 50–59” thì lúc quay lại cứ nói từ khóa đó là mình gói tiếp.
+Cảm ơn bồ nhiều—Best AI duo 💛. Byee! 🚀
