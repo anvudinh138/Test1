@@ -1,0 +1,156 @@
+tuyệt vời luôn! 🎉 EA đã “sống” trên real ticks rồi – bước gốc đã xong. Bây giờ để kéo win rate/profit lên, mình đề xuất lộ trình ngắn–gọn–làm được ngay dưới đây.
+
+Kế hoạch tối ưu PTG (ưu tiên theo hiệu quả)
+1) Nâng chất lượng tín hiệu (cắt bớt entry xấu) – Ưu tiên cao nhất
+
+Vấn đề thấy rõ trong log
+
+Rất nhiều lệnh bị Time-stop (30 bars no progress) → vào lệnh khi thị trường đang range/choppy, breakout không “thoát” được vùng nén. 
+
+log
+
+Không ít lệnh chạm SL rất nhanh (vài giây tới 1-2 phút sau vào lệnh) → vào đúng lúc pullback/whipsaw ngay sau cú phá. 
+
+log
+
+Giải pháp cụ thể
+
+Bộ lọc “squeeze → expansion” trước khi cho GO
+
+Chỉ trade khi Bollinger Band Width hoặc ATR(14) trên M1 > percentile 60–70% của 3–5 ngày gần nhất.
+
+Thêm điều kiện Donchian width (N=20) > X pip (ví dụ > 25–35p) để đảm bảo có độ rộng thoát range.
+
+Multi-TF trend confirm (M5)
+
+Chỉ nhận lệnh Long khi EMA50(M5) > EMA200(M5) và độ dốc EMA50 > ngưỡng nhỏ; Short thì ngược lại. Điều này giảm giao dịch ngược trend khung lớn (một nguyên nhân lớn khiến SL nhanh).
+
+Phiên giao dịch
+
+Bật trade chỉ trong London + NY (ví dụ 07:00–17:00 London time, convert sang broker time). Tắt phiên Á – phần lớn time-stop/whipsaw xuất hiện giờ thanh khoản mỏng. (Bạn đã log đủ để check lại theo giờ).
+
+Filter “Spread/ATR”
+
+Thay vì ngưỡng spread tuyệt đối 12p, dùng Spread ≤ min(12, 0.15×ATR(14) M1 / Pip) để tự co giãn theo biến động. Thông số hiện tại là MaxSpreadPips=12 (doc dự án), có thể khiến bạn bỏ sót giờ tốt hoặc trade giờ xấu khi ATR quá nhỏ. 
+
+PTG_QUICK_REFERENCE
+
+2) Cải thiện timing của lệnh GO (giảm SL nhanh) – Ưu tiên cao
+
+“Stop emulation” cho Market Buy/Sell
+
+Khi giá vượt test-high/low, đợi thêm 1–2 ticks hoặc 100–200ms và giá vẫn đứng ngoài biên mới vào lệnh. Điều này mô phỏng stop-order mà không vi phạm minimum distance, hạn chế false-break ngay tick kế.
+
+Retest micro
+
+Yêu cầu sau cú break phải có pullback rất nông (≤ 25–35% push range) và không phá lại biên test trong ≤3 bar trước khi vào Market. (Bạn đã có TEST ≤85% rồi; thêm một “mini-test” sau break sẽ lọc whipsaw). 
+
+PTG_PROJECT_README
+
+Tránh round-number
+
+Skip lệnh nếu giá vào nằm trong ±10–15p của số tròn (…00/…50). Vàng hay hắt hơi ở mốc này → SL nhanh.
+
+3) Quản trị lệnh (BE/Partial/Trail) – Ưu tiên vừa
+
+Quan sát log: nhiều lần BE/Trail được set rồi sửa ngay, có lúc SL bị đặt “0.11700” → Invalid stops trước khi chỉnh lại giá đúng (3616.xxx). Cần fix để không gửi lệnh sai lần đầu (đã thấy “Invalid stops/Invalid parameters”). 
+
+log
+
+Các chỉnh sửa đề nghị
+
+Sửa triệt để tính SL/BE cho XAU
+
+Chuẩn hóa pip→price 1 lần, chỉ gửi 1 yêu cầu modify hợp lệ (tránh gửi 0.117 rồi sửa). Bạn đã note “Gold pip = 0.01”; hãy dùng NormalizeDouble(price, _Digits) và kiểm tra StopLevel/FreezeLevel trước khi gửi. 
+
+AI_ANALYSIS_PROMPT_TEMPLATE
+
+BE muộn & có điều kiện
+
+Dời BreakevenPips từ 15p → 18–20p, hoặc chỉ kích hoạt BE sau khi có HL/LH mới (structure-based), giảm cảnh “chạm spread rồi quay lên”. Tham số hiện tại: BreakevenPips=15. 
+
+PTG_PROJECT_README
+
+Partial TP hợp lý hơn với mục tiêu tăng win rate
+
+Hiện PartialTP=22p (đúng bằng Average Win ≈22p trong doc). Hãy kéo PartialTP=18–20p (30% khối lượng), và TP2=35–45p cho phần còn lại với trail “step=18–22p”. Điều này tăng tỷ lệ trade có lời (ít nhất chạm partial) → win rate cao hơn, trong khi vẫn giữ R:R cho phần còn lại. 
+
+PTG_PROJECT_README
+
+Time-stop thích nghi
+
+Time-stop 30 bar đang đóng rất nhiều lệnh (log thể hiện nhiều lần). Đổi sang time-stop động theo ATR: ví dụ min(30, 12 + 1.2×ATR_pips) bar; hoặc đếm “progress ticks” – nếu sau 12 bar chưa đi thêm ≥10p so với entry mới đóng.
+
+4) Kiểm soát rủi ro chuỗi lỗ – Ưu tiên vừa
+
+Circuit-breaker: nếu ConsecutiveLosses ≥ 6–8, tạm dừng 60–90 phút hoặc tới phiên sau.
+
+Cool-down sau SL: sau mỗi SL, chờ ≥ 5 phút trước khi nhận tín hiệu mới cùng hướng.
+
+Giới hạn “1 setup/biên test”: trong cùng 1 vùng test, chỉ cho 1 lệnh/15 phút/hướng để tránh “bị đánh vỡ” nhiều lần liên tiếp trong range.
+
+5) Telemetry & tối ưu có kiểm soát – Ưu tiên vừa
+
+Để iterate nhanh hơn, thêm CSV logger mỗi lệnh: time-of-day, session, spread, ATR, BBWidth, M5 trend state, push range %, test depth %, có retest hay không… Sau 300–500 lệnh bạn sẽ thấy pattern thắng/thua rất rõ để khoanh vùng tham số tối ưu. (Bạn đã có hệ thống tài liệu hóa & template rất tốt – tận dụng luôn.) 
+
+AI_ANALYSIS_PROMPT_TEMPLATE
+
+Gợi ý code-level (cao cấp nhưng làm được ngay)
+
+Chuẩn hóa hàm pip/price cho vàng & 1 nơi duy nhất dùng cho mọi tính toán (entry buffer, SL, BE, trail). Tránh log kiểu “SL @ 0.11700”/“Invalid stops”. 
+
+log
+
+Risk/Spread filter động: bool ok = (spreadPips <= MathMin(MaxSpreadPips, 0.15*ATR14_pips)); hiện MaxSpreadPips=12. 
+
+PTG_QUICK_REFERENCE
+
+Stop emulation: khi Ask > trigger + buffer, đợi GetMicroConfirmation() (giá vẫn > trigger sau N ticks/ms), rồi mới OrderSend().
+
+Session window: thêm Inputs TradeSessionStart/End và check TimeHour(TimeCurrent()).
+
+Squeeze filter: tính BBWidth/ATR percentile theo rolling window (ví dụ 3 ngày x phiên).
+
+BE theo cấu trúc: chỉ set BE khi giá tạo higher-low (long) / lower-high (short).
+
+Thứ tự triển khai (roadmap 1–2 vòng test)
+
+Fix chuẩn hóa SL/BE & stop emulation (ổn định execution, hết Invalid stops). 
+
+log
+
+Bật session filter (London+NY) và Spread/ATR filter.
+
+Bộ lọc squeeze→expansion + M5 trend confirm.
+
+Điều chỉnh BE=18–20p, PartialTP=18–20p, TrailStep=18–22p; time-stop động.
+
+Circuit-breaker & cool-down.
+
+Chạy backtest 1–3 tháng real-ticks, log CSV, đo Win rate, PF, % lệnh time-stop, % SL < 2 phút.
+
+Kỳ vọng tác động
+
+Win rate: từ ~21% → 32–38% (nhờ cắt phiên Á, lọc squeeze, M5 trend, partial gần hơn). 
+
+PTG_QUICK_REFERENCE
+
+Profit factor: hướng tới ≥1.2 nhờ ít lệnh rác + quản trị lệnh hợp lý.
+
+Drawdown: giảm do circuit-breaker và cooldown.
+
+Ghi chú nhanh về hiện trạng & tài liệu
+
+Tham số hiện tại (FixedSL=25, BE=15, Partial=22, Trail=18, MaxSpread=12) – như trong README/Quick Ref. 
+
+PTG_PROJECT_README
+
+PTG_QUICK_REFERENCE
+
+Log cho thấy nhiều Time-stop và một số Invalid stops/parameters khi set SL/BE – nên xử ngay. 
+
+log
+
+log
+
+Nếu muốn, mình có thể viết block pseudo-code cho từng tính năng (session filter, spread/ATR filter, stop-emulation, BE theo cấu trúc) để bạn copy vào PTG_REAL_TICK_FINAL.mq5 và chạy thử.

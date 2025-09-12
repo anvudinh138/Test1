@@ -1,0 +1,161 @@
+Ok, mình đọc nhanh stats + log của bản PTG v3.1.0 – Balanced và chốt lại như sau:
+
+Tóm tắt vấn đề
+
+Winrate ~24.6% (188/764), Profit Factor 0.44 ⇒ lỗ đều; chuỗi thua dài nhất 18 lệnh → rõ ràng có giai đoạn thị trường không phù hợp nhưng bot vẫn bắn.
+
+Log cho thấy bot hoạt động nhiều đúng lúc vol thấp (ATR ~81–82p) và spread nhảy cao ~11.2p quanh giờ rollover, nhưng bộ lọc hiện tại lại không chặn (Squeeze Filter = FALSE, nhưng vẫn báo squeeze) → tín hiệu breakout bị “nghẹt” và dễ fake. Ví dụ: 23:52–23:53 liên tục “SQUEEZE DETECTED: ATR 81–82p < 92–95p” và ngay sau đó hàng loạt “SPREAD HIGH: 11.2p > 11.1p”. 
+
+log
+
+Tham số exit hiện tại BE=18, Partial=19, Trail=20 (chênh nhau 1–2 pip) → rất dễ bị dính BE/thoát sớm, làm méo R:R (trong README/quick-ref cũ cũng khác — BE=15, TP=22, Trail=18). 
+
+PTG_PROJECT_README
+
+ 
+
+PTG_QUICK_REFERENCE
+
+Cách nâng winrate & profit (đề xuất v3.1.1)
+1) Bật lại “Squeeze filter” theo kiểu SOFT, không quá bó
+
+Giữ triết lý “M1 manipulation”, nhưng **loại những lúc nghẹt + spread xấu:
+
+SOFT SQUEEZE: chỉ cho phép lệnh khi ATR(14) ≥ max(85p, P50 của ATR 3 ngày) hoặc range nến PUSH ≥ 1.25×ATR(14).
+→ Điều này vẫn cho phép vào khi có nến đột biến thật sự, nhưng chặn vùng ATR ~80p như trong log. 
+
+log
+
+Blackout thời gian: 23:50–00:10 (server) không trade (đúng khung log báo squeeze + spread cao). Tuỳ broker có thể thêm 23:00–23:05 và trước – sau news lớn 2 phút.
+
+Spread gate 2 mức:
+
+Bình thường: MaxSpread = 11.0p
+
+Khi ATR < 95p (vol thấp): MaxSpread = 10.0p
+→ Tránh cảnh “SPREAD HIGH 11.2p > 11.1p” spam đúng lúc ATR thấp. 
+
+log
+
+Kỳ vọng: lọc bớt các cú fake-break trong vol thấp → tăng winrate thêm ~5–8 điểm % mà không làm mất nhiều kèo thật (do vẫn mở cửa cho nến push “to” vượt 1.25×ATR).
+
+2) Nâng chất “GO” – đừng vào chỉ vì 1 tick
+
+Hiện tại bạn để Stop Emulation = TRUE + 1 tick momentum (rất nhạy) → dễ bị quét. Đổi sang:
+
+Entry buffer: Breakout buffer = max(3p, 1.2×spread) (trước đây chỉ 1 tick).
+
+Tick-rate/volume snap: yêu cầu tick count trong 3s gần nhất ≥ 1.15× median 1 phút hoặc vol của nến entry ≥ 1.2× median vol 5 nến.
+
+Distance filter: không vào nếu phá range nhưng tổng range 3 nến < 60p (vi mô quá chật = dễ fail).
+
+Kỳ vọng: ít vào sớm → giảm số lệnh nhưng tăng chất, winrate +3–5%.
+
+3) Sửa exit để tránh “BE sớm – TP sát”
+
+Set hiện tại (BE 18 / Partial 19 / Trail 20) khiến lệnh thắng bị “cắt mỏng”. Đề xuất 2 preset (chọn 1):
+
+Preset A – An toàn, dễ tăng winrate
+
+SL giữ 25p.
+
+BE: 22p (≥ spread + noise).
+
+Partial: 25p (30%).
+
+Trailing: bắt đầu sau 26p, step = 22p hoặc ATR(14)×0.7 (chọn cái nào lớn hơn).
+
+Preset B – R:R tốt hơn (nếu A ổn rồi hãy thử)
+
+BE 20p | Partial 28p (35%) | TP2 42p | Trail start 30p, step 20p.
+
+Mục tiêu là kéo Average Win lên ≥ loss, đồng thời giảm BE/thoát non.
+
+4) Circuit Breaker “thông minh” (để chặn chuỗi -18)
+
+Nếu 6 thua trong 60 phút → cooldown 90 phút và chỉ bật lại khi ATR ≥ 95p.
+
+Nếu 10 thua trong 1 ngày → stop for the day.
+
+Thêm regime check khi bật lại: yêu cầu 2 điều kiện (ATR OK + spread OK) trước khi kích hoạt.
+
+5) Bias nhẹ theo M5 (không biến thành trend-follow)
+
+Giữ triết lý M1, nhưng thêm “bias weight”:
+
+Khi EMA50 M5 có slope rõ (|slope| > ngưỡng), giảm 30% tần suất lệnh ngược slope (ví dụ chỉ lấy breakout thuận slope hoặc tăng buffer cho ngược trend).
+→ Không “khóa” theo phiên, chỉ tránh đi ngược ngày “one-sided”.
+
+6) Round Number & cấu trúc
+
+Giữ Round Number Avoidance = TRUE, buffer 10p (8p đang dùng là ổn, có thể tăng 10p nếu còn hay bị “tap-n-run”).
+
+Bắt buộc TEST có ít nhất 3 nến và retracement 25–85%; nếu test quá nông (<25%) thì yêu cầu entry buffer lớn hơn ( +2p ).
+
+Ưu tiên triển khai
+
+SOFT SQUEEZE + Blackout + Spread 2 mức (tác động lớn nhất vào winrate vì nó loại điều kiện xấu thấy rõ trong log). 
+
+log
+
+Entry buffer 3p & tick/vol snap (giảm vào sớm).
+
+Exit preset A (ổn định đường cong PnL).
+
+Circuit breaker thông minh.
+
+Bias nhẹ M5 (tuỳ cảm nhận, bật sau khi 1–4 đã ổn).
+
+Gợi ý code (cao mức, áp vào EA của bạn)
+
+bool IsSqueezed() → đổi thành soft:
+
+return (ATR14 < max(85*pip, ATR_P50_3days)) && (PushRange < 1.25*ATR14);
+
+bool CanTradeNow():
+
+chèn time blackout 23:50–00:10;
+
+spread gate 2 mức theo ATR hiện tại.
+
+bool ValidGoBreakout():
+
+break_buffer = max(3*pip, 1.2*current_spread);
+
+tick_ok = ticks_3s >= 1.15*median_1m; vol_ok = vol_curr >= 1.2*median_5;
+
+range3_ok = range_3bars >= 60*pip;
+
+ManagePosition():
+
+Preset A/B cho BE/Partial/Trail như trên (nhớ cộng spread buffer khi set BE).
+
+CircuitBreaker():
+
+đếm lệnh thua rolling 60’ & trong ngày; cooldown có điều kiện ATR & spread.
+
+BiasM5() (optional):
+
+nếu abs(slope(EMA50_M5)) > SlopeMin ⇒ tăng buffer cho lệnh ngược slope thêm +2p (hoặc giảm tỉ lệ kích hoạt).
+
+Kỳ vọng tác động (thận trọng)
+
+Winrate: +8–12 điểm % (từ ~24–25% → 32–37%).
+
+PF: tiến gần/qua 1.0–1.2 nếu exit mới kéo được average win.
+
+Streak: giảm chuỗi thua cực đoan (18) nhờ CB + filter.
+
+Lý do chính đáng (evidence)
+
+Log ghi nhận hàng chục lần squeeze (ATR~81–82p) + spread cao đúng giờ rollover trước khi cảnh báo spread. Đây là điều kiện tệ nhất cho breakout M1, nên cần khóa mềm/thời gian. 
+
+log
+
+Tham số exit hiện thời gần như “đạp lên nhau” (BE 18/Partial 19/Trail 20) – không phù hợp với vàng M1 có spread biến động; tài liệu cũ của dự án cũng dùng BE=15, TP=22, Trail=18 (hợp lý hơn). 
+
+PTG_PROJECT_README
+
+ 
+
+PTG_QUICK_REFERENCE
