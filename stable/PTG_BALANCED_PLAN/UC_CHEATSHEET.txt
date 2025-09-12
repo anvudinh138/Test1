@@ -1,0 +1,8 @@
+STABLE: 18 (RN/Spread strict), 19 (18 + adaptive exits)
+OPEN THE TAP: 21 (bias mềm), 30 (bias OFF), 40 (bias mềm hơn)
+STRICT RN/SPREAD: 18/19 baseline, 32 RN 7/5, 34 spread 10/9, 44 RN asym (8/3)
+HIGH-VOL ONLY: 42 (ATRmin 70, hard sweep), 47 (momentum-only)
+LOW-VOL FRIENDLY / SPREAD LỚN: 25 (15/12), 43 (ATRmin 45 + 15/12)
+ENGINE – CHOP CONTROL: 35 (kiên nhẫn), 45 (rất kiên nhẫn), 36 (nhanh)
+EXITS: 38 (bảo thủ), 39 (tích cực), 46 (scalpy), 48 (trend carry), 49 (protective)
+SWEEP OFF/HARD: 27 (off/soft), 37 (hard)
