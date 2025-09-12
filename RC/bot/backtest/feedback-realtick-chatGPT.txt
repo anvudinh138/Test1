@@ -1,0 +1,184 @@
+Tóm gọn trước khi đi sâu:
+
+“Every tick” = Tester tự giả lập tick bên trong OHLC mỗi nến → thứ tự giá chạm High/Low là ngẫu nhiên, spread gần như cố định theo nến.
+
+“Every tick based on real ticks” = Dùng chuỗi tick thực (Bid/Ask thật, spread giãn, nhảy gap vi mô).
+
+PTG của bạn đặt BUY_STOP/SELL_STOP rất sát giá → trong “every tick” dễ khớp đẹp, nhưng sang “real ticks” spread-spike & thứ tự tick khác làm: khớp xấu, bị “chạm BE/SL bằng spread”, hoặc không khớp do tối thiểu khoảng cách/giãn spread ⇒ kết quả có thể lật lãi → lỗ chỉ vì đổi mô hình.
+
+Dưới đây là các chỉnh sửa “adapter to real tick” (ưu tiên XAUUSD M1) + các mảnh code có thể thả vào ngay:
+
+1) Dùng STOP-LIMIT để khóa trượt giá khi bứt phá
+
+Stop thuần trong real ticks dễ bị khớp cách xa entry vì spike. Dùng BUY_STOP_LIMIT / SELL_STOP_LIMIT với “limit offset = MaxSlippagePips”.
+
+// helper
+double Pip() {
+   double pt = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   int d = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+   // XAU thường 2 hoặc 3 chữ số thập phân ⇒ 1 "pip" = 0.01
+   if(StringFind(_Symbol,"XAU")>=0) return 0.01;
+   if(d==5 || d==3) return 10*pt; // FX 5/3 digits
+   return pt;
+}
+int PointsFromPips(double pips){ 
+   return (int)MathRound((pips*Pip())/SymbolInfoDouble(_Symbol,SYMBOL_POINT));
+}
+
+void PlaceStopLimit(bool is_long, double stop_price){
+   MqlTradeRequest r; MqlTradeResult s; ZeroMemory(r); ZeroMemory(s);
+   r.action   = TRADE_ACTION_PENDING;
+   r.symbol   = _Symbol;
+   r.magic    = magic_number;
+   r.volume   = /* lot đã tính */;
+   r.type     = is_long ? ORDER_TYPE_BUY_STOP_LIMIT : ORDER_TYPE_SELL_STOP_LIMIT;
+   r.price    = NormalizeDouble(stop_price, (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS));
+   // limit giá khớp tối đa sau khi chạm stop
+   double lim_off = MaxSlippagePips * Pip();
+   r.stoplimit = is_long ? r.price + lim_off : r.price - lim_off;
+   r.type_time = ORDER_TIME_SPECIFIED;                     // tự hết hạn thay vì tự quét và xóa
+   r.expiration = TimeCurrent() + PendingTimeout*PeriodSeconds(PERIOD_CURRENT);
+   // bắt buộc kiểm tra khoảng cách tối thiểu
+   double stoplvl = SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   if(is_long && r.price - SymbolInfoDouble(_Symbol, SYMBOL_ASK) < stoplvl) 
+      r.price = SymbolInfoDouble(_Symbol, SYMBOL_ASK) + stoplvl;
+   if(!is_long && SymbolInfoDouble(_Symbol, SYMBOL_BID) - r.price < stoplvl) 
+      r.price = SymbolInfoDouble(_Symbol, SYMBOL_BID) - stoplvl;
+
+   if(!OrderSend(r,s) && EnableDebugLogs) Print("Send stop-limit failed: ",s.retcode," ",s.comment);
+}
+
+
+Lợi ích: vào lệnh chỉ khi thật sự phá vỡ, đồng thời khóa trượt giá đúng theo MaxSlippagePips.
+
+2) Đệm entry theo spread động (tránh bị “khớp bằng spread”)
+
+Trong real ticks, chỉ một spike spread cũng đủ kích hoạt stop. Hãy dùng buffer = max(EntryBufferPips, spreadMA × k).
+
+double DynamicEntryBufferPips(){
+   static double smoothed = 0;
+   double spr = (SymbolInfoDouble(_Symbol,SYMBOL_ASK)-SymbolInfoDouble(_Symbol,SYMBOL_BID))/Pip();
+   smoothed = (smoothed==0) ? spr : (0.7*smoothed + 0.3*spr);
+   return MathMax(EntryBufferPips, smoothed*1.2); // k=1.2–1.5
+}
+
+
+Khi đặt lệnh:
+
+double buf = DynamicEntryBufferPips()*Pip();
+double buyStop = SymbolInfoDouble(_Symbol, SYMBOL_ASK) + buf;
+double sellStop = SymbolInfoDouble(_Symbol, SYMBOL_BID) - buf;
+PlaceStopLimit(/*is_long=*/true, buyStop);
+// hoặc false với sellStop
+
+3) Giảm nhạy cảm với microstructure: BE & Trail “dày” hơn
+
+Spread thật trên XAU hay phồng → BE quá sớm 8 pip sẽ bị chạm vì Ask/Bid lệch chứ không do giá đảo. Gợi ý cho XAU M1:
+
+BreakevenPips 12–20
+
+PartialTPPips 18–30
+
+TrailStepPips ≥ 18 và MinProfitPips ≥ 8–10
+
+Ngoài ra, khi move SL về BE, nên cộng spread hiện tại:
+
+void MoveSLToBreakeven() {
+   if(!PositionSelectByTicket(active_position_ticket)) return;
+   bool is_long = (PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY);
+   double spr = (SymbolInfoDouble(_Symbol,SYMBOL_ASK)-SymbolInfoDouble(_Symbol,SYMBOL_BID));
+   double be = is_long ? (original_entry_price + spr + 0.5*Pip()) 
+                       : (original_entry_price - spr - 0.5*Pip());
+   // ... phần gửi lệnh SLTP như bạn đang làm
+}
+
+4) Kiểm soát spread & điều kiện thực thi kỹ hơn
+
+Giảm MaxSpreadPips về 10–15 cho XAU M1.
+
+Bỏ lệnh khi spread > MA(spread)×1.5 (lọc spike tin tức).
+
+Với market deal (partial/close), set deviation (slippage) theo pips:
+
+int dev = PointsFromPips(MaxSlippagePips);
+req.deviation = dev; // cho TRADE_ACTION_DEAL
+
+5) Tính “pip” nhất quán trên mọi broker (XAU 2–3 digits)
+
+Đừng dựa hoàn toàn vào Digits()==3 nhân ×10. Dùng hàm Pip() ở trên để mọi nơi hiểu 1 pip = 0.01 cho XAUUSD.
+
+6) Bền vững hơn với dữ liệu tick thật
+
+PUSH: bạn đã dùng dữ liệu của nến đã đóng (bắt đầu copy từ shift 1) → tốt.
+
+VSA/khối lượng: tick-volume giữa model & real có thể lệch. Để ổn định hơn, thêm ATR/True Range làm xác nhận song song với volume:
+
+double ATR(int period=14){
+   double atr[]; ArraySetAsSeries(atr,true);
+   if(iATR(_Symbol, PERIOD_CURRENT, period, 1, atr) <= 0) return 0;
+   return atr[0];
+}
+bool range_criteria = current_range >= MathMax(avg_range*PushRangePercent, 0.6*ATR(14));
+
+7) Tránh lỗi chọn position
+
+Đoạn này nên dùng PositionSelectByIndex thay vì PositionGetTicket(i):
+
+void UpdatePositionInfo(){
+   active_position_ticket = 0;
+   for(int i=PositionsTotal()-1; i>=0; --i){
+      if(PositionSelectByIndex(i) && PositionGetInteger(POSITION_MAGIC)==magic_number){
+         active_position_ticket = (ulong)PositionGetInteger(POSITION_TICKET);
+         remaining_volume = PositionGetDouble(POSITION_VOLUME);
+         break;
+      }
+   }
+}
+
+8) Hết hạn pending bằng ORDER_TIME_SPECIFIED (thay vì tự quét)
+
+Bạn đang tự đếm bar rồi xóa. Với real ticks, nên để server tự hết hạn (đã minh hoạ ở mục 1) → giảm lệch trạng thái khi nhiều tick dồn/delay.
+
+9) Một vài preset thực chiến cho XAU M1 (real ticks)
+
+EntryBufferPips = 1.5–2.0 (nhưng dùng DynamicEntryBufferPips ở trên)
+
+MaxSpreadPips = 12
+
+BreakevenPips = 15
+
+PartialTPPips = 22, PartialTPPercent = 30
+
+TrailStepPips = 18, MinProfitPips = 9
+
+VolHighMultiplier = 1.2 (đòi push “sạch” hơn)
+
+OppWickPercent = 0.55
+
+Vì sao chỉ đổi mô hình tick mà Lãi → Lỗ?
+
+Thứ tự chạm High/Low trong 1 nến khác nhau → stop/BE/trail của bạn kích hoạt ở chỗ khác.
+
+Spread & Bid/Ask thật: BUY_STOP cần Ask chạm; SELL_STOP cần Bid chạm. Trong model, spread “mượt”; trong real, spread spike làm “khớp xấu” hoặc chạm BE/SL oan.
+
+Slippage: model ~0; real có trượt → entry xa hơn, SL gần hơn (RR xấu đi).
+
+Min stop distance & freeze level của broker: trong real có kiểm; model dễ bỏ qua → nhiều lệnh bị từ chối/khớp lệch.
+
+TL;DR
+
+Chiến thuật không hẳn “failed”; nó quá nhạy với microstructure. Hãy:
+
+đổi sang STOP-LIMIT,
+
+dùng đệm entry theo spread động,
+
+nới các ngưỡng BE/Trail,
+
+siết spread/vol filter,
+
+tính pip chuẩn & thêm deviation,
+
+để server hết hạn pending.
+
+Làm xong 6–8 điểm trên, kết quả giữa “every tick” và “real ticks” sẽ gần nhau hơn và bot chạy live ổn định hơn trên XAUUSD. Nếu bạn muốn, mình có thể gộp các thay đổi này thành một bản .mq5 rút gọn để bạn dán vào dự án.

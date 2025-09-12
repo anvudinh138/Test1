@@ -1,67 +1,67 @@
 //+------------------------------------------------------------------+
-//|                    PTG Trail Runner Natural v1.6.0             |
-//|               Natural Flow + Unlimited Trailing Profits        |
-//|                    The ULTIMATE PTG Implementation             |
+//|                        PTG EXNESS PRO ACCOUNT v1.0             |
+//|               Realistic Backtest for Exness Pro Account        |
+//|                    Spread: 0.1-2p | Commission: $0             |
 //+------------------------------------------------------------------+
 #property strict
 #property copyright "Copyright 2024, PTG Trading Strategy"
-#property link      "https://github.com/ptg-trading"
-#property version   "1.60"
-#property description "PTG Trail Runner Natural - Natural Flow + Unlimited Profit Potential"
+#property version   "1.00"
+#property description "PTG Natural Flow - EXNESS PRO Account Simulation"
 
-//=== INPUTS ===
+//=== EXNESS PRO ACCOUNT SETTINGS ===
+input group "=== EXNESS PRO ACCOUNT CONDITIONS ==="
+input double   FixedSpreadPips    = 1.2;               // Exness Pro average spread (0.1-2p)
+input double   CommissionPerLot   = 0.0;               // No commission on Pro
+input double   SlippagePips       = 0.3;               // Minimal slippage on Pro
+input double   MaxSpreadPips      = 15.0;              // Don't trade if spread > 15p (realistic for Gold)
+input bool     SimulateRealism    = true;              // Enable Pro conditions
+
+//=== PTG CORE SETTINGS ===
 input group "=== PTG CORE SETTINGS ==="
 input bool     UseEMAFilter       = false;             // EMA 34/55 trend filter
-input bool     UseVWAPFilter      = false;             // (chưa dùng)
 input int      LookbackPeriod     = 10;                // Lookback for range & volSMA
 
-input group "=== PUSH PARAMETERS (NATURAL) ==="
-input double   PushRangePercent   = 0.35;              // Range >= 35% (quality)
-input double   ClosePercent       = 0.45;              // Close pos 45% (momentum)
-input double   OppWickPercent     = 0.65;              // Opp wick <= 65% (strict)
-input double   VolHighMultiplier  = 1.0;               // Vol >= 100% (confirm)
+input group "=== PUSH PARAMETERS ==="
+input double   PushRangePercent   = 0.35;              // Range >= 35%
+input double   ClosePercent       = 0.45;              // Close pos 45%
+input double   OppWickPercent     = 0.65;              // Opp wick <= 65%
+input double   VolHighMultiplier  = 1.0;               // Vol >= 100%
 
-input group "=== TEST PARAMETERS (NATURAL) ==="
+input group "=== TEST PARAMETERS ==="
 input int      TestBars           = 10;                // Allow TEST within X bars
 input int      PendingTimeout     = 5;                 // Remove pendings after X bars
-input double   PullbackMax        = 0.85;              // Pullback <= 85% push range
+input double   PullbackMax        = 0.85;              // Pullback <= 85%
 input double   VolLowMultiplier   = 2.0;               // Vol TEST <= 200%
 
-input group "=== TRAIL RUNNER NATURAL CONFIG ==="
-// Ultimate combination: Natural Flow + Unlimited Profits
-input double   BreakevenPips      = 8.0;               // +X pips => move SL to BE (natural wide)
-input double   TrailStepPips      = 15.0;              // Trail step (optimal for big moves)
-input double   MinProfitPips      = 5.0;               // Min profit to keep when trailing
-input int      MaxBarsInTrade     = 30;                // Time-stop: close if no progress (longer for trails)
-input bool     UsePartialTP       = false;             // false=Full position trails (recommended)
+input group "=== PRO ACCOUNT MANAGEMENT ==="
+// Optimized for Exness Pro (low spread, no commission)
+input double   BreakevenPips      = 8.0;               // +X pips => move SL to BE
+input double   PartialTPPips      = 15.0;              // Take 30% profit at +X pips
+input double   PartialTPPercent   = 30.0;              // % of position to close
+input double   TrailStepPips      = 12.0;              // Trail step
+input double   MinProfitPips      = 5.0;               // Min profit to keep
+input int      MaxBarsInTrade     = 20;                // Time-stop
 
-input group "=== ENTRY OPTIMIZATION ==="
-input double   EntryBufferPips    = 1.0;               // Entry buffer (tight entry)
-input double   SLBufferPips       = 2.0;               // SL buffer (natural SL intent)
-input double   MaxSlippagePips    = 3.0;               // Max acceptable slippage
+input group "=== ENTRY SETTINGS ==="
+input double   EntryBufferPips    = 1.0;               // Entry buffer
+input double   SLBufferPips       = 2.0;               // SL buffer
+input double   MinProfitTarget    = 10.0;              // Min profit target
 
-input group "=== RISK MANAGEMENT (NATURAL) ==="
-input bool     UseFixedLotSize    = true;              // Fixed lot (recommended)
-input double   FixedLotSize       = 0.10;              // 0.10 lot ~ $1/pip with Gold
-input double   MaxSpreadPips      = 30.0;              // Higher spread tolerance
-input bool     AllowWideStops     = true;              // Allow natural wide stops (CRITICAL!)
-
-input group "=== TRADING HOURS ==="
-input bool     UseTimeFilter      = false;             // true=limit hours
-input string   StartTime          = "00:00";
-input string   EndTime            = "23:59";
+input group "=== RISK MANAGEMENT ==="
+input bool     UseFixedLotSize    = false;             // Auto lot sizing
+input double   FixedLotSize       = 0.01;              // Fallback lot
+input double   RiskPercentage     = 2.0;               // Risk % per trade
+input double   MaxLotSize         = 0.10;              // Max lot size
 
 input group "=== SYSTEM ==="
 input bool     AllowMultiplePositions = false;         // 1 trade at a time
-input int      MinBarsBetweenTrades   = 1;             // Min spacing (bars)
+input int      MinBarsBetweenTrades   = 1;             // Min spacing
 input bool     EnableDebugLogs    = true;
 input bool     EnableAlerts       = true;
-
-input group "=== VERSION CONTROL ==="
-input string   BotVersion         = "v1.6.0-TrailRunner-Natural-ULTIMATE";
+input string   BotVersion         = "v1.0-ExnessPro";
 
 //=== GLOBAL VARIABLES ===
-int magic_number = 66666; // Trail Runner Natural magic
+int magic_number = 11111; // Exness Pro magic
 ulong active_position_ticket = 0;
 ulong last_order_ticket = 0;
 int bars_since_entry = 0;
@@ -70,10 +70,12 @@ int last_trade_bar = -1;
 double original_entry_price = 0.0;
 double pip_size = 0.0;
 bool breakeven_activated = false;
-double last_trail_level = 0.0;
+bool partial_tp_taken = false;
+double remaining_volume = 0.0;
 
 int signal_count = 0;
 int trade_count = 0;
+int rejected_by_spread = 0;
 
 //=== INITIALIZATION ===
 int OnInit()
@@ -81,12 +83,10 @@ int OnInit()
    pip_size = Point();
    if(Digits() == 5 || Digits() == 3) pip_size *= 10;
    
-   Print("🚀 PTG TRAIL RUNNER NATURAL v1.6.0 STARTED - ULTIMATE EDITION!");
-   Print("🌊 Natural Flow + Unlimited Trailing = MAXIMUM PROFIT POTENTIAL");
-   Print("📊 Pip Size: ", pip_size, " | Magic: ", magic_number);
-   Print("🎯 Trail Config: BE=", BreakevenPips, "p | Trail=", TrailStepPips, "p | Keep=", MinProfitPips, "p");
-   Print("🚫 NO ARTIFICIAL LIMITS - Let PTG breathe and trail to the moon!");
-   Print("💰 Expected: Lower win rate but MASSIVE average wins!");
+   Print("💎 PTG EXNESS PRO ACCOUNT v1.0 STARTED!");
+   Print("📊 Pro Conditions: Spread=", DoubleToString(FixedSpreadPips, 1), "p | Commission=$0 | Slippage=", DoubleToString(SlippagePips, 1), "p");
+   Print("🎯 Pro Management: BE=", DoubleToString(BreakevenPips, 1), "p | PartialTP=", DoubleToString(PartialTPPips, 1), "p | Trail=", DoubleToString(TrailStepPips, 1), "p");
+   Print("✅ BEST FOR: Scalping strategies with tight spreads!");
    
    return INIT_SUCCEEDED;
 }
@@ -96,21 +96,16 @@ void OnTick()
 {
    if(!IsTradingAllowed()) return;
    
-   // Update active position info
    UpdatePositionInfo();
    
-   // Manage existing positions
    if(active_position_ticket > 0)
    {
-      ManageTrailRunnerNaturalPosition();
+      ManageProPosition();
       bars_since_entry++;
       return;
    }
    
-   // Look for new PTG signals
    CheckPTGSignals();
-   
-   // Clean up old pending orders
    CheckPendingOrderTimeout();
 }
 
@@ -124,12 +119,13 @@ void UpdatePositionInfo()
       if(PositionGetTicket(i) && PositionGetInteger(POSITION_MAGIC) == magic_number)
       {
          active_position_ticket = PositionGetInteger(POSITION_TICKET);
+         remaining_volume = PositionGetDouble(POSITION_VOLUME);
          break;
       }
    }
 }
 
-void ManageTrailRunnerNaturalPosition()
+void ManageProPosition()
 {
    if(!PositionSelectByTicket(active_position_ticket)) return;
    
@@ -142,24 +138,69 @@ void ManageTrailRunnerNaturalPosition()
                        (current_price - original_entry_price) / pip_size :
                        (original_entry_price - current_price) / pip_size;
    
-   // Time-stop: Close if no progress after MaxBarsInTrade (longer for trails)
-   if(bars_since_entry >= MaxBarsInTrade && profit_pips < MinProfitPips)
+   // Pro account: Only subtract spread (no commission)
+   double cost_pips = FixedSpreadPips + (SlippagePips * 2); // Entry + exit slippage
+   double net_profit_pips = profit_pips - cost_pips;
+   
+   // Time-stop
+   if(bars_since_entry >= MaxBarsInTrade && net_profit_pips < MinProfitPips)
    {
-      ClosePositionAtMarket("Time-stop: No progress after " + IntegerToString(MaxBarsInTrade) + " bars");
+      ClosePositionAtMarket("Pro Time-stop: No progress");
       return;
    }
    
-   // Breakeven when profitable
-   if(!breakeven_activated && profit_pips >= BreakevenPips)
+   // Partial TP
+   if(!partial_tp_taken && net_profit_pips >= PartialTPPips)
+   {
+      TakePartialProfit();
+      return;
+   }
+   
+   // Breakeven
+   if(!breakeven_activated && net_profit_pips >= BreakevenPips)
    {
       MoveSLToBreakeven();
       return;
    }
    
-   // UNLIMITED TRAILING - No TP limit!
-   if(breakeven_activated && profit_pips > last_trail_level + TrailStepPips)
+   // Trail
+   if(breakeven_activated && net_profit_pips > BreakevenPips + TrailStepPips)
    {
-      TrailStopLoss(profit_pips);
+      TrailStopLoss(net_profit_pips);
+   }
+}
+
+void TakePartialProfit()
+{
+   if(!PositionSelectByTicket(active_position_ticket)) return;
+   
+   double current_volume = PositionGetDouble(POSITION_VOLUME);
+   double close_volume = NormalizeDouble(current_volume * PartialTPPercent / 100.0, 2);
+   
+   double min_vol = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_MIN);
+   if(close_volume < min_vol) close_volume = min_vol;
+   if(close_volume >= current_volume) close_volume = current_volume;
+   
+   MqlTradeRequest req;
+   MqlTradeResult res;
+   ZeroMemory(req);
+   ZeroMemory(res);
+   
+   req.action = TRADE_ACTION_DEAL;
+   req.symbol = Symbol();
+   req.position = active_position_ticket;
+   req.volume = close_volume;
+   req.type = PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
+   req.magic = magic_number;
+   req.comment = "Pro Partial TP " + DoubleToString(PartialTPPips, 1) + "p";
+   
+   if(OrderSend(req, res))
+   {
+      partial_tp_taken = true;
+      remaining_volume = current_volume - close_volume;
+      
+      if(EnableDebugLogs)
+         Print("💎 PRO PARTIAL TP: ", DoubleToString(close_volume, 2), " lots at +", DoubleToString(PartialTPPips, 1), "p");
    }
 }
 
@@ -168,7 +209,10 @@ void MoveSLToBreakeven()
    if(!PositionSelectByTicket(active_position_ticket)) return;
    
    bool is_long = PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY;
-   double be_price = original_entry_price + (is_long ? pip_size : -pip_size); // +1 pip for safety
+   double cost_pips = FixedSpreadPips + (SlippagePips * 2);
+   double be_price = is_long ? 
+                    original_entry_price + (cost_pips + 1) * pip_size :
+                    original_entry_price - (cost_pips + 1) * pip_size;
    
    MqlTradeRequest req;
    MqlTradeResult res;
@@ -179,37 +223,29 @@ void MoveSLToBreakeven()
    req.symbol = Symbol();
    req.position = active_position_ticket;
    req.sl = NormalizeDouble(be_price, (int)SymbolInfoInteger(Symbol(), SYMBOL_DIGITS));
-   req.tp = 0.0; // NO TP - UNLIMITED PROFIT!
+   req.tp = PositionGetDouble(POSITION_TP);
    
    if(OrderSend(req, res))
    {
       breakeven_activated = true;
-      last_trail_level = BreakevenPips;
-      
       if(EnableDebugLogs)
-         Print("🛡️ NATURAL BE: SL moved to entry+1p | UNLIMITED UPSIDE ACTIVATED!");
-      
-      if(EnableAlerts)
-         Alert("PTG TRAIL NATURAL 🛡️ Breakeven - Ready for moon mission!");
+         Print("💎 PRO BREAKEVEN: SL moved to cover spread costs");
    }
 }
 
-void TrailStopLoss(double profit_pips)
+void TrailStopLoss(double net_profit_pips)
 {
    if(!PositionSelectByTicket(active_position_ticket)) return;
    
    bool is_long = PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY;
    double current_sl = PositionGetDouble(POSITION_SL);
    
-   // Calculate new trailing SL - Keep MinProfitPips
-   double new_trail_level = MathFloor(profit_pips / TrailStepPips) * TrailStepPips;
-   double trail_distance = new_trail_level - MinProfitPips;
-   
+   double cost_pips = FixedSpreadPips + (SlippagePips * 2);
+   double trail_distance = net_profit_pips - MinProfitPips;
    double new_sl = is_long ? 
-                   original_entry_price + trail_distance * pip_size :
-                   original_entry_price - trail_distance * pip_size;
+                   original_entry_price + (cost_pips + trail_distance) * pip_size :
+                   original_entry_price - (cost_pips + trail_distance) * pip_size;
    
-   // Only move SL if it's better
    if((is_long && new_sl > current_sl) || (!is_long && new_sl < current_sl))
    {
       MqlTradeRequest req;
@@ -221,18 +257,12 @@ void TrailStopLoss(double profit_pips)
       req.symbol = Symbol();
       req.position = active_position_ticket;
       req.sl = NormalizeDouble(new_sl, (int)SymbolInfoInteger(Symbol(), SYMBOL_DIGITS));
-      req.tp = 0.0; // ALWAYS 0 - UNLIMITED!
+      req.tp = PositionGetDouble(POSITION_TP);
       
       if(OrderSend(req, res))
       {
-         last_trail_level = new_trail_level;
-         
          if(EnableDebugLogs)
-            Print("🚀 TRAIL TO MOON: SL @", DoubleToString(new_sl, (int)SymbolInfoInteger(Symbol(), SYMBOL_DIGITS)), 
-                  " | Profit: +", DoubleToString(profit_pips, 1), "p | Keep: +", DoubleToString(trail_distance, 1), "p");
-         
-         if(EnableAlerts)
-            Alert("PTG TRAIL NATURAL 🚀 Trailing +", DoubleToString(profit_pips, 1), "p");
+            Print("💎 PRO TRAIL: Net +", DoubleToString(net_profit_pips, 1), "p");
       }
    }
 }
@@ -257,16 +287,33 @@ void ClosePositionAtMarket(string reason)
    if(OrderSend(req, res))
    {
       ResetTradeState();
-      
       if(EnableDebugLogs)
-         Print("🔚 TRAIL CLOSED: ", reason);
-      
-      if(EnableAlerts)
-         Alert("PTG TRAIL NATURAL 🔚 ", reason);
+         Print("💎 PRO CLOSED: ", reason);
    }
 }
 
-//=== PTG SIGNAL DETECTION (Same as Natural Flow) ===
+//=== AUTO LOT CALCULATION ===
+double CalculateOptimalLotSize(double sl_distance_pips)
+{
+   if(UseFixedLotSize) return FixedLotSize;
+   
+   double account_balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double risk_amount = account_balance * RiskPercentage / 100.0;
+   
+   // Pro account: Only spread cost (no commission)
+   double total_cost_pips = FixedSpreadPips + (SlippagePips * 2);
+   double effective_sl_pips = sl_distance_pips + total_cost_pips;
+   
+   double pip_value_per_001_lot = 0.10;
+   double calculated_lot = risk_amount / (effective_sl_pips * pip_value_per_001_lot);
+   
+   calculated_lot = MathMin(calculated_lot, MaxLotSize);
+   calculated_lot = MathMax(calculated_lot, 0.01);
+   
+   return calculated_lot;
+}
+
+//=== PTG SIGNAL DETECTION ===
 void CheckPTGSignals()
 {
    int current_bar = Bars(Symbol(), PERIOD_CURRENT) - 1;
@@ -275,9 +322,6 @@ void CheckPTGSignals()
    if(IsPushDetected())
    {
       signal_count++;
-      if(signal_count % 100 == 0)
-         Print("🔥 TRAIL NATURAL PUSH #", signal_count, " detected");
-      
       last_signal_bar = current_bar;
       CheckTestAndGo();
    }
@@ -333,44 +377,47 @@ void CheckTestAndGo()
    double ask = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
    double bid = SymbolInfoDouble(Symbol(), SYMBOL_BID);
    
-   bool is_bullish = IsBullishContext();
+   bool is_bullish = iClose(Symbol(), PERIOD_CURRENT, 1) > iClose(Symbol(), PERIOD_CURRENT, 2);
    
    if(is_bullish)
-   {
-      ExecuteTrailRunnerNaturalTrade(ORDER_TYPE_BUY_STOP, ask + EntryBufferPips * pip_size);
-   }
+      ExecuteProTrade(ORDER_TYPE_BUY_STOP, ask + EntryBufferPips * pip_size);
    else
-   {
-      ExecuteTrailRunnerNaturalTrade(ORDER_TYPE_SELL_STOP, bid - EntryBufferPips * pip_size);
-   }
+      ExecuteProTrade(ORDER_TYPE_SELL_STOP, bid - EntryBufferPips * pip_size);
 }
 
-bool IsBullishContext()
-{
-   double close_current = iClose(Symbol(), PERIOD_CURRENT, 1);
-   double close_prev = iClose(Symbol(), PERIOD_CURRENT, 2);
-   return close_current > close_prev;
-}
-
-//=== TRADE EXECUTION ===
-void ExecuteTrailRunnerNaturalTrade(ENUM_ORDER_TYPE order_type, double entry_price)
+void ExecuteProTrade(ENUM_ORDER_TYPE order_type, double entry_price)
 {
    if(active_position_ticket > 0) return;
    
    int current_bar = Bars(Symbol(), PERIOD_CURRENT) - 1;
    if(current_bar - last_trade_bar < MinBarsBetweenTrades) return;
    
-   bool is_long = (order_type == ORDER_TYPE_BUY_STOP);
+   // Check spread
+   double ask = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
+   double bid = SymbolInfoDouble(Symbol(), SYMBOL_BID);
+   double current_spread_pips = (ask - bid) / pip_size;
    
-   // Calculate natural SL based on recent swing points
+   if(current_spread_pips > MaxSpreadPips)
+   {
+      rejected_by_spread++;
+      return;
+   }
+   
+   bool is_long = (order_type == ORDER_TYPE_BUY_STOP);
    double sl_price = CalculateNaturalSL(is_long, entry_price);
    double sl_distance_pips = MathAbs(entry_price - sl_price) / pip_size;
    
-   // NO MaxRiskPips limit - Natural breathing room!
-   if(EnableDebugLogs && sl_distance_pips > 50)
-      Print("🌊 TRAIL NATURAL SL: ", DoubleToString(sl_distance_pips, 1), "p (Wide stops = Big profits!)");
+   // Check profitability
+   double total_cost_pips = FixedSpreadPips + (SlippagePips * 2);
+   if(sl_distance_pips < MinProfitTarget || total_cost_pips >= MinProfitTarget * 0.3)
+      return;
    
-   double lot_size = UseFixedLotSize ? FixedLotSize : 0.10;
+   // Apply slippage
+   double realistic_entry = is_long ? 
+                           entry_price + SlippagePips * pip_size :
+                           entry_price - SlippagePips * pip_size;
+   
+   double lot_size = CalculateOptimalLotSize(sl_distance_pips);
    
    double min_vol = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_MIN);
    double max_vol = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_MAX);
@@ -387,11 +434,11 @@ void ExecuteTrailRunnerNaturalTrade(ENUM_ORDER_TYPE order_type, double entry_pri
    req.symbol = Symbol();
    req.volume = lot_size;
    req.type = order_type;
-   req.price = NormalizeDouble(entry_price, (int)SymbolInfoInteger(Symbol(), SYMBOL_DIGITS));
+   req.price = NormalizeDouble(realistic_entry, (int)SymbolInfoInteger(Symbol(), SYMBOL_DIGITS));
    req.sl = NormalizeDouble(sl_price, (int)SymbolInfoInteger(Symbol(), SYMBOL_DIGITS));
-   req.tp = 0.0; // NO TP - UNLIMITED TRAIL TO MOON!
+   req.tp = 0.0;
    req.magic = magic_number;
-   req.comment = "Trail Natural R:" + DoubleToString(sl_distance_pips, 1) + "p";
+   req.comment = "Pro PTG R:" + DoubleToString(sl_distance_pips, 1) + "p";
    
    if(OrderSend(req, res))
    {
@@ -399,21 +446,9 @@ void ExecuteTrailRunnerNaturalTrade(ENUM_ORDER_TYPE order_type, double entry_pri
       last_trade_bar = current_bar;
       trade_count++;
       
-      string direction = is_long ? "LONG" : "SHORT";
-      
       if(EnableDebugLogs)
-         Print("✅ TRAIL NATURAL: ", direction, " ", DoubleToString(lot_size, 2), " lots | Risk: ", 
-               DoubleToString(sl_distance_pips, 1), "p | UNLIMITED UPSIDE!");
-      
-      if(EnableAlerts)
-         Alert("PTG TRAIL NATURAL ", direction, " @", DoubleToString(entry_price, (int)SymbolInfoInteger(Symbol(), SYMBOL_DIGITS)), 
-               " SL@", DoubleToString(sl_price, (int)SymbolInfoInteger(Symbol(), SYMBOL_DIGITS)), 
-               " MOON MISSION");
-   }
-   else
-   {
-      if(EnableDebugLogs)
-         Print("❌ TRAIL NATURAL FAILED: ", res.retcode, " - ", res.comment);
+         Print("💎 PRO TRADE: ", (is_long ? "LONG" : "SHORT"), " ", DoubleToString(lot_size, 2), 
+               " lots | Risk: ", DoubleToString(sl_distance_pips, 1), "p | Costs: ", DoubleToString(total_cost_pips, 1), "p");
    }
 }
 
@@ -431,17 +466,7 @@ double CalculateNaturalSL(bool is_long, double entry_price)
       if(high_i > swing_high) swing_high = high_i;
    }
    
-   double sl_price;
-   if(is_long)
-   {
-      sl_price = swing_low - SLBufferPips * pip_size;
-   }
-   else
-   {
-      sl_price = swing_high + SLBufferPips * pip_size;
-   }
-   
-   return sl_price;
+   return is_long ? swing_low - SLBufferPips * pip_size : swing_high + SLBufferPips * pip_size;
 }
 
 //=== UTILITY FUNCTIONS ===
@@ -451,23 +476,7 @@ bool IsTradingAllowed()
    double bid = SymbolInfoDouble(Symbol(), SYMBOL_BID);
    double spread_pips = (ask - bid) / pip_size;
    
-   if(spread_pips > MaxSpreadPips)
-   {
-      if(EnableDebugLogs)
-         Print("SPREAD TOO HIGH: ", DoubleToString(spread_pips, 1), " > ", DoubleToString(MaxSpreadPips, 1), " pips");
-      return false;
-   }
-   
-   if(UseTimeFilter)
-   {
-      datetime current_time = TimeCurrent();
-      string current_time_str = TimeToString(current_time, TIME_MINUTES);
-      
-      if(current_time_str < StartTime || current_time_str > EndTime)
-         return false;
-   }
-   
-   return true;
+   return spread_pips <= MaxSpreadPips;
 }
 
 void CheckPendingOrderTimeout()
@@ -493,9 +502,6 @@ void CheckPendingOrderTimeout()
             
             if(OrderSend(req, res))
             {
-               if(EnableDebugLogs)
-                  Print("⏰ TIMEOUT: Removed pending order #", last_order_ticket, " after ", PendingTimeout, " bars");
-               
                last_order_ticket = 0;
             }
          }
@@ -512,7 +518,8 @@ void ResetTradeState()
    bars_since_entry = 0;
    original_entry_price = 0.0;
    breakeven_activated = false;
-   last_trail_level = 0.0;
+   partial_tp_taken = false;
+   remaining_volume = 0.0;
 }
 
 void OnTradeTransaction(const MqlTradeTransaction& trans, const MqlTradeRequest& request, const MqlTradeResult& result)
@@ -531,16 +538,12 @@ void OnTradeTransaction(const MqlTradeTransaction& trans, const MqlTradeRequest&
             original_entry_price = trans.price;
             bars_since_entry = 0;
             breakeven_activated = false;
-            last_trail_level = 0.0;
-            
-            string direction = trans.deal_type == DEAL_TYPE_BUY ? "LONG" : "SHORT";
+            partial_tp_taken = false;
+            remaining_volume = trans.volume;
             
             if(EnableDebugLogs)
-               Print("🎯 TRAIL NATURAL ENTRY: ", direction, " ", DoubleToString(trans.volume, 2), 
-                     " lots at ", DoubleToString(trans.price, (int)SymbolInfoInteger(Symbol(), SYMBOL_DIGITS)), " - MOON MISSION STARTED!");
-            
-            if(EnableAlerts)
-               Alert("PTG TRAIL NATURAL ENTRY ", direction, " - TO THE MOON!");
+               Print("💎 PRO ENTRY: ", (trans.deal_type == DEAL_TYPE_BUY ? "LONG" : "SHORT"), 
+                     " ", DoubleToString(trans.volume, 2), " lots");
          }
          // Exit
          else
@@ -554,16 +557,17 @@ void OnTradeTransaction(const MqlTradeTransaction& trans, const MqlTradeRequest&
                             (original_entry_price - trans.price) / pip_size;
             }
             
-            double profit_usd = profit_pips * trans.volume * 10; // Approximate for Gold
+            double cost_pips = FixedSpreadPips + (SlippagePips * 2);
+            double net_profit_pips = profit_pips - cost_pips;
             
             if(EnableDebugLogs)
-               Print("💰 TRAIL NATURAL EXIT: ", (profit_pips >= 0 ? "+" : ""), DoubleToString(profit_pips, 1), 
-                     "p ($", DoubleToString(profit_usd, 0), ")");
+               Print("💎 PRO EXIT: Gross: ", (profit_pips >= 0 ? "+" : ""), DoubleToString(profit_pips, 1), 
+                     "p | Net: ", (net_profit_pips >= 0 ? "+" : ""), DoubleToString(net_profit_pips, 1), "p");
             
-            if(EnableAlerts)
-               Alert("PTG TRAIL NATURAL 💰 Exit: ", (profit_pips >= 0 ? "+" : ""), DoubleToString(profit_pips, 1), "p");
-            
-            ResetTradeState();
+            if(active_position_ticket == trans.position && trans.volume >= remaining_volume)
+            {
+               ResetTradeState();
+            }
          }
       }
    }
@@ -571,7 +575,7 @@ void OnTradeTransaction(const MqlTradeTransaction& trans, const MqlTradeRequest&
 
 void OnDeinit(const int reason)
 {
-   Print("🚀 PTG TRAIL RUNNER NATURAL v1.6.0 STOPPED");
-   Print("📊 Total Signals: ", signal_count, " | Total Trades: ", trade_count);
-   Print("🌊 TRAIL NATURAL COMPLETED - Natural Flow + Unlimited Trailing!");
+   Print("💎 PTG EXNESS PRO ACCOUNT v1.0 STOPPED");
+   Print("📊 Signals: ", signal_count, " | Trades: ", trade_count, " | Spread Rejects: ", rejected_by_spread);
+   Print("✅ PRO ACCOUNT SIMULATION COMPLETED!");
 }
