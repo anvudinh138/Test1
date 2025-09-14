@@ -1,0 +1,11 @@
+PresetID,Label,TrailMode,ATR_Period,ATR_Mult,StepUSD,StartRR,BE_R,TP1_R,PartialClose%,PF,Net,MaxDD%,Deals,Win%,AvgWin,AvgLoss,Notes
+37,ATR14x1.5 start0.8,ATR,14,1.5,,0.8,,,,,,,,,,,
+38,ATR14x2.0 start1.0,ATR,14,2.0,,1.0,,,,,,,,,,,
+39,ATR21x1.8 start1.0,ATR,21,1.8,,1.0,,,,,,,,,,,
+40,ATR21x2.2 start1.2,ATR,21,2.2,,1.2,,,,,,,,,,,
+41,STEP0.25 start0.8,STEP,,,0.25,0.8,,,,,,,,,,,
+42,STEP0.30 start1.0,STEP,,,0.3,1.0,,,,,,,,,,,
+43,STEP0.35 start1.0,STEP,,,0.35,1.0,,,,,,,,,,,
+44,STEP0.45 start1.2,STEP,,,0.45,1.2,,,,,,,,,,,
+45,ATR14x1.5 + BE0.8/TP1=1.2/PC40%,ATR,14,1.5,,0.8,0.8,1.2,40.0,,,,,,,,
+46,STEP0.30 + BE0.8/TP1=1.2/PC40%,STEP,,,0.3,1.0,0.8,1.2,40.0,,,,,,,,
