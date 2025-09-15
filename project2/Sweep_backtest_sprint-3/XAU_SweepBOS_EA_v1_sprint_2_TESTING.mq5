@@ -123,7 +123,11 @@ double         sweepHigh  = 0.0;
 double         sweepLow   = 0.0;
 
 
-int g_block_rn=0, g_block_kz=0, g_block_spread=0;
+// --- diagnostics counters (GLOBAL SCOPE) ---
+int g_block_rn     = 0;
+int g_block_kz     = 0;
+int g_block_spread = 0;
+
 
 // Preset container
 struct Params
@@ -213,42 +217,40 @@ void UseInputsAsParams()
 
 //===================== USECASE GENERATOR (NO CSV) =====================//
 
-struct UCRow
-  {
-   string            SelectedSymbol;
-   int               K_swing, N_bos, M_retest;
-   double            EqTol_pips;
-   int               UseRoundNumber;          // 0/1
-   double            RNDelta_pips;
-   int               UseKillzones;            // 0/1
-   double            RiskPerTradePct;         // 0.3–0.5
-   int               TrailMode;               // 1/2
-   double            SL_Buffer_pips;          // pips (EA sẽ tự đổi sang USD/points)
-   double            BOSBuffer_pips;          // pips -> points
-   int               UsePendingRetest;        // 0/1
-   double            RetestOffset_pips;
-   double            TP1_R, TP2_R, BE_Activate_R;
-   int               PartialClosePct;         // 40/50/60
-   int               UsePyramid;              // 0/1
-   int               MaxAdds;                 // 0/1/2
-   double            AddSizeFactor;           // 0.5/0.75
-   double            AddSpacing_pips;
+struct UCRow {
+   string SelectedSymbol;
+   int    K_swing, N_bos, M_retest;
+   double EqTol_pips;
+   int    UseRoundNumber;
+   double RNDelta_pips;
+   int    UseKillzones;
+   double RiskPerTradePct;
+   int    TrailMode;
+   double SL_Buffer_pips;
+   double BOSBuffer_pips;
+   int    UsePendingRetest;
+   double RetestOffset_pips;
+   double TP1_R, TP2_R, BE_Activate_R;
+   int    PartialClosePct;
+   int    UsePyramid;
+   int    MaxAdds;
+   double AddSizeFactor;
+   double AddSpacing_pips;
+   int    MaxOpenPositions;
+   int    TimeStopMinutes;
+   double MinProgressR;
+};
 
-   // fixed guards
-   int               MaxOpenPositions;
-   int               TimeStopMinutes;
-   double            MinProgressR;
-  };
+// RNG nhẹ, ổn định giữa lần chạy
+uint LCG(uint &s){ s = 1664525u*s + 1013904223u; return s; }
+int  PickIdx(const int n, uint &s){ return (int)(LCG(s) % (uint)n); }
+int  PickI(const int &arr[], int size, uint &s){ return arr[PickIdx(size,s)]; }
+double PickD(const double &arr[], int size, uint &s){ return arr[PickIdx(size,s)]; }
 
-// simple deterministic RNG (ổn định giữa lần chạy)
-uint LCG(uint &s) { s = 1664525u*s + 1013904223u; return s; }
-int  pickIdx(int n, uint &s) { return (int)(LCG(s) % (uint)n); }
-
-// điền từ UCRow -> struct tham số P của ông (đổi pips -> giá/points)
+// đổi pips sang tham số P (dùng biến P & SelectedSymbol của EA ông)
 void ApplyUCRowToParams(const UCRow &r)
-  {
-// nếu SelectedSymbol là input riêng thì set ở đây
-   SelectedSymbol = r.SelectedSymbol;
+{
+   SelectedSymbol = r.SelectedSymbol; // nếu SelectedSymbol là input khác, thì bỏ dòng này
 
    double pip       = SymbolPipSize(SelectedSymbol);
    double point     = SymbolPoint();
@@ -276,33 +278,22 @@ void ApplyUCRowToParams(const UCRow &r)
    P.AddSizeFactor    = r.AddSizeFactor;
    P.AddSpacingUSD    = r.AddSpacing_pips * pip;
 
-// guards
    P.MaxOpenPositions = r.MaxOpenPositions;
    P.TimeStopMinutes  = r.TimeStopMinutes;
    P.MinProgressR     = r.MinProgressR;
-  }
+}
 
-// sinh UC cho 3 symbol theo PresetID (600–1199)
+// sinh UC theo PresetID (600–1199)
 bool GetUsecaseByPreset(const int presetID, UCRow &row)
-  {
-   if(presetID>=600 && presetID<=799)
-      row.SelectedSymbol = "EURUSD";
-   else
-      if(presetID>=800 && presetID<=999)
-         row.SelectedSymbol = "USDJPY";
-      else
-         if(presetID>=1000 && presetID<=1199)
-            row.SelectedSymbol = "BTCUSD";
-         else
-            return false;
+{
+   if(presetID>=600 && presetID<=799)  row.SelectedSymbol = "EURUSD";
+   else if(presetID>=800 && presetID<=999)  row.SelectedSymbol = "USDJPY";
+   else if(presetID>=1000 && presetID<=1199)row.SelectedSymbol = "BTCUSD";
+   else return false;
 
-// seed theo preset để ổn định
    uint s = (uint)presetID * 2654435761u + 12345u;
 
-// --- lưới giá trị theo symbol ---
-// dùng cùng lưới như mình mô tả hôm trước
-
-// chung
+   // --- lưới giá trị ---
    int     use01[]      = {0,1};
    int     partialPct[] = {40,50,60};
    int     maxAdds[]    = {0,1,2};
@@ -313,7 +304,6 @@ bool GetUsecaseByPreset(const int presetID, UCRow &row)
    double  tp2r[]       = {2.0,2.5,3.0};
    double  beAct[]      = {0.6,0.8,1.0};
 
-// EURUSD
    int     K_EUR[]      = {40,50,60,70};
    int     N_EUR[]      = {6,7,8};
    int     M_EUR[]      = {3,4};
@@ -325,7 +315,6 @@ bool GetUsecaseByPreset(const int presetID, UCRow &row)
    double  ret_EUR[]    = {1.5,2.0,2.5};
    double  addsp_EUR[]  = {3,4,5};
 
-// USDJPY
    int     K_JPY[]      = {40,50,60,70};
    int     N_JPY[]      = {6,7,8};
    int     M_JPY[]      = {3,4};
@@ -337,102 +326,92 @@ bool GetUsecaseByPreset(const int presetID, UCRow &row)
    double  ret_JPY[]    = {1.0,1.5,2.0};
    double  addsp_JPY[]  = {3,4,5};
 
-// BTCUSD (pip = 10 USD theo mapping của EA ông)
    int     K_BTC[]      = {35,45,55,65,75};
    int     N_BTC[]      = {6,7,8,9};
    int     M_BTC[]      = {3,4,5};
    double  eq_BTC[]     = {1.0,1.5,2.0};
-   double  rn_BTC[]     = {2.0,3.0,4.0};     // = 20/30/40 USD
-   int     kz_BTC[]     = {0};               // crypto 24/7
-   double  sl_BTC[]     = {6,8,10,12};       // 60/80/100/120 USD
+   double  rn_BTC[]     = {2.0,3.0,4.0};
+   int     kz_BTC[]     = {0};
+   double  sl_BTC[]     = {6,8,10,12};
    double  bos_BTC[]    = {1.0,1.5,2.0};
-   double  ret_BTC[]    = {1.0,1.5,2.0};     // 10/15/20 USD
-   double  addsp_BTC[]  = {4,6,8};           // 40/60/80 USD
+   double  ret_BTC[]    = {1.0,1.5,2.0};
+   double  addsp_BTC[]  = {4,6,8};
 
-// helper chọn phần tử - remove lambda functions for MT5 compatibility
+   if(row.SelectedSymbol=="EURUSD"){
+      row.K_swing          = PickI(K_EUR,  ArraySize(K_EUR),  s);
+      row.N_bos            = PickI(N_EUR,  ArraySize(N_EUR),  s);
+      row.M_retest         = PickI(M_EUR,  ArraySize(M_EUR),  s);
+      row.EqTol_pips       = PickD(eq_EUR, ArraySize(eq_EUR), s);
+      row.UseRoundNumber   = PickI(use01,  ArraySize(use01),  s);
+      row.RNDelta_pips     = PickD(rn_EUR, ArraySize(rn_EUR), s);
+      row.UseKillzones     = PickI(kz_EUR, ArraySize(kz_EUR), s);
+      row.RiskPerTradePct  = PickD(riskPct,ArraySize(riskPct),s);
+      row.TrailMode        = PickI(trailMode,ArraySize(trailMode),s);
+      row.SL_Buffer_pips   = PickD(sl_EUR, ArraySize(sl_EUR), s);
+      row.BOSBuffer_pips   = PickD(bos_EUR,ArraySize(bos_EUR),s);
+      row.UsePendingRetest = PickI(use01,  ArraySize(use01),  s);
+      row.RetestOffset_pips= PickD(ret_EUR,ArraySize(ret_EUR),s);
+      row.TP1_R            = PickD(tp1r,  ArraySize(tp1r),   s);
+      row.TP2_R            = PickD(tp2r,  ArraySize(tp2r),   s);
+      row.BE_Activate_R    = PickD(beAct, ArraySize(beAct),  s);
+      row.PartialClosePct  = PickI(partialPct,ArraySize(partialPct),s);
+      row.UsePyramid       = PickI(use01,  ArraySize(use01),  s);
+      row.MaxAdds          = PickI(maxAdds,ArraySize(maxAdds),s);
+      row.AddSizeFactor    = PickD(addSize,ArraySize(addSize),s);
+      row.AddSpacing_pips  = PickD(addsp_EUR,ArraySize(addsp_EUR),s);
+   }
+   else if(row.SelectedSymbol=="USDJPY"){
+      row.K_swing          = PickI(K_JPY,  ArraySize(K_JPY),  s);
+      row.N_bos            = PickI(N_JPY,  ArraySize(N_JPY),  s);
+      row.M_retest         = PickI(M_JPY,  ArraySize(M_JPY),  s);
+      row.EqTol_pips       = PickD(eq_JPY, ArraySize(eq_JPY), s);
+      row.UseRoundNumber   = PickI(use01,  ArraySize(use01),  s);
+      row.RNDelta_pips     = PickD(rn_JPY, ArraySize(rn_JPY), s);
+      row.UseKillzones     = PickI(kz_JPY, ArraySize(kz_JPY), s);
+      row.RiskPerTradePct  = PickD(riskPct,ArraySize(riskPct),s);
+      row.TrailMode        = PickI(trailMode,ArraySize(trailMode),s);
+      row.SL_Buffer_pips   = PickD(sl_JPY, ArraySize(sl_JPY), s);
+      row.BOSBuffer_pips   = PickD(bos_JPY,ArraySize(bos_JPY),s);
+      row.UsePendingRetest = PickI(use01,  ArraySize(use01),  s);
+      row.RetestOffset_pips= PickD(ret_JPY,ArraySize(ret_JPY),s);
+      row.TP1_R            = PickD(tp1r,  ArraySize(tp1r),   s);
+      row.TP2_R            = PickD(tp2r,  ArraySize(tp2r),   s);
+      row.BE_Activate_R    = PickD(beAct, ArraySize(beAct),  s);
+      row.PartialClosePct  = PickI(partialPct,ArraySize(partialPct),s);
+      row.UsePyramid       = PickI(use01,  ArraySize(use01),  s);
+      row.MaxAdds          = PickI(maxAdds,ArraySize(maxAdds),s);
+      row.AddSizeFactor    = PickD(addSize,ArraySize(addSize),s);
+      row.AddSpacing_pips  = PickD(addsp_JPY,ArraySize(addsp_JPY),s);
+   }
+   else{ // BTCUSD
+      row.K_swing          = PickI(K_BTC,  ArraySize(K_BTC),  s);
+      row.N_bos            = PickI(N_BTC,  ArraySize(N_BTC),  s);
+      row.M_retest         = PickI(M_BTC,  ArraySize(M_BTC),  s);
+      row.EqTol_pips       = PickD(eq_BTC, ArraySize(eq_BTC), s);
+      row.UseRoundNumber   = PickI(use01,  ArraySize(use01),  s);
+      row.RNDelta_pips     = PickD(rn_BTC, ArraySize(rn_BTC), s);
+      row.UseKillzones     = PickI(kz_BTC, ArraySize(kz_BTC), s);
+      row.RiskPerTradePct  = PickD(riskPct,ArraySize(riskPct),s);
+      row.TrailMode        = PickI(trailMode,ArraySize(trailMode),s);
+      row.SL_Buffer_pips   = PickD(sl_BTC, ArraySize(sl_BTC), s);
+      row.BOSBuffer_pips   = PickD(bos_BTC,ArraySize(bos_BTC),s);
+      row.UsePendingRetest = PickI(use01,  ArraySize(use01),  s);
+      row.RetestOffset_pips= PickD(ret_BTC,ArraySize(ret_BTC),s);
+      row.TP1_R            = PickD(tp1r,  ArraySize(tp1r),   s);
+      row.TP2_R            = PickD(tp2r,  ArraySize(tp2r),   s);
+      row.BE_Activate_R    = PickD(beAct, ArraySize(beAct),  s);
+      row.PartialClosePct  = PickI(partialPct,ArraySize(partialPct),s);
+      row.UsePyramid       = PickI(use01,  ArraySize(use01),  s);
+      row.MaxAdds          = PickI(maxAdds,ArraySize(maxAdds),s);
+      row.AddSizeFactor    = PickD(addSize,ArraySize(addSize),s);
+      row.AddSpacing_pips  = PickD(addsp_BTC,ArraySize(addsp_BTC),s);
+   }
 
-// fill theo symbol - simple random selection without lambda
-   if(row.SelectedSymbol=="EURUSD")
-     {
-      row.K_swing         = K_EUR[pickIdx(ArraySize(K_EUR),s)];
-      row.N_bos           = N_EUR[pickIdx(ArraySize(N_EUR),s)];
-      row.M_retest        = M_EUR[pickIdx(ArraySize(M_EUR),s)];
-      row.EqTol_pips      = eq_EUR[pickIdx(ArraySize(eq_EUR),s)];
-      row.UseRoundNumber  = use01[pickIdx(ArraySize(use01),s)];
-      row.RNDelta_pips    = rn_EUR[pickIdx(ArraySize(rn_EUR),s)];
-      row.UseKillzones    = kz_EUR[pickIdx(ArraySize(kz_EUR),s)];
-      row.RiskPerTradePct = riskPct[pickIdx(ArraySize(riskPct),s)];
-      row.TrailMode       = trailMode[pickIdx(ArraySize(trailMode),s)];
-      row.SL_Buffer_pips  = sl_EUR[pickIdx(ArraySize(sl_EUR),s)];
-      row.BOSBuffer_pips  = bos_EUR[pickIdx(ArraySize(bos_EUR),s)];
-      row.UsePendingRetest= use01[pickIdx(ArraySize(use01),s)];
-      row.RetestOffset_pips=ret_EUR[pickIdx(ArraySize(ret_EUR),s)];
-      row.TP1_R           = tp1r[pickIdx(ArraySize(tp1r),s)];
-      row.TP2_R           = tp2r[pickIdx(ArraySize(tp2r),s)];
-      row.BE_Activate_R   = beAct[pickIdx(ArraySize(beAct),s)];
-      row.PartialClosePct = partialPct[pickIdx(ArraySize(partialPct),s)];
-      row.UsePyramid      = use01[pickIdx(ArraySize(use01),s)];
-      row.MaxAdds         = maxAdds[pickIdx(ArraySize(maxAdds),s)];
-      row.AddSizeFactor   = addSize[pickIdx(ArraySize(addSize),s)];
-      row.AddSpacing_pips = addsp_EUR[pickIdx(ArraySize(addsp_EUR),s)];
-     }
-   else
-      if(row.SelectedSymbol=="USDJPY")
-        {
-         row.K_swing         = K_JPY[pickIdx(ArraySize(K_JPY),s)];
-         row.N_bos           = N_JPY[pickIdx(ArraySize(N_JPY),s)];
-         row.M_retest        = M_JPY[pickIdx(ArraySize(M_JPY),s)];
-         row.EqTol_pips      = eq_JPY[pickIdx(ArraySize(eq_JPY),s)];
-         row.UseRoundNumber  = use01[pickIdx(ArraySize(use01),s)];
-         row.RNDelta_pips    = rn_JPY[pickIdx(ArraySize(rn_JPY),s)];
-         row.UseKillzones    = kz_JPY[pickIdx(ArraySize(kz_JPY),s)];
-         row.RiskPerTradePct = riskPct[pickIdx(ArraySize(riskPct),s)];
-         row.TrailMode       = trailMode[pickIdx(ArraySize(trailMode),s)];
-         row.SL_Buffer_pips  = sl_JPY[pickIdx(ArraySize(sl_JPY),s)];
-         row.BOSBuffer_pips  = bos_JPY[pickIdx(ArraySize(bos_JPY),s)];
-         row.UsePendingRetest= use01[pickIdx(ArraySize(use01),s)];
-         row.RetestOffset_pips=ret_JPY[pickIdx(ArraySize(ret_JPY),s)];
-         row.TP1_R           = tp1r[pickIdx(ArraySize(tp1r),s)];
-         row.TP2_R           = tp2r[pickIdx(ArraySize(tp2r),s)];
-         row.BE_Activate_R   = beAct[pickIdx(ArraySize(beAct),s)];
-         row.PartialClosePct = partialPct[pickIdx(ArraySize(partialPct),s)];
-         row.UsePyramid      = use01[pickIdx(ArraySize(use01),s)];
-         row.MaxAdds         = maxAdds[pickIdx(ArraySize(maxAdds),s)];
-         row.AddSizeFactor   = addSize[pickIdx(ArraySize(addSize),s)];
-         row.AddSpacing_pips = addsp_JPY[pickIdx(ArraySize(addsp_JPY),s)];
-        }
-      else  // BTCUSD
-        {
-         row.K_swing         = K_BTC[pickIdx(ArraySize(K_BTC),s)];
-         row.N_bos           = N_BTC[pickIdx(ArraySize(N_BTC),s)];
-         row.M_retest        = M_BTC[pickIdx(ArraySize(M_BTC),s)];
-         row.EqTol_pips      = eq_BTC[pickIdx(ArraySize(eq_BTC),s)];
-         row.UseRoundNumber  = use01[pickIdx(ArraySize(use01),s)];
-         row.RNDelta_pips    = rn_BTC[pickIdx(ArraySize(rn_BTC),s)];
-         row.UseKillzones    = kz_BTC[pickIdx(ArraySize(kz_BTC),s)];
-         row.RiskPerTradePct = riskPct[pickIdx(ArraySize(riskPct),s)];
-         row.TrailMode       = trailMode[pickIdx(ArraySize(trailMode),s)];
-         row.SL_Buffer_pips  = sl_BTC[pickIdx(ArraySize(sl_BTC),s)];
-         row.BOSBuffer_pips  = bos_BTC[pickIdx(ArraySize(bos_BTC),s)];
-         row.UsePendingRetest= use01[pickIdx(ArraySize(use01),s)];
-         row.RetestOffset_pips=ret_BTC[pickIdx(ArraySize(ret_BTC),s)];
-         row.TP1_R           = tp1r[pickIdx(ArraySize(tp1r),s)];
-         row.TP2_R           = tp2r[pickIdx(ArraySize(tp2r),s)];
-         row.BE_Activate_R   = beAct[pickIdx(ArraySize(beAct),s)];
-         row.PartialClosePct = partialPct[pickIdx(ArraySize(partialPct),s)];
-         row.UsePyramid      = use01[pickIdx(ArraySize(use01),s)];
-         row.MaxAdds         = maxAdds[pickIdx(ArraySize(maxAdds),s)];
-         row.AddSizeFactor   = addSize[pickIdx(ArraySize(addSize),s)];
-         row.AddSpacing_pips = addsp_BTC[pickIdx(ArraySize(addsp_BTC),s)];
-        }
-
-// guards mặc định
    row.MaxOpenPositions = 1;
    row.TimeStopMinutes  = 5;
    row.MinProgressR     = 0.5;
-
    return true;
-  }
+}
 
 //=== ------------------------ UTILS ---------------------------------- ===
 // --- Symbol / Pip adapters ---
@@ -475,7 +454,10 @@ double PriceToPips(double pricediff, const string sym="")
    return pricediff / pip;
   }
 
-// Bảng spread gợi ý theo symbol (để set MaxSpreadUSD). Trả về hi/lo (hi = ngưỡng MaxSpread đè)
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 bool DefaultSpreadForSymbol(string symbol_name, double &hi, double &lo)
   {
    string s = symbol_name;
@@ -1996,6 +1978,7 @@ bool SetupParamsFromPreset()
 
    if(UsePreset)
      {
+      // EUR presets 201.. -> xử lý riêng; còn lại dùng built-in gốc (XAU)
 
       if(PresetID >= 600 && PresetID <= 1199)
         {
@@ -2142,7 +2125,7 @@ bool HasBOSUpFrom(int sweepBar, int maxN, double &outLevel, int &bosBarOut)
 //+------------------------------------------------------------------+
 bool FiltersPass(int bar)
   {
-
+double sp = SpreadUSD();
    if(P.UseRoundNumber && !NearRound(rates[bar].close, P.RNDelta))
      {
       g_block_rn++;
@@ -2157,7 +2140,6 @@ bool FiltersPass(int bar)
          Print("BLOCK KZ @", TimeToString(rates[bar].time));
       return false;
      }
-   double sp = SpreadUSD();
    if(sp > P.MaxSpreadUSD)
      {
       g_block_spread++;
@@ -2633,6 +2615,19 @@ void TryEnterAfterRetest()
 int OnInit()
   {
 // Handle symbol selector
+
+   if(PresetID >= 600 && PresetID <= 1199)
+        {
+         UCRow r;
+         if(GetUsecaseByPreset(PresetID, r)){
+
+            ApplyUCRowToParams(r);
+             trade.SetAsyncMode(false);
+   SetupParamsFromPreset();
+   return(INIT_SUCCEEDED);
+         }
+        }
+
    if(InpSymbolSelector > 0)
      {
       SelectedSymbol = SelectedSymbol;
@@ -2788,7 +2783,7 @@ void OnDeinit(const int reason)
    Print("DETECTION: K=", P.K_swing, ", N=", P.N_bos, ", M=", P.M_retest,
          ", EqTol=", DoubleToString(eqTolPips, 1), "pips");
 
-// Đếm "BLOCK RN/KZ/Spread" để chẩn đoán nhanh
+   // Đếm "BLOCK RN/KZ/Spread" để chẩn đoán nhanh
    Print("FILTER BLOCKS: RN=", g_block_rn, ", KZ=", g_block_kz, ", Spread=", g_block_spread);
 
 
