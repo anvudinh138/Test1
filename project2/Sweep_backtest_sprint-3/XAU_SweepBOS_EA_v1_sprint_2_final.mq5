@@ -1331,76 +1331,6 @@ bool ApplyPresetBuiltIn(int id)
    return false;
   }
 
-// === NEW: Preset block cho EUR (ID 201..204)
-bool ApplyPresetEUR(int id)
-{
-   UseInputsAsParams(); // lấy default từ input trước
-   double pip       = SymbolPipSize(InpSymbol);
-   double point     = SymbolPoint();
-   double pipPoints = (point>0.0 ? pip/point : 0.0);
-
-   switch(id)
-   {
-      case 201: // EUR_Baseline_Loose: sanity check (nhiều lệnh)
-         P.EnableLong=true; P.EnableShort=true;
-         P.K_swing=50; P.N_bos=6; P.LookbackInternal=12; P.M_retest=3;
-         P.EqTol=2.0*pip; P.BOSBufferPoints=2.0*pipPoints;
-         P.UseKillzones=false; P.UseRoundNumber=false; P.UseVSA=false;
-         P.L_percentile=150; P.RNDelta=2.5*pip;
-         // Killzones giữ mặc định input
-         P.RiskPerTradePct=0.5;
-         P.SL_BufferUSD=7.0*pip; P.TP1_R=1.0; P.TP2_R=2.0; P.BE_Activate_R=0.8; P.PartialClosePct=50.0;
-         P.TimeStopMinutes=50; P.MinProgressR=0.5;
-         P.MaxSpreadUSD=0.00035; P.MaxOpenPositions=2;
-         P.UsePendingRetest=false; P.RetestOffsetUSD=2.0*pip; P.PendingExpirySec=60;
-         // trailing/pyramid (nếu EA bạn đang dùng): cứ để theo input sẵn có
-         return true;
-
-      case 202: // EUR_LDN_RN_VSA: London + RN + VSA (precision tốt)
-         P.EnableLong=true; P.EnableShort=true;
-         P.K_swing=60; P.N_bos=6; P.LookbackInternal=12; P.M_retest=3;
-         P.EqTol=2.0*pip; P.BOSBufferPoints=2.0*pipPoints;
-         P.UseKillzones=true; P.UseRoundNumber=true; P.UseVSA=true;
-         P.L_percentile=150; P.RNDelta=2.0*pip;
-         // Killzones (server minutes) giữ y hệt block XAU — nhớ chỉnh theo broker nếu cần
-         // Risk
-         P.RiskPerTradePct=0.4;
-         P.SL_BufferUSD=8.0*pip; P.TP1_R=1.0; P.TP2_R=2.0; P.BE_Activate_R=0.9; P.PartialClosePct=40.0;
-         P.TimeStopMinutes=45; P.MinProgressR=0.5;
-         P.MaxSpreadUSD=0.00030; P.MaxOpenPositions=2;
-         P.UsePendingRetest=false; P.RetestOffsetUSD=2.0*pip; P.PendingExpirySec=60;
-         return true;
-
-      case 203: // EUR_NY_Aggressive: nhiều lệnh hơn
-         P.EnableLong=true; P.EnableShort=true;
-         P.K_swing=35; P.N_bos=8; P.LookbackInternal=10; P.M_retest=4;
-         P.EqTol=3.0*pip; P.BOSBufferPoints=2.0*pipPoints;
-         P.UseKillzones=true; P.UseRoundNumber=false; P.UseVSA=false;
-         P.L_percentile=120; P.RNDelta=2.5*pip;
-         P.RiskPerTradePct=0.5;
-         P.SL_BufferUSD=7.0*pip; P.TP1_R=1.0; P.TP2_R=2.0; P.BE_Activate_R=0.8; P.PartialClosePct=50.0;
-         P.TimeStopMinutes=40; P.MinProgressR=0.5;
-         P.MaxSpreadUSD=0.00035; P.MaxOpenPositions=3;
-         P.UsePendingRetest=true; P.RetestOffsetUSD=2.0*pip; P.PendingExpirySec=120;
-         return true;
-
-      case 204: // EUR_Pending_Retest: vào bằng pending sau BOS
-         P.EnableLong=true; P.EnableShort=true;
-         P.K_swing=50; P.N_bos=6; P.LookbackInternal=12; P.M_retest=4;
-         P.EqTol=2.0*pip; P.BOSBufferPoints=2.0*pipPoints;
-         P.UseKillzones=false; P.UseRoundNumber=true; P.UseVSA=false;
-         P.L_percentile=150; P.RNDelta=2.5*pip;
-         P.RiskPerTradePct=0.4;
-         P.SL_BufferUSD=8.0*pip; P.TP1_R=1.0; P.TP2_R=2.0; P.BE_Activate_R=0.9; P.PartialClosePct=40.0;
-         P.TimeStopMinutes=45; P.MinProgressR=0.5;
-         P.MaxSpreadUSD=0.00030; P.MaxOpenPositions=2;
-         P.UsePendingRetest=true; P.RetestOffsetUSD=2.0*pip; P.PendingExpirySec=90;
-         return true;
-   }
-   return false;
-}
-
-
 
 
 //+------------------------------------------------------------------+
@@ -2248,10 +2178,6 @@ bool SetupParamsFromPreset()
 
    if(UsePreset)
    {
-      // EUR presets 201.. -> xử lý riêng; còn lại dùng built-in gốc (XAU)
-      if(PresetID>=200)
-         ok = ApplyPresetEUR(PresetID);
-      else
          ok = ApplyPresetBuiltIn(PresetID);
    }
    // Dù preset nào, vẫn auto chỉnh theo pip/symbol cho an toàn

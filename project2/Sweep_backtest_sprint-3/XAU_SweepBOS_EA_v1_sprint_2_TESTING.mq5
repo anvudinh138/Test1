@@ -38,6 +38,7 @@ input bool   AutoSymbolProfile   = true;   // tự scale EqTol/RN/Spread/SL theo
 // Preset system
 input bool   UsePreset           = true;     // if true -> override inputs by preset
 input int    PresetID            = 1;        // 0=Custom, 1..N built-include
+input string Filename = "Usecases_600_1199.csv";  // Tên file CSV
 
 // Switches (used when UsePreset=false, or as defaults before preset override)
 input bool   EnableLong          = true;
@@ -284,8 +285,7 @@ void ApplyUCRowToParams(const UCRow &r)
 }
 
 // sinh UC theo PresetID (600–1199)
-bool GetUsecaseByPreset(const int presetID, UCRow &row)
-{
+bool GetUsecaseByPreset(const int presetID, UCRow &row) {
    if(presetID>=600 && presetID<=799)  row.SelectedSymbol = "EURUSD";
    else if(presetID>=800 && presetID<=999)  row.SelectedSymbol = "USDJPY";
    else if(presetID>=1000 && presetID<=1199)row.SelectedSymbol = "BTCUSD";
@@ -2611,9 +2611,50 @@ void TryEnterAfterRetest()
    state = ST_IDLE;
   }
 
+
+//+------------------------------------------------------------------+
+//| Script program start function                                    |
+//+------------------------------------------------------------------+
+void OnStart() {
+   int handle = FileOpen(Filename, FILE_WRITE|FILE_CSV|FILE_ANSI);
+   if(handle == INVALID_HANDLE) {
+      Print("Error creating file: ", GetLastError());
+      return;
+   }
+
+   // Write header
+   string header = "PresetID,Symbol,K_swing,N_bos,M_retest,EqTol_pips,UseRoundNumber,RNDelta_pips,UseKillzones,"
+                   "RiskPerTradePct,TrailMode,SL_Buffer_pips,BOSBuffer_pips,UsePendingRetest,RetestOffset_pips,"
+                   "TP1_R,TP2_R,BE_Activate_R,PartialClosePct,UsePyramid,MaxAdds,AddSizeFactor,AddSpacing_pips,"
+                   "MaxOpenPositions,TimeStopMinutes,MinProgressR";
+   FileWrite(handle, header);
+
+   UCRow row;
+   for(int id = 600; id <= 1199; id++) {
+      if(GetUsecaseByPreset(id, row)) {
+         string line = StringFormat("%d,%s,%d,%d,%d,%.2f,%d,%.2f,%d,%.2f,%d,%.2f,%.2f,%d,%.2f,%.2f,%.2f,%.2f,%d,%d,%d,%.2f,%.2f,%d,%d,%.2f",
+                                    id, row.SelectedSymbol, row.K_swing, row.N_bos, row.M_retest, row.EqTol_pips,
+                                    row.UseRoundNumber, row.RNDelta_pips, row.UseKillzones, row.RiskPerTradePct,
+                                    row.TrailMode, row.SL_Buffer_pips, row.BOSBuffer_pips, row.UsePendingRetest,
+                                    row.RetestOffset_pips, row.TP1_R, row.TP2_R, row.BE_Activate_R, row.PartialClosePct,
+                                    row.UsePyramid, row.MaxAdds, row.AddSizeFactor, row.AddSpacing_pips,
+                                    row.MaxOpenPositions, row.TimeStopMinutes, row.MinProgressR);
+         FileWrite(handle, line);
+      }
+   }
+
+   FileClose(handle);
+   Print("CSV generated: ", Filename);
+}
+//+------------------------------------------------------------------+
+
+
 //=== ------------------------ INIT/TICK ------------------------------- ===
 int OnInit()
   {
+
+OnStart();
+
 // Handle symbol selector
 
    if(PresetID >= 600 && PresetID <= 1199)
@@ -2664,6 +2705,7 @@ int OnInit()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+
 void OnTick()
   {
    if(!UpdateRates(450))
