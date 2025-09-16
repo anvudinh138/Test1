@@ -270,147 +270,10 @@ string BuildDataRow(double netProfit, double profitFactor, int totalTrades, int 
                              largestLoss,
                              g_block_rn,
                              g_block_kz,
-                            g_block_spread,
-                            "OptimizationRun"
+                             g_block_spread,
+                             "OptimizationRun"
                             );
    return row;
-  }
-
-struct TradeStats
-  {
-   double netProfit;
-   double grossProfit;
-   double grossLoss;
-   double profitFactor;
-   int    totalTrades;
-   int    winTrades;
-   int    lossTrades;
-   double winRate;
-   double avgWin;
-   double avgLoss;
-   double largestWin;
-   double largestLoss;
-  };
-
-void ResetTradeStats(TradeStats &stats)
-  {
-   stats.netProfit   = 0.0;
-   stats.grossProfit = 0.0;
-   stats.grossLoss   = 0.0;
-   stats.profitFactor= 0.0;
-   stats.totalTrades = 0;
-   stats.winTrades   = 0;
-   stats.lossTrades  = 0;
-   stats.winRate     = 0.0;
-   stats.avgWin      = 0.0;
-   stats.avgLoss     = 0.0;
-   stats.largestWin  = 0.0;
-   stats.largestLoss = 0.0;
-  }
-
-void CollectTradeStats(TradeStats &stats)
-  {
-   ResetTradeStats(stats);
-
-   const double eps = 1e-8;
-   double lossAccumulator = 0.0;
-
-   if(HistorySelect(0, TimeCurrent()))
-     {
-      int totalDeals = HistoryDealsTotal();
-      for(int i = 0; i < totalDeals; ++i)
-        {
-         ulong ticket = HistoryDealGetTicket(i);
-         if(ticket == 0)
-            continue;
-
-         if(HistoryDealGetString(ticket, DEAL_SYMBOL) != SelectedSymbol)
-            continue;
-
-         long entryType = HistoryDealGetInteger(ticket, DEAL_ENTRY);
-         if(entryType != DEAL_ENTRY_OUT)
-            continue;
-
-         long dealType = HistoryDealGetInteger(ticket, DEAL_TYPE);
-         if(dealType != DEAL_TYPE_BUY && dealType != DEAL_TYPE_SELL)
-            continue;
-
-         double pnl = HistoryDealGetDouble(ticket, DEAL_PROFIT)
-                    + HistoryDealGetDouble(ticket, DEAL_SWAP)
-                    + HistoryDealGetDouble(ticket, DEAL_COMMISSION);
-
-         stats.netProfit += pnl;
-
-         if(pnl > eps)
-           {
-            stats.grossProfit += pnl;
-            stats.winTrades++;
-            if(pnl > stats.largestWin)
-               stats.largestWin = pnl;
-           }
-         else
-            if(pnl < -eps)
-              {
-               stats.grossLoss += MathAbs(pnl);
-               lossAccumulator += pnl;
-               stats.lossTrades++;
-               if(pnl < stats.largestLoss)
-                  stats.largestLoss = pnl;
-              }
-       }
-     }
-
-   stats.totalTrades = stats.winTrades + stats.lossTrades;
-
-   if(stats.totalTrades > 0)
-      stats.winRate = (double)stats.winTrades / stats.totalTrades * 100.0;
-
-   if(stats.winTrades > 0)
-      stats.avgWin = stats.grossProfit / stats.winTrades;
-
-   if(stats.lossTrades > 0)
-      stats.avgLoss = lossAccumulator / stats.lossTrades;
-
-   if(stats.grossLoss < -eps)
-      stats.profitFactor = stats.grossProfit / MathAbs(stats.grossLoss);
-
-   if(MQLInfoInteger(MQL_TESTER))
-     {
-      double testerNet = TesterStatistics(STAT_PROFIT);
-      if(MathAbs(stats.netProfit) < eps)
-         stats.netProfit = testerNet;
-
-      double testerGrossProfit = TesterStatistics(STAT_GROSS_PROFIT);
-      double testerGrossLoss   = TesterStatistics(STAT_GROSS_LOSS);
-      int    testerWins        = (int)TesterStatistics(STAT_PROFIT_TRADES);
-      int    testerLosses      = (int)TesterStatistics(STAT_LOSS_TRADES);
-      int    testerTotal       = (int)TesterStatistics(STAT_TRADES);
-      double testerPF          = TesterStatistics(STAT_PROFIT_FACTOR);
-
-      if(stats.grossProfit <= eps && testerGrossProfit > 0.0)
-         stats.grossProfit = testerGrossProfit;
-      if(stats.grossLoss <= eps && testerGrossLoss > 0.0)
-         stats.grossLoss = testerGrossLoss;
-
-      if(stats.winTrades == 0 && testerWins > 0)
-         stats.winTrades = testerWins;
-      if(stats.lossTrades == 0 && testerLosses > 0)
-         stats.lossTrades = testerLosses;
-      if(stats.totalTrades == 0 && testerTotal > 0)
-         stats.totalTrades = testerTotal;
-
-      if(stats.totalTrades > 0)
-         stats.winRate = (double)stats.winTrades / stats.totalTrades * 100.0;
-
-      if(stats.winTrades > 0 && (stats.avgWin == 0.0 || !MathIsValidNumber(stats.avgWin)))
-         stats.avgWin = testerWins > 0 ? testerGrossProfit / testerWins : stats.avgWin;
-      if(stats.lossTrades > 0 && (stats.avgLoss == 0.0 || !MathIsValidNumber(stats.avgLoss)))
-         stats.avgLoss = (testerLosses > 0 ? -testerGrossLoss / testerLosses : stats.avgLoss);
-
-      if(stats.profitFactor == 0.0 && testerPF > 0.0)
-         stats.profitFactor = testerPF;
-
-     }
   }
 
 
@@ -1700,12 +1563,49 @@ int OnInit()
 void OnTesterPass()
   {
    Print("OnTesterPass() called for PresetID ", PresetID);
-   TradeStats stats;
-   CollectTradeStats(stats);
+// Get tester statistics
+   double net = TesterStatistics(STAT_PROFIT);
+   double pf = TesterStatistics(STAT_PROFIT_FACTOR);
+   int totalTrades = (int)TesterStatistics(STAT_TRADES);
+   int winTrades = (int)TesterStatistics(STAT_PROFIT_TRADES);
+   int lossTrades = (int)TesterStatistics(STAT_LOSS_TRADES);
+   double winRate = (totalTrades > 0) ? ((double)winTrades / totalTrades * 100.0) : 0.0;
+
+// Calculate averages (approximation from tester stats)
+   double grossProfit = TesterStatistics(STAT_GROSS_PROFIT);
+   double grossLoss = TesterStatistics(STAT_GROSS_LOSS);
+   double avgWin = (winTrades > 0) ? (grossProfit / winTrades) : 0.0;
+   double avgLoss = (lossTrades > 0) ? (grossLoss / lossTrades) : 0.0;
+   
+   // Calculate largest win/loss from deal history (safe for all MT5 builds)
+   double largestWin = 0.0;
+   double largestLoss = 0.0;
+   
+   if(HistorySelect(0, TimeCurrent()))
+     {
+      int totalDeals = HistoryDealsTotal();
+      for(int i = 0; i < totalDeals; i++)
+        {
+         ulong ticket = HistoryDealGetTicket(i);
+         if(ticket > 0 && HistoryDealGetString(ticket, DEAL_SYMBOL) == SelectedSymbol)
+           {
+            long dealType = HistoryDealGetInteger(ticket, DEAL_TYPE);
+            if(dealType == DEAL_TYPE_BUY || dealType == DEAL_TYPE_SELL)
+              {
+               double pnl = HistoryDealGetDouble(ticket, DEAL_PROFIT)
+                          + HistoryDealGetDouble(ticket, DEAL_SWAP)
+                          + HistoryDealGetDouble(ticket, DEAL_COMMISSION);
+
+               if(pnl > largestWin)  largestWin  = pnl;
+               if(pnl < largestLoss) largestLoss = pnl;
+              }
+           }
+        }
+     }
 
    string header = CsvHeader();
-   string row = BuildDataRow(stats.netProfit, stats.profitFactor, stats.totalTrades, stats.winTrades, stats.lossTrades,
-                             stats.winRate, stats.avgWin, stats.avgLoss, stats.largestWin, stats.largestLoss);
+   string row = BuildDataRow(net, pf, totalTrades, winTrades, lossTrades,
+                             winRate, avgWin, avgLoss, largestWin, largestLoss);
 
    if(!AppendCsvRow(g_log_file, InpUseCommonFile, header, row))
       Print("OnTesterPass: Failed to append CSV row for PresetID ", PresetID);
@@ -1742,13 +1642,48 @@ void OnDeinit(const int reason)
    if(atr_handle!=INVALID_HANDLE)
       IndicatorRelease(atr_handle);
 
-   TradeStats stats;
-   CollectTradeStats(stats);
+// Get backtest statistics from TesterStatistics (accurate and reliable)
+   double netProfit = TesterStatistics(STAT_PROFIT);
+   double profitFactor = TesterStatistics(STAT_PROFIT_FACTOR);
+   int totalTrades = (int)TesterStatistics(STAT_TRADES);
+   int profitTrades = (int)TesterStatistics(STAT_PROFIT_TRADES);
+   int lossTrades = (int)TesterStatistics(STAT_LOSS_TRADES);
+   double grossProfit = TesterStatistics(STAT_GROSS_PROFIT);
+   double grossLoss = TesterStatistics(STAT_GROSS_LOSS);
+   double winRate = (totalTrades > 0) ? ((double)profitTrades / totalTrades * 100.0) : 0.0;
+   double avgProfit = (profitTrades > 0) ? (grossProfit / profitTrades) : 0.0;
+   double avgLoss = (lossTrades > 0) ? (grossLoss / lossTrades) : 0.0;
+   
+   // Calculate largest win/loss from deal history
+   double largestProfit = 0.0;
+   double largestLoss = 0.0;
+   
+   if(HistorySelect(0, TimeCurrent()))
+     {
+      int totalDeals = HistoryDealsTotal();
+      for(int i = 0; i < totalDeals; i++)
+        {
+         ulong ticket = HistoryDealGetTicket(i);
+         if(ticket > 0 && HistoryDealGetString(ticket, DEAL_SYMBOL) == SelectedSymbol)
+           {
+            long dealType = HistoryDealGetInteger(ticket, DEAL_TYPE);
+            if(dealType == DEAL_TYPE_BUY || dealType == DEAL_TYPE_SELL)
+              {
+               double pnl = HistoryDealGetDouble(ticket, DEAL_PROFIT)
+                          + HistoryDealGetDouble(ticket, DEAL_SWAP)
+                          + HistoryDealGetDouble(ticket, DEAL_COMMISSION);
+
+               if(pnl > largestProfit)  largestProfit = pnl;
+               if(pnl < largestLoss)    largestLoss = pnl;
+              }
+           }
+        }
+     }
 
 // Ghi log cho cả optimization và single run (OnTesterPass có thể không được gọi)
    string header = CsvHeader();
-   string row = BuildDataRow(stats.netProfit, stats.profitFactor, stats.totalTrades, stats.winTrades, stats.lossTrades,
-                             stats.winRate, stats.avgWin, stats.avgLoss, stats.largestWin, stats.largestLoss);
+   string row = BuildDataRow(netProfit, profitFactor, profitTrades + lossTrades, profitTrades, lossTrades,
+                            winRate, avgProfit, avgLoss, largestProfit, largestLoss);
    
    if(!AppendCsvRow(g_log_file, InpUseCommonFile, header, row))
       Print("OnDeinit: Failed to append CSV row for PresetID ", PresetID);
@@ -1757,11 +1692,11 @@ void OnDeinit(const int reason)
 
 // === DETAILED ANALYSIS LOGS ===
    Print("=== UC", PresetID, " (", SelectedSymbol, ") ANALYSIS ===");
-   Print("PERFORMANCE: Net $", DoubleToString(stats.netProfit, 2), ", PF ", DoubleToString(stats.profitFactor, 2),
-         ", Trades ", stats.totalTrades, " (", stats.winTrades, "W/", stats.lossTrades, "L)");
-   Print("PROFIT DETAILS: Gross $", DoubleToString(stats.grossProfit, 2), ", Loss $", DoubleToString(stats.grossLoss, 2),
-         ", Avg Win $", DoubleToString(stats.avgWin, 2), ", Avg Loss $", DoubleToString(stats.avgLoss, 2));
-   Print("EXTREME TRADES: Largest Win $", DoubleToString(stats.largestWin, 2), ", Largest Loss $", DoubleToString(stats.largestLoss, 2));
+   Print("PERFORMANCE: Net $", DoubleToString(netProfit, 2), ", PF ", DoubleToString(profitFactor, 2),
+         ", Trades ", (profitTrades + lossTrades), " (", profitTrades, "W/", lossTrades, "L)");
+   Print("PROFIT DETAILS: Gross $", DoubleToString(grossProfit, 2), ", Loss $", DoubleToString(grossLoss, 2),
+         ", Avg Win $", DoubleToString(avgProfit, 2), ", Avg Loss $", DoubleToString(avgLoss, 2));
+   Print("EXTREME TRADES: Largest Win $", DoubleToString(largestProfit, 2), ", Largest Loss $", DoubleToString(largestLoss, 2));
 
 // Filter analysis with CORRECTED pip display
    string filterStatus = "";
@@ -1795,9 +1730,9 @@ void OnDeinit(const int reason)
    Print("FILTER BLOCKS: RN=", g_block_rn, ", KZ=", g_block_kz, ", Spread=", g_block_spread);
 
 // SUMMARY STATS (requested by user)
-   string summary = "SUMMARY: WinRate=" + DoubleToString(stats.winRate, 1) + "%, ";
-   summary += "AvgR=" + DoubleToString((stats.avgLoss != 0) ? (stats.avgWin / MathAbs(stats.avgLoss)) : 0, 2) + ", ";
-   summary += "MaxDD=" + DoubleToString(stats.largestLoss, 2);
+   string summary = "SUMMARY: WinRate=" + DoubleToString(winRate, 1) + "%, ";
+   summary += "AvgR=" + DoubleToString((avgLoss != 0) ? (avgProfit / MathAbs(avgLoss)) : 0, 2) + ", ";
+   summary += "MaxDD=" + DoubleToString(largestLoss, 2);
    Print(summary);
    Print("=== END UC", PresetID, " ===");
   }

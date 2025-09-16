@@ -1,0 +1,93 @@
+VirtualApple @ 2.50GHz, 16383 MB
+EURUSD: symbol to be synchronized
+EURUSD: symbol synchronized already, 18 bytes received
+EURUSD,M1: history cached from 2024.01.01 22:05
+EURUSD,M1 (Exness-MT5Trial17): generating based on real ticks
+testing with execution delay 100 milliseconds
+EURUSD,M1: testing of Experts\new-27.ex5 from 2025.07.01 00:00 to 2025.09.16 00:00 started with inputs:
+  InpSymbol=XAUUSD
+  InpSymbolSelector=0
+  InpTF=1
+  AutoSymbolProfile=true
+  UsePreset=true
+  PresetID=1
+  InpLogFileName=OptimizationResults.csv
+  InpRunTag=
+  InpUseCommonFile=true
+  EnableLong=true
+  EnableShort=true
+  K_swing=50
+  N_bos=6
+  LookbackInternal=12
+  M_retest=3
+  EqTol=0.2
+  BOSBufferPoints=2.0
+  UseKillzones=true
+  UseRoundNumber=true
+  UseVSA=true
+  RNDelta=0.3
+  RN_GridPips_FX=25.0
+  RN_GridUSD_CRYPTO=100.0
+  KZ1_StartMin=835
+  KZ1_EndMin=860
+  KZ2_StartMin=985
+  KZ2_EndMin=1000
+  KZ3_StartMin=1165
+  KZ3_EndMin=1185
+  KZ4_StartMin=1255
+  KZ4_EndMin=1275
+  L_percentile=150
+  RiskPerTradePct=0.5
+  SL_BufferUSD=0.5
+  TP1_R=1.0
+  TP2_R=2.0
+  BE_Activate_R=0.8
+  PartialClosePct=50.0
+  TimeStopMinutes=5
+  MinProgressR=0.5
+  MaxSpreadUSD=0.5
+  MaxOpenPositions=1
+  UsePendingRetest=false
+  RetestOffsetUSD=0.07
+  PendingExpirySec=60
+  Debug=true
+  UseTrailing=false
+  TrailMode=0
+  TrailATRPeriod=14
+  TrailATRMult=2.0
+  TrailStepUSD=0.3
+  TrailStartRR=1.0
+  UsePyramid=false
+  MaxAdds=0
+  AddSpacingUSD=0.4
+  AddSizeFactor=0.6
+  CooldownSec=0
+2025.07.01 00:00:00   Logging setup: File=OptimizationResults.csv, UseCommon=true, RunID=2025.07.01_00-00-00_1
+2025.07.01 00:00:00   SUCCESS: Loaded PresetID=1 from embedded resource.
+XAUUSD: symbol to be synchronized
+XAUUSD: symbol synchronized already, 18 bytes received
+2025.07.01 00:00:00   Applied UC1 for symbol: XAUUSD RunID: 2025.07.01_00-00-00_1
+EURUSD : real ticks begin from 2025.07.01 00:00:00
+XAUUSD : real ticks begin from 2025.07.01 00:00:00
+XAUUSD,M1: history cached from 2024.01.01 23:05 to 2025.06.30 23:59
+XAUUSD,M1: 1 bar from 2025.07.01 00:00 added
+final balance 5000.00 USD
+2025.09.15 23:59:58   OnDeinit: Logged UC1 -> OptimizationResults.csv (Common)
+2025.09.15 23:59:58   === UC1 (XAUUSD) ANALYSIS ===
+2025.09.15 23:59:58   PERFORMANCE: Net $0.00, PF 0.00, Trades 0 (0W/0L)
+2025.09.15 23:59:58   PROFIT DETAILS: Gross $0.00, Loss $-0.00, Avg Win $0.00, Avg Loss $0.00
+2025.09.15 23:59:58   EXTREME TRADES: Largest Win $0.00, Largest Loss $0.00
+2025.09.15 23:59:58   FILTERS: KZ-ON RN-ON , RNDelta=28.0pips
+2025.09.15 23:59:58   STYLE: Risk0.5%, TP 1.0R/2.0R
+2025.09.15 23:59:58   DETECTION: K=50, N=6, M=3, EqTol=20.0pips
+2025.09.15 23:59:58   FILTER BLOCKS: RN=0, KZ=0, Spread=0
+2025.09.15 23:59:58   SUMMARY: WinRate=0.0%, AvgR=0.00, MaxDD=0.00
+2025.09.15 23:59:58   === END UC1 ===
+EURUSD,M1: 3230068 ticks, 79102 bars generated. Environment synchronized in 0:00:00.051. Test passed in 0:00:07.571.
+EURUSD,M1: total time from login to stop testing 0:00:07.622 (including 0:00:00.051 for history data synchronization)
+13358392 total ticks for all symbols
+EURUSD: passed to tester 3230069 ticks
+XAUUSD: passed to tester 10128324 ticks
+1 Mb memory used including 71 Mb of history data, 320 Mb of tick data
+log file "C:\Program Files\MetaTrader 5\Tester\Agent-127.0.0.1-3008\logs\20250916.log" written
+connection closed
