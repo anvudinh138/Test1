@@ -14,6 +14,7 @@
 #include <Trade/PositionInfo.mqh>
 #include <Trade/DealInfo.mqh>
 
+
 /*
   v1.2 Highlights
   ---------------

@@ -204,7 +204,7 @@ void UseInputsAsParams()
    P.RetestOffsetUSD=RetestOffsetUSD;
    P.PendingExpirySec=PendingExpirySec;
    P.UseTrailing=UseTrailing;
-   P.TrailMode=TrailMode;
+   P.TrailMode=(int)TrailMode;
    P.TrailATRPeriod=TrailATRPeriod;
    P.TrailATRMult=TrailATRMult;
    P.TrailStepUSD=TrailStepUSD;
@@ -1978,22 +1978,19 @@ bool SetupParamsFromPreset()
 
    if(UsePreset)
      {
-      // EUR presets 201.. -> xử lý riêng; còn lại dùng built-in gốc (XAU)
-
+      // Handle different preset ranges
       if(PresetID >= 600 && PresetID <= 1199)
         {
-         UCRow r;
-         if(GetUsecaseByPreset(PresetID, r))
-            ApplyUCRowToParams(r);
+         // UC 600-1199 are handled separately in OnInit via ApplyUCRowToParams
+         ok = true; // Already applied
+        }
+      else if(PresetID>=200)
+        {
+         ok = ApplyPresetEUR(PresetID);
         }
       else
         {
-
-
-         if(PresetID>=200)
-            ok = ApplyPresetEUR(PresetID);
-         else
-            ok = ApplyPresetBuiltIn(PresetID);
+         ok = ApplyPresetBuiltIn(PresetID);
         }
 
       ApplyAutoSymbolProfile();
@@ -2615,7 +2612,8 @@ void TryEnterAfterRetest()
 //+------------------------------------------------------------------+
 //| Script program start function                                    |
 //+------------------------------------------------------------------+
-void OnStart() {
+// 600 - 1199
+void generateCSVFileBaseOnUsecase() {
    int handle = FileOpen(Filename, FILE_WRITE|FILE_CSV|FILE_ANSI);
    if(handle == INVALID_HANDLE) {
       Print("Error creating file: ", GetLastError());
@@ -2645,6 +2643,11 @@ void OnStart() {
 
    FileClose(handle);
    Print("CSV generated: ", Filename);
+
+   // In ra đường dẫn đầy đủ để bạn dễ tìm
+   string data_path = TerminalInfoString(TERMINAL_DATA_PATH);
+   string full_path = data_path + "\\MQL5\\Files\\" + Filename;
+   Print("CSV generated at: ", full_path); // Sẽ log ra đường dẫn chi tiết
 }
 //+------------------------------------------------------------------+
 
@@ -2652,21 +2655,30 @@ void OnStart() {
 //=== ------------------------ INIT/TICK ------------------------------- ===
 int OnInit()
   {
+// Generate CSV file only once when PresetID = 600 (first usecase)
+   if(PresetID == 600)
+     {
+      generateCSVFileBaseOnUsecase();
+      Print("CSV file generated successfully for UC 600-1199");
+     }
 
-OnStart();
-
-// Handle symbol selector
-
+// Handle symbol selector and preset application
    if(PresetID >= 600 && PresetID <= 1199)
         {
          UCRow r;
-         if(GetUsecaseByPreset(PresetID, r)){
-
+         if(GetUsecaseByPreset(PresetID, r))
+           {
             ApplyUCRowToParams(r);
-             trade.SetAsyncMode(false);
-   SetupParamsFromPreset();
-   return(INIT_SUCCEEDED);
-         }
+            trade.SetAsyncMode(false);
+            // Don't call SetupParamsFromPreset again - already applied via ApplyUCRowToParams
+            Print("Applied UC", PresetID, " for symbol: ", SelectedSymbol);
+            return(INIT_SUCCEEDED);
+           }
+         else
+           {
+            Print("ERROR: Failed to get usecase for PresetID=", PresetID);
+            return(INIT_FAILED);
+           }
         }
 
    if(InpSymbolSelector > 0)
