@@ -16,7 +16,7 @@
 #include <Trade/PositionInfo.mqh>
 #include <Trade/DealInfo.mqh>
 
-#resource "\\Files\\uc600-1199.csv" as string UC600_1199;
+#resource "\\Files\\usecases_list.csv" as string usecases_list;
 
 /*
   v1.2 Highlights - FINAL CLEAN VERSION + MULTI-AGENT LOGGING
@@ -71,7 +71,7 @@ input double BOSBufferPoints     = 2.0;      // in points
 // Filters
 input bool   UseKillzones        = true;
 input bool   UseRoundNumber      = true;
-input bool   UseVSA              = true;
+input bool   UseVSA              = false;
 input double RNDelta             = 0.30;     // USD
 input double RN_GridPips_FX   = 25.0;  // lưới RN cho FX (pips). 10/25/50 đều hợp lý để test
 input double RN_GridUSD_CRYPTO= 100.0; // lưới RN cho Crypto (USD). 50/100/200
@@ -139,6 +139,18 @@ datetime       bosBarTime = 0;
 double         sweepHigh  = 0.0;
 double         sweepLow   = 0.0;
 
+//=== GLOBAL OVERRIDES (used instead of inputs) ===
+// These will be set by CSV or input defaults, and used by all logic
+double         g_PartialClosePct = 50.0;     // Override for PartialClosePct input
+double         g_MaxSpreadUSD = 0.50;        // Override for MaxSpreadUSD input
+int            g_TimeStopMinutes = 5;        // Override for TimeStopMinutes input
+double         g_MinProgressR = 0.5;         // Override for MinProgressR input
+double         g_RiskPerTradePct = 0.5;      // Override for RiskPerTradePct input
+double         g_SL_BufferUSD = 0.50;        // Override for SL_BufferUSD input
+double         g_TP1_R = 1.0;                // Override for TP1_R input
+double         g_TP2_R = 2.0;                // Override for TP2_R input
+double         g_BE_Activate_R = 0.8;        // Override for BE_Activate_R input
+
 
 // --- diagnostics counters (GLOBAL SCOPE) ---
 int g_block_rn     = 0;
@@ -197,8 +209,8 @@ bool AppendCsvRow(const string fname, const bool use_common, const string header
       return false;
 
    bool needHeader = newfile;
-   
-   // Check if existing file needs header (first line doesn't start with "RunID")
+
+// Check if existing file needs header (first line doesn't start with "RunID")
    if(!newfile && header!="")
      {
       FileSeek(h, 0, SEEK_SET);
@@ -221,7 +233,12 @@ bool AppendCsvRow(const string fname, const bool use_common, const string header
 // Tạo header chuẩn cho usecase logging
 string CsvHeader()
   {
-   return "RunID,PresetID,Symbol,K_swing,N_bos,M_retest,EqTol_pips,UseRoundNumber,RNDelta_pips,UseKillzones,RiskPerTradePct,TrailMode,SL_Buffer_pips,BOSBuffer_pips,UsePendingRetest,RetestOffset_pips,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,UsePyramid,MaxAdds,AddSizeFactor,AddSpacing_pips,MaxOpenPositions,TimeStopMinutes,MinProgressR,NetProfit,ProfitFactor,TotalTrades,WinTrades,LossTrades,WinRate,AvgWin,AvgLoss,LargestWin,LargestLoss,FilterBlocks_RN,FilterBlocks_KZ,FilterBlocks_Spread,Comment";
+   return "RunID,PresetID,Symbol,"
+          "NetProfit,ProfitFactor,TotalTrades,WinTrades,LossTrades,WinRate,AvgWin,AvgLoss,LargestWin,LargestLoss,"
+          "FilterBlocks_RN,FilterBlocks_KZ,FilterBlocks_Spr,"
+          "K_swing,N_bos,M_retest,EqTol_pips,UseRoundNumber,RNDelta_pips,UseKillzones,RiskPerTradePct,TrailMode,"
+          "SL_Buffer_pips,BOSBuffer_points,UsePendingRetest,RetestOffset_pips,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,"
+          "UsePyramid,MaxAdds,AddSizeFactor,AddSpacing_pips,MaxOpenPositions,TimeStopMinutes,MinProgressR,Tag";
   }
 
 // Build dòng dữ liệu từ kết quả backtest
@@ -230,68 +247,49 @@ string BuildDataRow(double netProfit, double profitFactor, int totalTrades, int 
   {
    double pipSize = SymbolPipSize(SelectedSymbol);
 
-   string row = StringFormat("%s,%d,%s,%d,%d,%d,%.1f,%d,%.1f,%d,%.2f,%d,%.1f,%.1f,%d,%.1f,%.1f,%.1f,%.1f,%d,%d,%d,%.2f,%.1f,%d,%d,%.2f,%.2f,%.2f,%d,%d,%d,%.1f,%.2f,%.2f,%.2f,%.2f,%d,%d,%d,%s",
-                             g_run_id,
-                             PresetID,
-                             SelectedSymbol,
-                             P.K_swing,
-                             P.N_bos,
-                             P.M_retest,
-                             P.EqTol / pipSize,
-                             P.UseRoundNumber ? 1 : 0,
-                             P.RNDelta / pipSize,
-                             P.UseKillzones ? 1 : 0,
-                             P.RiskPerTradePct,
-                             P.TrailMode,
-                             P.SL_BufferUSD / pipSize,
-                             P.BOSBufferPoints * pipSize / SymbolPoint() / pipSize,
-                             P.UsePendingRetest ? 1 : 0,
-                             P.RetestOffsetUSD / pipSize,
-                             P.TP1_R,
-                             P.TP2_R,
-                             P.BE_Activate_R,
-                             (int)P.PartialClosePct,
-                             P.UsePyramid ? 1 : 0,
-                             P.MaxAdds,
-                             P.AddSizeFactor,
-                             P.AddSpacingUSD / pipSize,
-                             P.MaxOpenPositions,
-                             P.TimeStopMinutes,
-                             P.MinProgressR,
-                             netProfit,
-                             profitFactor,
-                             totalTrades,
-                             winTrades,
-                             lossTrades,
-                             winRate,
-                             avgWin,
-                             avgLoss,
-                             largestWin,
-                             largestLoss,
-                             g_block_rn,
-                             g_block_kz,
-                            g_block_spread,
-                            "OptimizationRun"
-                            );
+   string row = StringFormat(
+                   "%d,%d,%s,"                                   // RunID, PresetID, Symbol
+                   "%.2f,%.2f,%d,%d,%d,%.1f,%.2f,%.2f,%.2f,%.2f,"// stats
+                   "%d,%d,%d,"                                   // FilterBlocks
+                   "%d,%d,%d,%.1f,%d,%.1f,%d,%.2f,%d,"           // core + filters
+                   "%.1f,%.1f,%d,%.1f,%.1f,%.1f,%.1f,"           // risk + BOS/pending + exits
+                   "%d,%d,%.2f,%.1f,%d,%d,%.2f,%s",              // pyramid + misc + tag
+                   g_run_id, PresetID, SelectedSymbol,
+                   netProfit, profitFactor, totalTrades, winTrades, lossTrades,
+                   winRate, avgWin, avgLoss, largestWin, largestLoss,
+                   g_block_rn, g_block_kz, g_block_spread,
+                   P.K_swing, P.N_bos, P.M_retest,
+                   P.EqTol/pipSize, (P.UseRoundNumber?1:0), P.RNDelta/pipSize, (P.UseKillzones?1:0), P.RiskPerTradePct, P.TrailMode,
+                   P.SL_BufferUSD/pipSize,
+                   P.BOSBufferPoints * pipSize / SymbolPoint() / pipSize,  // giữ cách tính bạn đang dùng
+                   (P.UsePendingRetest?1:0), P.RetestOffsetUSD/pipSize,
+                   P.TP1_R, P.TP2_R, P.BE_Activate_R, (int)P.PartialClosePct,
+                   (P.UsePyramid?1:0), P.MaxAdds, P.AddSizeFactor, P.AddSpacingUSD/pipSize,
+                   P.MaxOpenPositions, P.TimeStopMinutes, P.MinProgressR,
+                   "OptimizationRun"
+                );
    return row;
   }
 
 struct TradeStats
   {
-   double netProfit;
-   double grossProfit;
-   double grossLoss;
-   double profitFactor;
-   int    totalTrades;
-   int    winTrades;
-   int    lossTrades;
-   double winRate;
-   double avgWin;
-   double avgLoss;
-   double largestWin;
-   double largestLoss;
+   double            netProfit;
+   double            grossProfit;
+   double            grossLoss;
+   double            profitFactor;
+   int               totalTrades;
+   int               winTrades;
+   int               lossTrades;
+   double            winRate;
+   double            avgWin;
+   double            avgLoss;
+   double            largestWin;
+   double            largestLoss;
   };
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void ResetTradeStats(TradeStats &stats)
   {
    stats.netProfit   = 0.0;
@@ -308,6 +306,9 @@ void ResetTradeStats(TradeStats &stats)
    stats.largestLoss = 0.0;
   }
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void CollectTradeStats(TradeStats &stats)
   {
    ResetTradeStats(stats);
@@ -350,6 +351,7 @@ void CollectTradeStats(TradeStats &stats)
    int manualWins = 0;
    int manualLosses = 0;
 
+
    if(HistorySelect(0, TimeCurrent()))
      {
       int totalDeals = HistoryDealsTotal();
@@ -366,20 +368,21 @@ void CollectTradeStats(TradeStats &stats)
          if(dealType != DEAL_TYPE_BUY && dealType != DEAL_TYPE_SELL)
             continue;
 
+
          double pnl = HistoryDealGetDouble(ticket, DEAL_PROFIT)
-                    + HistoryDealGetDouble(ticket, DEAL_SWAP)
-                    + HistoryDealGetDouble(ticket, DEAL_COMMISSION);
+                      + HistoryDealGetDouble(ticket, DEAL_SWAP)
+                      + HistoryDealGetDouble(ticket, DEAL_COMMISSION);
 
          if(pnl > stats.largestWin)
             stats.largestWin = pnl;
          if(pnl < stats.largestLoss)
             stats.largestLoss = pnl;
 
-      if(!isTester)
-        {
-         manualNet += pnl;
-         if(pnl > eps)
+         if(!isTester)
            {
+            manualNet += pnl;
+            if(pnl > eps)
+              {
                manualGrossProfit += pnl;
                manualWins++;
               }
@@ -393,6 +396,7 @@ void CollectTradeStats(TradeStats &stats)
            }
         }
      }
+
 
    if(!isTester)
      {
@@ -456,6 +460,20 @@ struct Params
   };
 Params P;
 
+// Initialize global overrides from input defaults
+void InitGlobalsFromInputs()
+  {
+   g_PartialClosePct = PartialClosePct;
+   g_MaxSpreadUSD = MaxSpreadUSD;
+   g_TimeStopMinutes = TimeStopMinutes;
+   g_MinProgressR = MinProgressR;
+   g_RiskPerTradePct = RiskPerTradePct;
+   g_SL_BufferUSD = SL_BufferUSD;
+   g_TP1_R = TP1_R;
+   g_TP2_R = TP2_R;
+   g_BE_Activate_R = BE_Activate_R;
+  }
+
 // Apply inputs to P (as defaults)
 void UseInputsAsParams()
   {
@@ -480,15 +498,15 @@ void UseInputsAsParams()
    P.KZ3e=KZ3_EndMin;
    P.KZ4s=KZ4_StartMin;
    P.KZ4e=KZ4_EndMin;
-   P.RiskPerTradePct=RiskPerTradePct;
-   P.SL_BufferUSD=SL_BufferUSD;
-   P.TP1_R=TP1_R;
-   P.TP2_R=TP2_R;
-   P.BE_Activate_R=BE_Activate_R;
-   P.PartialClosePct=PartialClosePct;
-   P.TimeStopMinutes=TimeStopMinutes;
-   P.MinProgressR=MinProgressR;
-   P.MaxSpreadUSD=MaxSpreadUSD;
+   P.RiskPerTradePct=g_RiskPerTradePct;
+   P.SL_BufferUSD=g_SL_BufferUSD;
+   P.TP1_R=g_TP1_R;
+   P.TP2_R=g_TP2_R;
+   P.BE_Activate_R=g_BE_Activate_R;
+   P.PartialClosePct=(int)g_PartialClosePct;
+   P.TimeStopMinutes=g_TimeStopMinutes;
+   P.MinProgressR=g_MinProgressR;
+   P.MaxSpreadUSD=g_MaxSpreadUSD;
    P.MaxOpenPositions=MaxOpenPositions;
    P.UsePendingRetest=UsePendingRetest;
    P.RetestOffsetUSD=RetestOffsetUSD;
@@ -511,1157 +529,35 @@ void UseInputsAsParams()
 struct UCRow
   {
    string            SelectedSymbol;
-   int               K_swing, N_bos, M_retest;
-   double            EqTol_pips;
-   int               UseRoundNumber;
-   double            RNDelta_pips;
-   int               UseKillzones;
+   int               K_swing, N_bos, LookbackInternal, M_retest;
+   double            EqTol, BOSBufferPoints;
+   int               UseKillzones, UseRoundNumber, UseVSA;
+   double            RNDelta;
+   int               L_percentile;
    double            RiskPerTradePct;
-   int               TrailMode;
-   double            SL_Buffer_pips;
-   double            BOSBuffer_pips;
-   int               UsePendingRetest;
-   double            RetestOffset_pips;
+   double            SL_BufferUSD;
    double            TP1_R, TP2_R, BE_Activate_R;
    int               PartialClosePct;
-   int               UsePyramid;
-   int               MaxAdds;
-   double            AddSizeFactor;
-   double            AddSpacing_pips;
-   int               MaxOpenPositions;
    int               TimeStopMinutes;
    double            MinProgressR;
+   double            MaxSpreadUSD;
+   int               MaxOpenPositions;
+   int               UsePendingRetest;
+   double            RetestOffsetUSD;
+   int               PendingExpirySec;
+   int               UseTrailing;
+   int               TrailMode;
+   int               TrailATRPeriod;
+   double            TrailATRMult;
+   double            TrailStepUSD;
+   double            TrailStartRR;
+   int               UsePyramid;
+   int               MaxAdds;
+   double            AddSpacingUSD;
+   double            AddSizeFactor;
+   int               CooldownSec;
   };
 
-bool ApplyPresetBuiltIn(int id)
-  {
-   UseInputsAsParams();
-
-   if(id==0)
-      return true;
-
-   double pip       = SymbolPipSize(InpSymbol);
-   double point     = SymbolPoint();
-   double pipPoints = (point>0.0 ? pip/point : 0.0);
-
-   switch(id)
-     {
-      case 1:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.28;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 2:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=60;
-         P.N_bos=5;
-         P.M_retest=3;
-         P.EqTol=0.18;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.70;
-         P.MaxSpreadUSD=0.45;
-         return true;
-
-      case 3:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=60;
-         P.N_bos=5;
-         P.M_retest=3;
-         P.EqTol=0.18;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.70;
-         P.MaxSpreadUSD=0.48;
-         P.BE_Activate_R=1.0;
-         return true;
-
-      case 4:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.60;
-         return true;
-
-      case 5:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.25;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 6:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.50;
-         return true;
-
-      case 7:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=2;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.60;
-         return true;
-
-      case 8:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=4;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.60;
-         return true;
-
-      case 9:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.40;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.22;
-         P.BOSBufferPoints=1.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.60;
-         return true;
-
-      case 10:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.32;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.60;
-         return true;
-
-      case 11:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.60;
-         P.BE_Activate_R=1.0;
-         P.TP1_R=1.0;
-         return true;
-
-      case 12:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=55;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=1.5;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 13:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.28;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 14:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.18;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.65;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 15:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=55;
-         P.N_bos=5;
-         P.M_retest=3;
-         P.EqTol=0.18;
-         P.BOSBufferPoints=2.5;
-         P.SL_BufferUSD=0.65;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 16:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=55;
-         P.N_bos=5;
-         P.M_retest=3;
-         P.EqTol=0.18;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.65;
-         P.MaxSpreadUSD=0.48;
-         return true;
-
-      case 17:
-         P.UseKillzones=true;
-         P.KZ1s=825;
-         P.KZ1e=855;
-         P.KZ2s=975;
-         P.KZ2e=1000;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=60;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.22;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.60;
-         return true;
-
-      case 18:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.TimeStopMinutes=4;
-         P.MinProgressR=0.6;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 19:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=55;
-         P.N_bos=5;
-         P.M_retest=3;
-         P.EqTol=0.18;
-         P.BOSBufferPoints=2.0;
-         P.PartialClosePct=40;
-         P.BE_Activate_R=1.0;
-         P.SL_BufferUSD=0.65;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 20:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.30;
-         P.UseVSA=false;
-         P.K_swing=65;
-         P.N_bos=5;
-         P.M_retest=2;
-         P.RiskPerTradePct=0.4;
-         P.EqTol=0.18;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.70;
-         P.MaxSpreadUSD=0.50;
-         return true;
-
-      case 21:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.40;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.22;
-         P.BOSBufferPoints=1.0;
-         P.SL_BufferUSD=0.55;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 22:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.40;
-         P.UseVSA=false;
-         P.K_swing=55;
-         P.N_bos=6;
-         P.M_retest=2;
-         P.EqTol=0.22;
-         P.BOSBufferPoints=1.0;
-         P.SL_BufferUSD=0.55;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 23:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.37;
-         P.UseVSA=false;
-         P.K_swing=60;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.22;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.50;
-         return true;
-
-      case 24:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.40;
-         P.UseVSA=false;
-         P.K_swing=55;
-         P.N_bos=5;
-         P.M_retest=3;
-         P.EqTol=0.22;
-         P.BOSBufferPoints=2.5;
-         P.SL_BufferUSD=0.60;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 25:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.40;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.22;
-         P.BOSBufferPoints=1.0;
-         P.SL_BufferUSD=0.55;
-         P.MaxSpreadUSD=0.50;
-         return true;
-
-      case 26:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.37;
-         P.UseVSA=false;
-         P.K_swing=55;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.22;
-         P.BOSBufferPoints=1.5;
-         P.SL_BufferUSD=0.55;
-         P.MaxSpreadUSD=0.55;
-         return true;
-
-      case 27:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRMult=1.5;
-         P.TrailStartRR=0.8;
-         return true;
-
-      case 28:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRMult=1.5;
-         P.TrailStartRR=0.8;
-         P.BE_Activate_R=0.8;
-         return true;
-
-      case 29:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.25;
-         P.TrailStartRR=0.8;
-         P.BE_Activate_R=0.8;
-         return true;
-
-      case 30:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRMult=1.5;
-         P.TrailStartRR=0.8;
-         P.BE_Activate_R=0.8;
-         P.TP1_R=1.2;
-         P.PartialClosePct=40;
-         return true;
-
-      case 31:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.30;
-         P.TrailStartRR=0.8;
-         P.BE_Activate_R=0.8;
-         P.TP1_R=1.2;
-         P.PartialClosePct=40;
-         return true;
-
-      case 32:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRMult=1.5;
-         P.TrailStartRR=0.8;
-         P.TP1_R=9.9;
-         P.UsePyramid=false;
-         P.PartialClosePct=0;
-         return true;
-
-      case 33:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRPeriod=21;
-         P.TrailATRMult=2.2;
-         P.TrailStartRR=1.0;
-         P.BE_Activate_R=1.0;
-         P.TP1_R=1.4;
-         P.PartialClosePct=30;
-         return true;
-
-      case 34:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRMult=1.5;
-         P.TrailStartRR=0.8;
-         P.BE_Activate_R=0.8;
-         P.TP1_R=1.5;
-         P.PartialClosePct=30;
-         return true;
-
-      case 35:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRMult=1.6;
-         P.TrailStartRR=0.8;
-         P.BE_Activate_R=0.8;
-         P.TP1_R=1.2;
-         P.PartialClosePct=40;
-         return true;
-
-      case 36:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.30;
-         P.TrailStartRR=0.8;
-         P.BE_Activate_R=0.8;
-         P.TP1_R=1.2;
-         P.PartialClosePct=40;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.35;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=3;
-         return true;
-
-      case 37:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRMult=1.5;
-         P.TrailStartRR=0.8;
-         return true;
-
-      case 38:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRMult=2.0;
-         P.TrailStartRR=1.0;
-         return true;
-
-      case 39:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRPeriod=21;
-         P.TrailATRMult=1.8;
-         P.TrailStartRR=1.0;
-         return true;
-
-      case 40:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.30;
-         P.TrailStartRR=1.0;
-         P.TP1_R=1.0;
-         P.PartialClosePct=30;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.30;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=3;
-         P.CooldownSec=5;
-         return true;
-
-      case 41:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.20;
-         P.TrailStartRR=1.2;
-         P.PartialClosePct=50;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.30;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=3;
-         P.CooldownSec=5;
-         return true;
-
-      case 42:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.20;
-         P.TrailStartRR=1.2;
-         P.PartialClosePct=30;
-         P.UsePyramid=true;
-         P.MaxAdds=3;
-         P.AddSpacingUSD=0.30;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=3;
-         P.CooldownSec=5;
-         return true;
-
-      case 43:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.20;
-         P.TrailStartRR=1.2;
-         P.PartialClosePct=40;
-         P.UsePyramid=true;
-         P.MaxAdds=3;
-         P.AddSpacingUSD=0.25;
-         P.AddSizeFactor=0.5;
-         P.MaxOpenPositions=4;
-         P.CooldownSec=5;
-         return true;
-
-      case 44:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.20;
-         P.TrailStartRR=1.2;
-         P.PartialClosePct=30;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.30;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=4;
-         P.CooldownSec=10;
-         return true;
-
-      case 45:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.22;
-         P.TrailStartRR=0.8;
-         P.PartialClosePct=0;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.35;
-         P.AddSizeFactor=0.5;
-         P.MaxOpenPositions=3;
-         P.CooldownSec=5;
-         return true;
-
-      case 46:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=1;
-         P.TrailATRMult=1.5;
-         P.TrailStartRR=0.8;
-         P.BE_Activate_R=0.8;
-         P.TP1_R=1.2;
-         P.PartialClosePct=40;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.30;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=3;
-         P.CooldownSec=5;
-         return true;
-
-      case 47:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.20;
-         P.TrailStartRR=0.8;
-         P.PartialClosePct=40;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.30;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=3;
-         P.CooldownSec=5;
-         return true;
-
-      case 48:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.30;
-         P.TrailStartRR=1.0;
-         P.PartialClosePct=30;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.32;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=4;
-         P.CooldownSec=15;
-         return true;
-
-      case 49:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.30;
-         P.TrailStartRR=1.0;
-         P.PartialClosePct=55;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.42;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=4;
-         P.CooldownSec=15;
-         return true;
-
-      case 50:
-         P.UseKillzones=true;
-         P.KZ3s=1165;
-         P.KZ3e=1185;
-         P.KZ4s=1255;
-         P.KZ4e=1275;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.K_swing=50;
-         P.N_bos=6;
-         P.M_retest=3;
-         P.EqTol=0.20;
-         P.BOSBufferPoints=2.0;
-         P.SL_BufferUSD=0.50;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.30;
-         P.TrailStartRR=1.0;
-         P.PartialClosePct=55;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.38;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=4;
-         P.CooldownSec=15;
-         return true;
-
-      case 51:
-         P.UseKillzones=true;
-         P.KZ1s=835;
-         P.KZ1e=865;
-         P.KZ3s=1160;
-         P.KZ3e=1185;
-         P.UseRoundNumber=true;
-         P.RNDelta=0.35;
-         P.UseVSA=false;
-         P.UseTrailing=true;
-         P.TrailMode=2;
-         P.TrailStepUSD=0.33;
-         P.TrailStartRR=0.8;
-         P.BE_Activate_R=0.8;
-         P.TP1_R=1.2;
-         P.PartialClosePct=30;
-         P.UsePyramid=true;
-         P.MaxAdds=2;
-         P.AddSpacingUSD=0.38;
-         P.AddSizeFactor=0.6;
-         P.MaxOpenPositions=4;
-         P.CooldownSec=30;
-         P.MaxSpreadUSD=0.50;
-         return true;
-     }
-
-   return false;
-  }
 
 // Helper functions removed - using CSV data directly
 
@@ -1671,19 +567,17 @@ void ApplyCSVRowToParams(const UCRow &r)
    SelectedSymbol = r.SelectedSymbol;
    SymbolSelect(SelectedSymbol, true);
 
-   double pip       = SymbolPipSize(SelectedSymbol);
-   double point     = SymbolInfoDouble(SelectedSymbol, SYMBOL_POINT);
-   if(point<=0.0)
-      point = SymbolPoint();
-   double pipPoints = (point>0.0 ? pip/point : 0.0);
-
    P.K_swing          = r.K_swing;
    P.N_bos            = r.N_bos;
+   P.LookbackInternal = r.LookbackInternal;
    P.M_retest         = r.M_retest;
-   P.EqTol            = r.EqTol_pips * pip;
-   P.UseRoundNumber   = (r.UseRoundNumber==1);
-   P.RNDelta          = r.RNDelta_pips * pip;
-   P.UseKillzones     = (r.UseKillzones==1);
+   P.EqTol            = r.EqTol;
+   P.BOSBufferPoints  = r.BOSBufferPoints;
+   P.UseKillzones     = r.UseKillzones;
+   P.UseRoundNumber   = r.UseRoundNumber;
+   P.UseVSA           = r.UseVSA;
+   P.RNDelta          = r.RNDelta;
+   P.L_percentile     = r.L_percentile;
    if(!P.UseKillzones)
      {
       P.KZ1s = KZ1_StartMin;
@@ -1695,24 +589,42 @@ void ApplyCSVRowToParams(const UCRow &r)
       P.KZ4s = KZ4_StartMin;
       P.KZ4e = KZ4_EndMin;
      }
-   P.RiskPerTradePct  = r.RiskPerTradePct;
-   P.TrailMode        = r.TrailMode;
-   P.SL_BufferUSD     = r.SL_Buffer_pips * pip;
-   P.BOSBufferPoints  = r.BOSBuffer_pips;  // BOSBuffer_pips in CSV is already in points, not pips
-   P.UsePendingRetest = (r.UsePendingRetest==1);
-   P.RetestOffsetUSD  = r.RetestOffset_pips * pip;
-   P.TP1_R            = r.TP1_R;
-   P.TP2_R            = r.TP2_R;
-   P.BE_Activate_R    = r.BE_Activate_R;
-   P.PartialClosePct  = r.PartialClosePct;
-   P.UsePyramid       = (r.UsePyramid==1);
-   P.MaxAdds          = r.MaxAdds;
-   P.AddSizeFactor    = r.AddSizeFactor;
-   P.AddSpacingUSD    = r.AddSpacing_pips * pip;
+// Set global overrides first
+   g_RiskPerTradePct  = r.RiskPerTradePct;
+   g_SL_BufferUSD     = r.SL_BufferUSD;
+   g_TP1_R            = r.TP1_R;
+   g_TP2_R            = r.TP2_R;
+   g_BE_Activate_R    = r.BE_Activate_R;
+   g_PartialClosePct  = (double)r.PartialClosePct;
+   g_TimeStopMinutes  = r.TimeStopMinutes;
+   g_MinProgressR     = r.MinProgressR;
+   g_MaxSpreadUSD     = r.MaxSpreadUSD;
 
+// Then apply to P from globals
+   P.RiskPerTradePct  = g_RiskPerTradePct;
+   P.SL_BufferUSD     = g_SL_BufferUSD;
+   P.TP1_R            = g_TP1_R;
+   P.TP2_R            = g_TP2_R;
+   P.BE_Activate_R    = g_BE_Activate_R;
+   P.PartialClosePct  = (int)g_PartialClosePct;
+   P.TimeStopMinutes  = g_TimeStopMinutes;
+   P.MinProgressR     = g_MinProgressR;
+   P.MaxSpreadUSD     = g_MaxSpreadUSD;
    P.MaxOpenPositions = r.MaxOpenPositions;
-   P.TimeStopMinutes  = r.TimeStopMinutes;
-   P.MinProgressR     = r.MinProgressR;
+   P.UsePendingRetest = r.UsePendingRetest;
+   P.RetestOffsetUSD  = r.RetestOffsetUSD;
+   P.PendingExpirySec = r.PendingExpirySec;
+   P.UseTrailing      = r.UseTrailing;
+   P.TrailMode        = r.TrailMode;
+   P.TrailATRPeriod   = r.TrailATRPeriod;
+   P.TrailATRMult     = r.TrailATRMult;
+   P.TrailStepUSD     = r.TrailStepUSD;
+   P.TrailStartRR     = r.TrailStartRR;
+   P.UsePyramid       = r.UsePyramid;
+   P.MaxAdds          = r.MaxAdds;
+   P.AddSpacingUSD    = r.AddSpacingUSD;
+   P.AddSizeFactor    = r.AddSizeFactor;
+   P.CooldownSec      = r.CooldownSec;
   }
 
 // ==== CSV tools (in-memory) ====
@@ -1724,6 +636,49 @@ string Trim(const string s)
    StringTrimLeft(t);
    StringTrimRight(t);
    return t;
+  }
+
+// Convert string "true"/"false" to boolean
+bool StringToBool(const string s)
+  {
+   string trimmed = Trim(s);
+   StringToLower(trimmed);
+   return (trimmed == "true" || trimmed == "1");
+  }
+
+// Convert CSV value with *pip or *pipPoints multipliers
+double ParseCSVValue(const string csvValue, const string symbol)
+  {
+   string trimmed = Trim(csvValue);
+
+// Check for *pip multiplier
+   if(StringFind(trimmed, "*pip") >= 0 && StringFind(trimmed, "*pipPoints") < 0)
+     {
+      // Extract number before "*pip"
+      string numStr = trimmed;
+      StringReplace(numStr, "*pip", "");
+      double multiplier = StringToDouble(Trim(numStr));
+      double pip = SymbolPipSize(symbol);
+      return multiplier * pip;
+     }
+
+// Check for *pipPoints multiplier
+   if(StringFind(trimmed, "*pipPoints") >= 0)
+     {
+      // Extract number before "*pipPoints"
+      string numStr = trimmed;
+      StringReplace(numStr, "*pipPoints", "");
+      double multiplier = StringToDouble(Trim(numStr));
+      double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
+      if(point <= 0.0)
+         point = SymbolPoint();
+      double pip = SymbolPipSize(symbol);
+      double pipPoints = (point > 0.0 ? pip/point : 0.0);
+      return multiplier * pipPoints;
+     }
+
+// Regular numeric value
+   return StringToDouble(trimmed);
   }
 
 // Tách 1 dòng CSV thành mảng fields, có hỗ trợ "quotes" và "" escape
@@ -1773,7 +728,7 @@ int SplitCsvQuoted(const string line, string &out[], const uchar delim=',')
 // Đọc usecase từ resource (#resource as string)
 bool LoadUsecaseFromResource(const int presetID, UCRow &row)
   {
-   string csv = UC600_1199;
+   string csv = usecases_list;
 // Chuẩn hoá xuống dòng
    StringReplace(csv, "\r", "");
 
@@ -1787,81 +742,68 @@ bool LoadUsecaseFromResource(const int presetID, UCRow &row)
 
    bool found=false;
 // Bỏ header (dòng 0). Nếu CSV không có header, vòng lặp vẫn parse được.
-   for(int i=1; i<lineCount; i++)
+   for(int i = 1; i < lineCount; i++)
      {
       string ln = lines[i];
-      if(ln=="" || ln=="\n")
+      if(ln == "" || ln == "\n")
          continue;
 
       string fields[];
       int c = SplitCsvQuoted(ln, fields, ',');
 
-      if(c < 26) // cần tối thiểu 26 cột như logic cũ
-         continue;
 
+      // Case,Symbol,K_swing,N_bos,LookbackInternal,M_retest,EqTol,BOSBufferPoints,UseKillzones,UseRoundNumber,UseVSA,RNDelta,L_percentile,RiskPerTradePct,SL_BufferUSD,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,TimeStopMinutes,MinProgressR,MaxSpreadUSD,MaxOpenPositions,UsePendingRetest,RetestOffsetUSD,PendingExpirySec,UseTrailing,TrailMode,TrailATRPeriod,TrailATRMult,TrailStepUSD,TrailStartRR,UsePyramid,MaxAdds,AddSpacingUSD,AddSizeFactor,CooldownSec
       int csvPresetID = (int)StringToInteger(fields[0]);
-
       if(csvPresetID == presetID)
         {
-         // Map đúng thứ tự cột cũ
-         row.SelectedSymbol     = fields[1];
-         row.K_swing            = (int)StringToInteger(fields[2]);
-         row.N_bos              = (int)StringToInteger(fields[3]);
-         row.M_retest           = (int)StringToInteger(fields[4]);
-         row.EqTol_pips         = StringToDouble(fields[5]);
-         row.UseRoundNumber     = (int)StringToInteger(fields[6]);
-         row.RNDelta_pips       = StringToDouble(fields[7]);
-         row.UseKillzones       = (int)StringToInteger(fields[8]);
-         row.RiskPerTradePct    = StringToDouble(fields[9]);
-         // Handle missing TrailMode for preset 1-51 (empty field)
-         if(fields[10] == "")
+         // Map fields according to CSV header order
+         row.SelectedSymbol       = fields[1];
+         row.K_swing              = (int)StringToInteger(fields[2]);
+         row.N_bos                = (int)StringToInteger(fields[3]);
+         row.LookbackInternal     = (int)StringToInteger(fields[4]);
+         row.M_retest             = (int)StringToInteger(fields[5]);
+         row.EqTol                = ParseCSVValue(fields[6], fields[1]);
+         row.BOSBufferPoints      = ParseCSVValue(fields[7], fields[1]);
+         row.UseKillzones         = StringToBool(fields[8]);
+         row.UseRoundNumber       = StringToBool(fields[9]);
+         row.UseVSA               = StringToBool(fields[10]);
+         row.RNDelta              = ParseCSVValue(fields[11], fields[1]);
+         row.L_percentile         = (int)StringToInteger(fields[12]);
+         row.RiskPerTradePct      = StringToDouble(fields[13]);
+         row.SL_BufferUSD         = ParseCSVValue(fields[14], fields[1]);
+         row.TP1_R                = StringToDouble(fields[15]);
+         row.TP2_R                = StringToDouble(fields[16]);
+         row.BE_Activate_R        = StringToDouble(fields[17]);
+         row.PartialClosePct      = (int)StringToInteger(fields[18]);
+         row.TimeStopMinutes      = (int)StringToInteger(fields[19]);
+         row.MinProgressR         = StringToDouble(fields[20]);
+         row.MaxSpreadUSD         = StringToDouble(fields[21]);
+         row.MaxOpenPositions     = (int)StringToInteger(fields[22]);
+         row.UsePendingRetest     = StringToBool(fields[23]);
+         row.RetestOffsetUSD      = ParseCSVValue(fields[24], fields[1]);
+         row.PendingExpirySec     = (int)StringToInteger(fields[25]);
+
+         // Debug pip parsing
+         if(Debug)
            {
-            row.TrailMode = 0;  // Default TRAIL_NONE
-            // Shift indices due to missing TrailMode column
-            row.SL_Buffer_pips     = StringToDouble(fields[10]);  // was fields[11]
-            row.BOSBuffer_pips     = StringToDouble(fields[11]);  // was fields[12]
+            Print("DEBUG CSV PARSING: Symbol=", fields[1],
+                  ", EqTol=", fields[6], " -> ", row.EqTol,
+                  ", BOSBuffer=", fields[7], " -> ", row.BOSBufferPoints,
+                  ", RNDelta=", fields[11], " -> ", row.RNDelta,
+                  ", SL_Buffer=", fields[14], " -> ", row.SL_BufferUSD,
+                  ", RetestOffset=", fields[24], " -> ", row.RetestOffsetUSD);
            }
-         else
-           {
-            row.TrailMode          = (int)StringToInteger(fields[10]);
-            row.SL_Buffer_pips     = StringToDouble(fields[11]);
-            row.BOSBuffer_pips     = StringToDouble(fields[12]);
-           }
-         // Continue with conditional indexing based on TrailMode presence
-         if(fields[10] == "")
-           {
-            // Missing TrailMode - shift all indices down by 1
-            row.UsePendingRetest   = (int)StringToInteger(fields[12]);  // was 13
-            row.RetestOffset_pips  = StringToDouble(fields[13]);       // was 14
-            row.TP1_R              = StringToDouble(fields[14]);       // was 15
-            row.TP2_R              = StringToDouble(fields[15]);       // was 16
-            row.BE_Activate_R      = StringToDouble(fields[16]);       // was 17
-            row.PartialClosePct    = (int)StringToInteger(fields[17]); // was 18
-            row.UsePyramid         = (int)StringToInteger(fields[18]); // was 19
-            row.MaxAdds            = (int)StringToInteger(fields[19]); // was 20
-            row.AddSizeFactor      = StringToDouble(fields[20]);       // was 21
-            row.AddSpacing_pips    = StringToDouble(fields[21]);       // was 22
-            row.MaxOpenPositions   = (int)StringToInteger(fields[22]); // was 23
-            row.TimeStopMinutes    = (int)StringToInteger(fields[23]); // was 24
-            row.MinProgressR       = StringToDouble(fields[24]);       // was 25
-           }
-         else
-           {
-            // Normal indexing with TrailMode present
-            row.UsePendingRetest   = (int)StringToInteger(fields[13]);
-            row.RetestOffset_pips  = StringToDouble(fields[14]);
-            row.TP1_R              = StringToDouble(fields[15]);
-            row.TP2_R              = StringToDouble(fields[16]);
-            row.BE_Activate_R      = StringToDouble(fields[17]);
-            row.PartialClosePct    = (int)StringToInteger(fields[18]);
-            row.UsePyramid         = (int)StringToInteger(fields[19]);
-            row.MaxAdds            = (int)StringToInteger(fields[20]);
-            row.AddSizeFactor      = StringToDouble(fields[21]);
-            row.AddSpacing_pips    = StringToDouble(fields[22]);
-            row.MaxOpenPositions   = (int)StringToInteger(fields[23]);
-            row.TimeStopMinutes    = (int)StringToInteger(fields[24]);
-            row.MinProgressR       = StringToDouble(fields[25]);
-           }
+         row.UseTrailing          = StringToBool(fields[26]);
+         row.TrailMode            = (int)StringToInteger(fields[27]);
+         row.TrailATRPeriod       = (int)StringToInteger(fields[28]);
+         row.TrailATRMult         = StringToDouble(fields[29]);
+         row.TrailStepUSD         = StringToDouble(fields[30]);
+         row.TrailStartRR         = StringToDouble(fields[31]);
+         row.UsePyramid           = StringToBool(fields[32]);
+         row.MaxAdds              = (int)StringToInteger(fields[33]);
+         row.AddSpacingUSD        = StringToDouble(fields[34]);
+         row.AddSizeFactor        = StringToDouble(fields[35]);
+         row.CooldownSec          = (int)StringToInteger(fields[36]);
 
          found = true;
          break;
@@ -2006,39 +948,11 @@ void ApplyAutoSymbolProfile()
 bool UpdateRates(int need_bars=400)
   {
    ArraySetAsSeries(rates,true);
-   ResetLastError();
    int copied = CopyRates(SelectedSymbol, InpTF, 0, need_bars, rates);
-   if(copied<=0)
-     {
-      int err = GetLastError();
-      PrintFormat("UpdateRates: no data for %s (%d) need=%d err=%d", SelectedSymbol, InpTF, need_bars, err);
-      return false;
-     }
-   if(copied < need_bars && Debug)
-      PrintFormat("UpdateRates: only %d bars loaded for %s (%d)", copied, SelectedSymbol, InpTF);
-   return true;
+   return (copied>0);
   }
 
-// Ensure tester has the price series ready for the selected symbol/timeframe
-void PreloadSeries(const string sym, ENUM_TIMEFRAMES tf)
-  {
-   if(sym=="")
-      return;
 
-   SymbolSelect(sym, true);
-   if(SeriesInfoInteger(sym, tf, SERIES_SYNCHRONIZED))
-      return;
-
-   MqlRates tmp[];
-   ArraySetAsSeries(tmp, true);
-   ResetLastError();
-   int copied = CopyRates(sym, tf, 0, 512, tmp);
-   if(copied<=0)
-     {
-      int err = GetLastError();
-      PrintFormat("PreloadSeries: failed to copy rates for %s (%d) err=%d", sym, tf, err);
-     }
-  }
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -2842,7 +1756,7 @@ int OnInit()
    string trimmed_tag = InpRunTag;
    StringTrimLeft(trimmed_tag);
    StringTrimRight(trimmed_tag);
-   
+
    if(StringLen(trimmed_tag)==0)
      {
       string t = NowStamp();
@@ -2858,19 +1772,24 @@ int OnInit()
    g_log_file = InpLogFileName;
    Print("Logging setup: File=", g_log_file, ", UseCommon=", InpUseCommonFile, ", RunID=", g_run_id);
 
-// No need to generate CSV - using existing file
 
-  
+
+
+// Initialize global overrides from input defaults first
+   InitGlobalsFromInputs();
 
    UCRow r;
    if(LoadUsecaseFromResource(PresetID, r))
      {
-      ApplyCSVRowToParams(r);
-      if(!SymbolSelect(SelectedSymbol, true))
-         Print("WARNING: failed to select symbol ", SelectedSymbol, " (err=", GetLastError(), ")");
-      PreloadSeries(SelectedSymbol, InpTF);
-      ApplyAutoSymbolProfile(); // Apply symbol-specific adjustments
-      trade.SetAsyncMode(false);
+
+
+      InitGlobalsFromInputs();
+      UseInputsAsParams();        // baseline
+      ApplyCSVRowToParams(r);     // CSV override
+      ApplyAutoSymbolProfile();
+
+      Print("DEBUG: After CSV apply - g_PartialClosePct=", g_PartialClosePct, ", g_MaxSpreadUSD=", g_MaxSpreadUSD,
+            ", P.PartialClosePct=", P.PartialClosePct, ", P.MaxSpreadUSD=", P.MaxSpreadUSD);
       Print("Applied UC", PresetID, " for symbol: ", SelectedSymbol, " RunID: ", g_run_id);
       return(INIT_SUCCEEDED);
      }
@@ -2904,10 +1823,8 @@ int OnInit()
       else
          SelectedSymbol = InpSymbol;
 
+      InitGlobalsFromInputs(); // Initialize globals from inputs
       UseInputsAsParams(); // Apply input settings as fallback
-      if(!SymbolSelect(SelectedSymbol, true))
-         Print("WARNING: failed to select fallback symbol ", SelectedSymbol, " (err=", GetLastError(), ")");
-      PreloadSeries(SelectedSymbol, InpTF);
       ApplyAutoSymbolProfile(); // Apply symbol-specific adjustments
       trade.SetAsyncMode(false);
       return(INIT_SUCCEEDED);
@@ -2920,17 +1837,7 @@ int OnInit()
 void OnTesterPass()
   {
    Print("OnTesterPass() called for PresetID ", PresetID);
-   TradeStats stats;
-   CollectTradeStats(stats);
 
-   string header = CsvHeader();
-   string row = BuildDataRow(stats.netProfit, stats.profitFactor, stats.totalTrades, stats.winTrades, stats.lossTrades,
-                             stats.winRate, stats.avgWin, stats.avgLoss, stats.largestWin, stats.largestLoss);
-
-   if(!AppendCsvRow(g_log_file, InpUseCommonFile, header, row))
-      Print("OnTesterPass: Failed to append CSV row for PresetID ", PresetID);
-   else
-      Print("OnTesterPass: Logged UC", PresetID, " -> ", g_log_file);
   }
 
 //+------------------------------------------------------------------+
@@ -2965,15 +1872,59 @@ void OnDeinit(const int reason)
    TradeStats stats;
    CollectTradeStats(stats);
 
+
+
 // Ghi log cho cả optimization và single run (OnTesterPass có thể không được gọi)
    string header = CsvHeader();
    string row = BuildDataRow(stats.netProfit, stats.profitFactor, stats.totalTrades, stats.winTrades, stats.lossTrades,
                              stats.winRate, stats.avgWin, stats.avgLoss, stats.largestWin, stats.largestLoss);
-   
+
    if(!AppendCsvRow(g_log_file, InpUseCommonFile, header, row))
       Print("OnDeinit: Failed to append CSV row for PresetID ", PresetID);
    else
       Print("OnDeinit: Logged UC", PresetID, " -> ", g_log_file, " (", InpUseCommonFile ? "Common" : "Local", ")");
+
+
+// === CSV FORMAT FOR COMPARISON ===
+   string csvLine = StringFormat("%d,%s,%d,%d,%d,%d,%.2f,%.1f,%s,%s,%s,%.2f,%d,%.1f,%.2f,%.1f,%.1f,%.1f,%d,%d,%.1f,%.2f,%d,%s,%.2f,%d,%s,%d,%d,%.1f,%.1f,%.1f,%s,%d,%.2f,%.1f,%d",
+                                 PresetID,
+                                 SelectedSymbol,
+                                 P.K_swing,
+                                 P.N_bos,
+                                 P.LookbackInternal,
+                                 P.M_retest,
+                                 P.EqTol,
+                                 P.BOSBufferPoints,
+                                 P.UseKillzones ? "true" : "false",
+                                 P.UseRoundNumber ? "true" : "false",
+                                 P.UseVSA ? "true" : "false",
+                                 P.RNDelta,
+                                 P.L_percentile,
+                                 g_RiskPerTradePct,
+                                 g_SL_BufferUSD,
+                                 g_TP1_R,
+                                 g_TP2_R,
+                                 g_BE_Activate_R,
+                                 (int)g_PartialClosePct,
+                                 g_TimeStopMinutes,
+                                 g_MinProgressR,
+                                 g_MaxSpreadUSD,
+                                 P.MaxOpenPositions,
+                                 P.UsePendingRetest ? "true" : "false",
+                                 P.RetestOffsetUSD,
+                                 P.PendingExpirySec,
+                                 P.UseTrailing ? "true" : "false",
+                                 P.TrailMode,
+                                 P.TrailATRPeriod,
+                                 P.TrailATRMult,
+                                 P.TrailStepUSD,
+                                 P.TrailStartRR,
+                                 P.UsePyramid ? "true" : "false",
+                                 P.MaxAdds,
+                                 P.AddSpacingUSD,
+                                 P.AddSizeFactor,
+                                 P.CooldownSec);
+   Print("CSV_LINE: ", csvLine);
 
 // === DETAILED ANALYSIS LOGS ===
    Print("=== UC", PresetID, " (", SelectedSymbol, ") ANALYSIS ===");

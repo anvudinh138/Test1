@@ -1595,15 +1595,14 @@ bool ApplyPresetEUR(int id)
 
       case 421:
          SelectedSymbol="BTCUSD"; // BTC Conservative
-         P.EnableLong=true;
-         P.EnableShort=true;
+         
+         P.UseKillzones=true;
          P.K_swing=80;
          P.N_bos=8;
          P.LookbackInternal=20;
          P.M_retest=5;
          P.EqTol=5.0;
          P.BOSBufferPoints=2.5;
-         P.UseKillzones=true;
          P.UseRoundNumber=true;
          P.UseVSA=true;
          P.L_percentile=200;
@@ -2777,6 +2776,7 @@ void OnDeinit(const int reason)
    double pipSize = SymbolPipSize(SelectedSymbol);
    double rnDeltaPips = P.RNDelta / pipSize; // CORRECT pip calculation
    Print("FILTERS: ", filterStatus, ", RNDelta=", DoubleToString(rnDeltaPips, 1), "pips");
+
 
 // Trading style analysis
    string styleInfo = "";

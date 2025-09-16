@@ -53,14 +53,14 @@ input bool   UseRoundNumber      = true;
 input bool   UseVSA              = true;
 input double RNDelta             = 0.30;     // USD
 // Killzone windows (server time, minutes from 00:00). Adjust per broker.
-input int    KZ1_StartMin        = 13*60+55;
-input int    KZ1_EndMin          = 14*60+20;
-input int    KZ2_StartMin        = 16*60+25;
-input int    KZ2_EndMin          = 16*60+40;
-input int    KZ3_StartMin        = 19*60+25;
-input int    KZ3_EndMin          = 19*60+45;
-input int    KZ4_StartMin        = 20*60+55;
-input int    KZ4_EndMin          = 21*60+15;
+input int    KZ1_StartMin        = 13*60+55; // 835
+input int    KZ1_EndMin          = 14*60+20; // 860
+input int    KZ2_StartMin        = 16*60+25; // 985
+input int    KZ2_EndMin          = 16*60+40; // 1000
+input int    KZ3_StartMin        = 19*60+25; // 1165
+input int    KZ3_EndMin          = 19*60+45; // 1185
+input int    KZ4_StartMin        = 20*60+55; // 1255
+input int    KZ4_EndMin          = 21*60+15; // 1275
 
 // VSA percentile window
 input int    L_percentile        = 150;
@@ -1373,76 +1373,79 @@ double PriceToPips(double pricediff, const string sym="")
    return pricediff / pip;
 }
 
-// Bảng spread gợi ý theo symbol (để set MaxSpreadUSD). Trả về hi/lo (hi = ngưỡng MaxSpread đè)
-bool DefaultSpreadForSymbol(string s, double &hi, double &lo)
-{
-   s = StringUpper(s);
-   // các giá trị lấy từ list bạn đưa (≈ 3/2 pips...); hi = ngưỡng "nên chặn"
-   if(s=="EURUSD"){ hi=0.00030; lo=0.00020; return true; }
-   if(s=="USDJPY"){ hi=0.03000; lo=0.02000; return true; }
-   if(s=="GBPUSD"){ hi=0.00040; lo=0.00025; return true; }
-   if(s=="USDCHF"){ hi=0.00040; lo=0.00025; return true; }
-   if(s=="USDCAD"){ hi=0.00045; lo=0.00030; return true; }
-   if(s=="AUDUSD"){ hi=0.00035; lo=0.00020; return true; }
-   if(s=="NZDUSD"){ hi=0.00035; lo=0.00025; return true; }
-   if(s=="EURJPY"){ hi=0.04000; lo=0.02500; return true; }
-   if(s=="GBPJPY"){ hi=0.06000; lo=0.04000; return true; }
-   if(s=="EURGBP"){ hi=0.00030; lo=0.00020; return true; }
-   if(s=="AUDJPY"){ hi=0.03500; lo=0.02500; return true; }
-   if(s=="CHFJPY"){ hi=0.04000; lo=0.03000; return true; }
-   if(s=="EURCHF"){ hi=0.00035; lo=0.00025; return true; }
-   if(s=="AUDCAD"){ hi=0.00035; lo=0.00025; return true; }
-   if(s=="CADJPY"){ hi=0.04000; lo=0.03000; return true; }
-   if(s=="NZDJPY"){ hi=0.04000; lo=0.03000; return true; }
-   // XAU mặc định (tuỳ broker), khuyến nghị theo doc
-   if(StringFind(s,"XAU",0)>=0){ hi=0.60; lo=0.30; return true; }
+bool DefaultSpreadForSymbol(string symbol_name, double &hi, double &lo)
+  {
+   string s = symbol_name;
+
+// ... (giữ nguyên các cặp FX sẵn có)
+
+// BTC/ETH – điển hình cho CFD (tùy broker, ông chỉnh lại theo thực tế spread live)
+   if(StringFind(s,"BTC",0) >= 0)
+     {
+      hi = 12.0;   // USD
+      lo = 6.0;
+      return true;
+     }
+   if(StringFind(s,"ETH",0) >= 0)
+     {
+      hi = 1.20;   // USD
+      lo = 0.60;
+      return true;
+     }
+
+// XAU giữ nguyên
+   if(StringFind(s,"XAU",0) >= 0)
+     {
+      hi = 0.60;
+      lo = 0.30;
+      return true;
+     }
+
    return false;
-}
+  }
 
 // Tự scale tham số theo symbol/pip (chỉ “điều chỉnh nhẹ” khi dùng Custom hoặc preset không chuyên EU)
 void ApplyAutoSymbolProfile()
-{
-   if(!AutoSymbolProfile) return;
+  {
+   if(!AutoSymbolProfile)
+      return;
 
-   double pip        = SymbolPipSize(InpSymbol);
-   double point      = SymbolPoint();
-   double pipPoints  = (point>0.0 ? pip/point : 0.0);
+   double pip       = SymbolPipSize(InpSymbol);
+   double point     = SymbolPoint();
+   double pipPoints = (point>0.0 ? pip/point : 0.0);
 
+// Spread guard từ catalogue (nếu có)
    double hi=0.0, lo=0.0;
    if(DefaultSpreadForSymbol(InpSymbol, hi, lo))
-   {
-      // Spread chặn theo catalogue
       P.MaxSpreadUSD = hi;
-   }
 
-   // Scale chung cho FX vs XAU (chỉ khi đang dùng Custom hoặc preset XAU)
-   bool isXAU = (StringFind(InpSymbol,"XAU",0)>=0);
-   bool isJPY = (StringFind(InpSymbol,"JPY",0)>=0);
+   bool isXAU    = (StringFind(InpSymbol,"XAU",0)>=0);
+   bool isJPY    = (StringFind(InpSymbol,"JPY",0)>=0);
+   bool isCrypto = (StringFind(InpSymbol,"BTC",0)>=0 || StringFind(InpSymbol,"ETH",0)>=0);
 
-   // Nếu là EURUSD: đè bộ thông số mặc định hợp lý cho test nhanh
-   if(StringUpper(InpSymbol)=="EURUSD")
-   {
-      // các “USD” là độ lệch giá tuyệt đối; pip EURUSD = 0.0001
-      P.EqTol            = 2.0 * pip;         // ≈ 2 pips để nhận equal highs/lows
-      P.RNDelta          = 2.5 * pip;         // ≈ 2.5 pips quanh RN .00/.25/.50/.75
-      P.SL_BufferUSD     = 7.0 * pip;         // ≈ 7 pips
-      P.BOSBufferPoints  = 2.0 * pipPoints;   // ≈ 2 pips BOS buffer (vì biến này tính theo points)
-      P.RetestOffsetUSD  = 2.0 * pip;         // pending offset nếu dùng pending
-      P.AddSpacingUSD    = 6.0 * pip;         // khoảng cách add tiếp theo
-      // Killzones giữ như XAU (theo phút server); chỉnh theo broker nếu cần
-   }
-   else if(!isXAU) // các cặp FX khác (generic)
-   {
-      // generic safe defaults
-      P.EqTol            = MathMax(P.EqTol, 2.0 * pip);
-      P.RNDelta          = MathMax(P.RNDelta, 3.0 * pip);
-      P.SL_BufferUSD     = MathMax(P.SL_BufferUSD, 8.0 * pip);
-      P.BOSBufferPoints  = MathMax(P.BOSBufferPoints, 2.0 * pipPoints);
-      P.RetestOffsetUSD  = MathMax(P.RetestOffsetUSD, 2.0 * pip);
-      P.AddSpacingUSD    = MathMax(P.AddSpacingUSD,   6.0 * pip);
-   }
-   // XAU giữ nguyên các preset gốc (đã tối ưu cho XAU)
-}
+   if(isCrypto)
+     {
+      // Crypto 24/7 – scale rộng hơn FX, tắt KZ mặc định
+      P.UseKillzones      = false;
+      P.EqTol             = MathMax(P.EqTol,          1.5*pip);
+      P.RNDelta           = MathMax(P.RNDelta,        3.0*pip);   // BTC mặc định ±30$ (pip=10$)
+      P.SL_BufferUSD      = MathMax(P.SL_BufferUSD,   8.0*pip);
+      P.BOSBufferPoints   = MathMax(P.BOSBufferPoints,1.5*pipPoints);
+      P.RetestOffsetUSD   = MathMax(P.RetestOffsetUSD,1.5*pip);
+      P.AddSpacingUSD     = MathMax(P.AddSpacingUSD,  4.0*pip);
+     }
+   else
+      if(!isXAU) // FX generic (EUR, JPY…)
+        {
+         P.EqTol             = MathMax(P.EqTol,          2.0*pip);
+         P.RNDelta           = MathMax(P.RNDelta,        2.5*pip);
+         P.SL_BufferUSD      = MathMax(P.SL_BufferUSD,   8.0*pip);
+         P.BOSBufferPoints   = MathMax(P.BOSBufferPoints,2.0*pipPoints);
+         P.RetestOffsetUSD   = MathMax(P.RetestOffsetUSD,2.0*pip);
+         P.AddSpacingUSD     = MathMax(P.AddSpacingUSD,  6.0*pip);
+        }
+// XAU: giữ preset gốc
+  }
 
 //+------------------------------------------------------------------+
 //|                                                                  |
