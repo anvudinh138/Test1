@@ -139,18 +139,6 @@ datetime       bosBarTime = 0;
 double         sweepHigh  = 0.0;
 double         sweepLow   = 0.0;
 
-//=== GLOBAL OVERRIDES (used instead of inputs) ===
-// These will be set by CSV or input defaults, and used by all logic
-double         g_PartialClosePct = 50.0;     // Override for PartialClosePct input
-double         g_MaxSpreadUSD = 0.50;        // Override for MaxSpreadUSD input
-int            g_TimeStopMinutes = 5;        // Override for TimeStopMinutes input
-double         g_MinProgressR = 0.5;         // Override for MinProgressR input
-double         g_RiskPerTradePct = 0.5;      // Override for RiskPerTradePct input
-double         g_SL_BufferUSD = 0.50;        // Override for SL_BufferUSD input
-double         g_TP1_R = 1.0;                // Override for TP1_R input
-double         g_TP2_R = 2.0;                // Override for TP2_R input
-double         g_BE_Activate_R = 0.8;        // Override for BE_Activate_R input
-
 
 // --- diagnostics counters (GLOBAL SCOPE) ---
 int g_block_rn     = 0;
@@ -160,6 +148,7 @@ int g_block_spread = 0;
 // Tạo RunID tự động (độc nhất cho mỗi lần nhấn Start)
 string g_run_id;
 string g_log_file;
+bool   g_stats_logged = false; // prevents duplicate writes when tester triggers multiple deinit events
 
 //=== MULTI-AGENT SAFE LOGGING SYSTEM ===
 string NowStamp()
@@ -234,7 +223,7 @@ bool AppendCsvRow(const string fname, const bool use_common, const string header
 string CsvHeader()
   {
    return "RunID,PresetID,Symbol,"
-          "NetProfit,ProfitFactor,TotalTrades,WinTrades,LossTrades,WinRate,AvgWin,AvgLoss,LargestWin,LargestLoss,"
+          "NetProfit,ProfitFactor,TotalTrades,WinTrades,LossTrades,WinRate,AvgWin,AvgLoss,LargestWin,LargestLoss,Drawdown,DrawdownColor,ExpectedPayoff,"
           "FilterBlocks_RN,FilterBlocks_KZ,FilterBlocks_Spr,"
           "K_swing,N_bos,M_retest,EqTol_pips,UseRoundNumber,RNDelta_pips,UseKillzones,RiskPerTradePct,TrailMode,"
           "SL_Buffer_pips,BOSBuffer_points,UsePendingRetest,RetestOffset_pips,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,"
@@ -243,20 +232,22 @@ string CsvHeader()
 
 // Build dòng dữ liệu từ kết quả backtest
 string BuildDataRow(double netProfit, double profitFactor, int totalTrades, int winTrades, int lossTrades,
-                    double winRate, double avgWin, double avgLoss, double largestWin, double largestLoss)
+                    double winRate, double avgWin, double avgLoss, double largestWin, double largestLoss,
+                    double drawdown, double expectedPayoff  // Thêm tham số drawdown và expectedPayoff
+                  )
   {
    double pipSize = SymbolPipSize(SelectedSymbol);
-
+   string drawdownColor = (drawdown >= 20.0) ? 1 : 0; // Ví dụ: Drawdown >= 20% là "HIGH" == 1 (nguy hiểm)
    string row = StringFormat(
                    "%d,%d,%s,"                                   // RunID, PresetID, Symbol
-                   "%.2f,%.2f,%d,%d,%d,%.1f,%.2f,%.2f,%.2f,%.2f,"// stats
+                   "%.2f,%.2f,%d,%d,%d,%.1f,%.2f,%.2f,%.2f,%.2f,%.2f,%d,%.2f,"// stats
                    "%d,%d,%d,"                                   // FilterBlocks
                    "%d,%d,%d,%.1f,%d,%.1f,%d,%.2f,%d,"           // core + filters
                    "%.1f,%.1f,%d,%.1f,%.1f,%.1f,%.1f,"           // risk + BOS/pending + exits
                    "%d,%d,%.2f,%.1f,%d,%d,%.2f,%s",              // pyramid + misc + tag
                    g_run_id, PresetID, SelectedSymbol,
                    netProfit, profitFactor, totalTrades, winTrades, lossTrades,
-                   winRate, avgWin, avgLoss, largestWin, largestLoss,
+                   winRate, avgWin, avgLoss, largestWin, largestLoss,drawdown, drawdownColor, expectedPayoff,
                    g_block_rn, g_block_kz, g_block_spread,
                    P.K_swing, P.N_bos, P.M_retest,
                    P.EqTol/pipSize, (P.UseRoundNumber?1:0), P.RNDelta/pipSize, (P.UseKillzones?1:0), P.RiskPerTradePct, P.TrailMode,
@@ -460,19 +451,7 @@ struct Params
   };
 Params P;
 
-// Initialize global overrides from input defaults
-void InitGlobalsFromInputs()
-  {
-   g_PartialClosePct = PartialClosePct;
-   g_MaxSpreadUSD = MaxSpreadUSD;
-   g_TimeStopMinutes = TimeStopMinutes;
-   g_MinProgressR = MinProgressR;
-   g_RiskPerTradePct = RiskPerTradePct;
-   g_SL_BufferUSD = SL_BufferUSD;
-   g_TP1_R = TP1_R;
-   g_TP2_R = TP2_R;
-   g_BE_Activate_R = BE_Activate_R;
-  }
+
 
 // Apply inputs to P (as defaults)
 void UseInputsAsParams()
@@ -498,18 +477,18 @@ void UseInputsAsParams()
    P.KZ3e=KZ3_EndMin;
    P.KZ4s=KZ4_StartMin;
    P.KZ4e=KZ4_EndMin;
-   P.RiskPerTradePct=g_RiskPerTradePct;
-   P.SL_BufferUSD=g_SL_BufferUSD;
-   P.TP1_R=g_TP1_R;
-   P.TP2_R=g_TP2_R;
-   P.BE_Activate_R=g_BE_Activate_R;
-   P.PartialClosePct=(int)g_PartialClosePct;
-   P.TimeStopMinutes=g_TimeStopMinutes;
-   P.MinProgressR=g_MinProgressR;
-   P.MaxSpreadUSD=g_MaxSpreadUSD;
+   P.RiskPerTradePct=RiskPerTradePct;
+   P.SL_BufferUSD=SL_BufferUSD;
+   P.TP1_R=TP1_R;
+   P.TP2_R=TP2_R;
+   P.BE_Activate_R=BE_Activate_R;
+   P.PartialClosePct=(int)PartialClosePct;
+   P.TimeStopMinutes=TimeStopMinutes;
+   P.MinProgressR=MinProgressR;
+   P.MaxSpreadUSD=MaxSpreadUSD;
    P.MaxOpenPositions=MaxOpenPositions;
    P.UsePendingRetest=UsePendingRetest;
-   P.RetestOffsetUSD=RetestOffsetUSD;
+   P.RetestOffsetUSD=RetestOffsetUSD;  
    P.PendingExpirySec=PendingExpirySec;
    P.UseTrailing=UseTrailing;
    P.TrailMode=(int)TrailMode;
@@ -589,27 +568,17 @@ void ApplyCSVRowToParams(const UCRow &r)
       P.KZ4s = KZ4_StartMin;
       P.KZ4e = KZ4_EndMin;
      }
-// Set global overrides first
-   g_RiskPerTradePct  = r.RiskPerTradePct;
-   g_SL_BufferUSD     = r.SL_BufferUSD;
-   g_TP1_R            = r.TP1_R;
-   g_TP2_R            = r.TP2_R;
-   g_BE_Activate_R    = r.BE_Activate_R;
-   g_PartialClosePct  = (double)r.PartialClosePct;
-   g_TimeStopMinutes  = r.TimeStopMinutes;
-   g_MinProgressR     = r.MinProgressR;
-   g_MaxSpreadUSD     = r.MaxSpreadUSD;
 
 // Then apply to P from globals
-   P.RiskPerTradePct  = g_RiskPerTradePct;
-   P.SL_BufferUSD     = g_SL_BufferUSD;
-   P.TP1_R            = g_TP1_R;
-   P.TP2_R            = g_TP2_R;
-   P.BE_Activate_R    = g_BE_Activate_R;
-   P.PartialClosePct  = (int)g_PartialClosePct;
-   P.TimeStopMinutes  = g_TimeStopMinutes;
-   P.MinProgressR     = g_MinProgressR;
-   P.MaxSpreadUSD     = g_MaxSpreadUSD;
+   P.RiskPerTradePct  = r.RiskPerTradePct;
+   P.SL_BufferUSD     = r.SL_BufferUSD;
+   P.TP1_R            = r.TP1_R;
+   P.TP2_R            = r.TP2_R;
+   P.BE_Activate_R    =  r.BE_Activate_R;
+   P.PartialClosePct  = (double)r.PartialClosePct;
+   P.TimeStopMinutes  = r.TimeStopMinutes;
+   P.MinProgressR     = r.MinProgressR;
+   P.MaxSpreadUSD     = r.MaxSpreadUSD;
    P.MaxOpenPositions = r.MaxOpenPositions;
    P.UsePendingRetest = r.UsePendingRetest;
    P.RetestOffsetUSD  = r.RetestOffsetUSD;
@@ -1771,26 +1740,20 @@ int OnInit()
 
    g_log_file = InpLogFileName;
    Print("Logging setup: File=", g_log_file, ", UseCommon=", InpUseCommonFile, ", RunID=", g_run_id);
+   g_stats_logged = false;
 
 
 
 
-// Initialize global overrides from input defaults first
-   InitGlobalsFromInputs();
 
    UCRow r;
    if(LoadUsecaseFromResource(PresetID, r))
      {
 
 
-      InitGlobalsFromInputs();
       UseInputsAsParams();        // baseline
       ApplyCSVRowToParams(r);     // CSV override
       ApplyAutoSymbolProfile();
-
-      Print("DEBUG: After CSV apply - g_PartialClosePct=", g_PartialClosePct, ", g_MaxSpreadUSD=", g_MaxSpreadUSD,
-            ", P.PartialClosePct=", P.PartialClosePct, ", P.MaxSpreadUSD=", P.MaxSpreadUSD);
-      Print("Applied UC", PresetID, " for symbol: ", SelectedSymbol, " RunID: ", g_run_id);
       return(INIT_SUCCEEDED);
      }
    else
@@ -1823,7 +1786,6 @@ int OnInit()
       else
          SelectedSymbol = InpSymbol;
 
-      InitGlobalsFromInputs(); // Initialize globals from inputs
       UseInputsAsParams(); // Apply input settings as fallback
       ApplyAutoSymbolProfile(); // Apply symbol-specific adjustments
       trade.SetAsyncMode(false);
@@ -1834,14 +1796,6 @@ int OnInit()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void OnTesterPass()
-  {
-   Print("OnTesterPass() called for PresetID ", PresetID);
-
-  }
-
-//+------------------------------------------------------------------+
-//|                                                                  |
 //+------------------------------------------------------------------+
 
 //+------------------------------------------------------------------+
@@ -1864,25 +1818,59 @@ void OnTick()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+
+
+
+void OnTesterPass()
+  {
+   Print("OnTesterPass() called for PresetID ", PresetID);
+
+
+
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+
+
 void OnDeinit(const int reason)
   {
    if(atr_handle!=INVALID_HANDLE)
       IndicatorRelease(atr_handle);
 
+   if(reason==REASON_INITFAILED)
+     {
+      Print("OnDeinit: Init failed, skip logging for PresetID ", PresetID);
+      return;
+     }
+
+   if(g_stats_logged)
+     {
+      Print("OnDeinit: Stats already logged for PresetID ", PresetID, " (reason ", reason, ")");
+      return;
+     }
+
    TradeStats stats;
    CollectTradeStats(stats);
+   // Lấy giá trị drawdown từ TesterStatistics (phần trăm)
+double drawdownPercent = TesterStatistics(STAT_MAX_DRAWDOWN_PERCENT);
 
+// Tính expected payoff (lợi nhuận trung bình mỗi giao dịch)
+double expectedPayoff = (stats.totalTrades > 0) ? stats.netProfit / stats.totalTrades : 0.0;
 
-
-// Ghi log cho cả optimization và single run (OnTesterPass có thể không được gọi)
+   // Ghi log cho cả optimization và single run (OnTesterPass có thể không được gọi)
    string header = CsvHeader();
    string row = BuildDataRow(stats.netProfit, stats.profitFactor, stats.totalTrades, stats.winTrades, stats.lossTrades,
-                             stats.winRate, stats.avgWin, stats.avgLoss, stats.largestWin, stats.largestLoss);
+                             stats.winRate, stats.avgWin, stats.avgLoss, stats.largestWin, stats.largestLoss, drawdownPercent, expectedPayoff);
 
    if(!AppendCsvRow(g_log_file, InpUseCommonFile, header, row))
       Print("OnDeinit: Failed to append CSV row for PresetID ", PresetID);
    else
+     {
       Print("OnDeinit: Logged UC", PresetID, " -> ", g_log_file, " (", InpUseCommonFile ? "Common" : "Local", ")");
+      g_stats_logged = true;
+     }
 
 
 // === CSV FORMAT FOR COMPARISON ===
@@ -1900,15 +1888,15 @@ void OnDeinit(const int reason)
                                  P.UseVSA ? "true" : "false",
                                  P.RNDelta,
                                  P.L_percentile,
-                                 g_RiskPerTradePct,
-                                 g_SL_BufferUSD,
-                                 g_TP1_R,
-                                 g_TP2_R,
-                                 g_BE_Activate_R,
-                                 (int)g_PartialClosePct,
-                                 g_TimeStopMinutes,
-                                 g_MinProgressR,
-                                 g_MaxSpreadUSD,
+                                 P.RiskPerTradePct,
+                                 P.SL_BufferUSD,
+                                 P.TP1_R,
+                                 P.TP2_R,
+                                 P.BE_Activate_R,
+                                 (int)P.PartialClosePct,
+                                 P.TimeStopMinutes,
+                                 P.MinProgressR,
+                                 P.MaxSpreadUSD,
                                  P.MaxOpenPositions,
                                  P.UsePendingRetest ? "true" : "false",
                                  P.RetestOffsetUSD,
@@ -1945,7 +1933,7 @@ void OnDeinit(const int reason)
    if(filterStatus == "")
       filterStatus = "NO-FILTERS";
    double pipSize = SymbolPipSize(SelectedSymbol);
-   double rnDeltaPips = P.RNDelta / pipSize; // CORRECT pip calculation
+   double rnDeltaPips = (pipSize > 0.0) ? P.RNDelta / pipSize : 0.0;
    Print("FILTERS: ", filterStatus, ", RNDelta=", DoubleToString(rnDeltaPips, 1), "pips");
 
 // Trading style analysis
