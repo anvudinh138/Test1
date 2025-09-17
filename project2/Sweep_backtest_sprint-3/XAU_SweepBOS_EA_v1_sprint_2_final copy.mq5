@@ -157,31 +157,6 @@ struct Params
 Params P;
 
 
-// === GLOBAL OVERRIDES (đồng bộ với input/preset để log nhất quán) ===
-double g_PartialClosePct = 50.0;
-double g_MaxSpreadUSD    = 0.50;
-int    g_TimeStopMinutes = 5;
-double g_MinProgressR    = 0.5;
-double g_RiskPerTradePct = 0.5;
-double g_SL_BufferUSD    = 0.50;
-double g_TP1_R           = 1.0;
-double g_TP2_R           = 2.0;
-double g_BE_Activate_R   = 0.8;
-
-// Lấy giá trị override từ input hiện thời
-void InitGlobalsFromInputs()
-  {
-   g_PartialClosePct = PartialClosePct;
-   g_MaxSpreadUSD    = MaxSpreadUSD;
-   g_TimeStopMinutes = TimeStopMinutes;
-   g_MinProgressR    = MinProgressR;
-   g_RiskPerTradePct = RiskPerTradePct;
-   g_SL_BufferUSD    = SL_BufferUSD;
-   g_TP1_R           = TP1_R;
-   g_TP2_R           = TP2_R;
-   g_BE_Activate_R   = BE_Activate_R;
-  }
-
 // Apply inputs to P (as defaults)
 void UseInputsAsParams()
   {
@@ -206,15 +181,15 @@ void UseInputsAsParams()
    P.KZ3e=KZ3_EndMin;
    P.KZ4s=KZ4_StartMin;
    P.KZ4e=KZ4_EndMin;
-   P.RiskPerTradePct=g_RiskPerTradePct;
-   P.SL_BufferUSD=g_SL_BufferUSD;
-   P.TP1_R=g_TP1_R;
-   P.TP2_R=g_TP2_R;
-   P.BE_Activate_R=g_BE_Activate_R;
-   P.PartialClosePct=g_PartialClosePct;
-   P.TimeStopMinutes=g_TimeStopMinutes;
-   P.MinProgressR=g_MinProgressR;
-   P.MaxSpreadUSD=g_MaxSpreadUSD;
+   P.RiskPerTradePct=RiskPerTradePct;
+   P.SL_BufferUSD=SL_BufferUSD;
+   P.TP1_R=TP1_R;
+   P.TP2_R=TP2_R;
+   P.BE_Activate_R=BE_Activate_R;
+   P.PartialClosePct=PartialClosePct;
+   P.TimeStopMinutes=TimeStopMinutes;
+   P.MinProgressR=MinProgressR;
+   P.MaxSpreadUSD=MaxSpreadUSD;
    P.MaxOpenPositions=MaxOpenPositions;
    P.UsePendingRetest=UsePendingRetest;
    P.RetestOffsetUSD=RetestOffsetUSD;
@@ -2354,9 +2329,8 @@ bool SetupParamsFromPreset()
    if(UsePreset)
    {
          ok = ApplyPresetBuiltIn(PresetID);
-         InitGlobalsFromInputs();
    }
-
+   // Dù preset nào, vẫn auto chỉnh theo pip/symbol cho an toàn
    ApplyAutoSymbolProfile();
 
    if(Debug)
@@ -2423,15 +2397,15 @@ void OnDeinit(const int reason)
                                  P.UseVSA ? "true" : "false",
                                  P.RNDelta,
                                  P.L_percentile,
-                                 g_RiskPerTradePct,
-                                 g_SL_BufferUSD,
-                                 g_TP1_R,
-                                 g_TP2_R,
-                                 g_BE_Activate_R,
-                                 (int)g_PartialClosePct,
-                                 g_TimeStopMinutes,
-                                 g_MinProgressR,
-                                 g_MaxSpreadUSD,
+                                 P.RiskPerTradePct,
+                                 P.SL_BufferUSD,
+                                 P.TP1_R,
+                                 P.TP2_R,
+                                 P.BE_Activate_R,
+                                 (int)P.PartialClosePct,
+                                 P.TimeStopMinutes,
+                                 P.MinProgressR,
+                                 P.MaxSpreadUSD,
                                  P.MaxOpenPositions,
                                  P.UsePendingRetest ? "true" : "false",
                                  P.RetestOffsetUSD,

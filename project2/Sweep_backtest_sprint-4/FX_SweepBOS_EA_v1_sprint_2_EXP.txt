@@ -1,0 +1,1975 @@
+// Base 1..47 + map 48..51 from 232,234,236,239; keep 200..231 & 232..239
+// Added BotB fine-tune 232..239 (orthogonal set)
+// Base 1..39 + new BotB winners remapped to 40..47; keep 200..231
+// Bot B fine-tune pack 220..231
+// === XAU_SweepBOS_EA_v1_sprint_2_selected.mq5 ===
+// Base 1..26 kept; 27..31 = Sprint1 winners; 32..39 = Sprint2 winners; experiments 200..219 + DoE 37..46 preserved
+//+------------------------------------------------------------------+
+//|                                                XAU_SweepBOS_Demo |
+//|                       Sweep -> BOS (XAUUSD M1) - v1.2 Presets     |
+//+------------------------------------------------------------------+
+#property copyright "Sweep->BOS Demo EA (XAUUSD M1)"
+#property version   "1.2"
+#property strict
+
+#include <Trade/Trade.mqh>
+#include <Trade/PositionInfo.mqh>
+#include <Trade/DealInfo.mqh>
+
+#resource "\\Files\\usecases_list.csv" as string usecases_list;
+
+/*
+  v1.2 Highlights - FINAL CLEAN VERSION + MULTI-AGENT LOGGING
+  ---------------
+  - Preset USECASES: choose PresetID (built-in) or load from CSV (MQL5/Files/XAU_SweepBOS_Presets.csv)
+  - Fix Percentile sort (ASC), PositionsOnSymbol(), live spread (bid/ask)
+  - Optional Pending Retest orders (SellStop/BuyStop) with expiration
+  - Debug logs to trace why signals are blocked (RN/KZ/Spread/VSA)
+  - EUR Support added with presets 201-204
+  - ALL COMPILATION ERRORS FIXED
+  - MULTI-AGENT SAFE LOGGING: All agents write to single CSV in Common\Files
+
+  LOGGING USAGE:
+  - Set InpLogFileName = "YourResults.csv"
+  - Set InpUseCommonFile = true (recommended)
+  - For optimization: Logs written via OnTesterPass() (clean, no file conflicts)
+  - For single runs: Logs written via OnDeinit()
+  - All results consolidate to: %ProgramData%\MetaQuotes\Terminal\Common\Files\[InpLogFileName]
+  - No more file overwrite issues with multiple agents!
+*/
+
+//=== ------------------------ INPUTS -------------------------------- ===
+input string InpSymbol           = "XAUUSD";
+input int    InpSymbolSelector   = 0;        // Quick Symbol: 0=Custom, 1=XAUUSD, 2=EURUSD, 3=USDJPY, 4=BTCUSD, 5=ETHUSD
+string SelectedSymbol = "XAUUSD";
+input ENUM_TIMEFRAMES InpTF      = PERIOD_M1;
+// === NEW: auto tune theo symbol/pip
+input bool   AutoSymbolProfile   = true;   // tự scale EqTol/RN/Spread/SL theo pip symbol
+
+// Preset system
+input bool   UsePreset           = true;     // if true -> override inputs by preset
+input int    PresetID            = 1;        // 0=Custom, 1..N built-include
+
+
+//====================== USER INPUTS =================================
+input string InpLogFileName   = "OptimizationResults.csv"; // tên file CSV
+input string InpRunTag        = "";                        // gắn tag cho lần chạy (trống = auto)
+input bool   InpUseCommonFile = true;                      // ghi ở Common\Files (khuyên dùng)
+
+// Switches (used when UsePreset=false, or as defaults before preset override)
+input bool   EnableLong          = true;
+input bool   EnableShort         = true;
+
+// Sweep/BOS core
+input int    K_swing             = 50;
+input int    N_bos               = 6;
+input int    LookbackInternal    = 12;
+input int    M_retest            = 3;
+input double EqTol               = 0.20;     // USD
+input double BOSBufferPoints     = 2.0;      // in points
+
+// Filters
+input bool   UseKillzones        = true;
+input bool   UseRoundNumber      = true;
+input bool   UseVSA              = false;
+input double RNDelta             = 0.30;     // USD
+input double RN_GridPips_FX   = 25.0;  // lưới RN cho FX (pips). 10/25/50 đều hợp lý để test
+input double RN_GridUSD_CRYPTO= 100.0; // lưới RN cho Crypto (USD). 50/100/200
+
+// Killzone windows (server time, minutes from 00:00). Adjust per broker.
+input int    KZ1_StartMin        = 13*60+55;
+input int    KZ1_EndMin          = 14*60+20;
+input int    KZ2_StartMin        = 16*60+25;
+input int    KZ2_EndMin          = 16*60+40;
+input int    KZ3_StartMin        = 19*60+25;
+input int    KZ3_EndMin          = 19*60+45;
+input int    KZ4_StartMin        = 20*60+55;
+input int    KZ4_EndMin          = 21*60+15;
+
+// VSA percentile window
+input int    L_percentile        = 150;
+
+// Risk & Money
+input double RiskPerTradePct     = 0.5;
+input double SL_BufferUSD        = 0.50;     // widened default for XAU
+input double TP1_R               = 1.0;
+input double TP2_R               = 2.0;
+input double BE_Activate_R       = 0.8;
+input double PartialClosePct     = 50.0;
+input int    TimeStopMinutes     = 5;
+input double MinProgressR        = 0.5;
+
+// Execution guards
+input double MaxSpreadUSD        = 0.50;     // live spread guard
+input int    MaxOpenPositions    = 1;
+
+// Entry style
+input bool   UsePendingRetest    = false;    // false=market after retest (default), true=pending stop
+input double RetestOffsetUSD     = 0.07;     // pending offset from BOS level
+input int    PendingExpirySec    = 60;
+
+// Debug
+input bool   Debug               = true;
+
+// === Sprint-1 Feature Testing Inputs ===
+enum ENUM_TrailMode { TRAIL_NONE=0, TRAIL_ATR=1, TRAIL_STEP=2 };
+input bool   UseTrailing         = false;
+input ENUM_TrailMode TrailMode   = TRAIL_NONE;
+input int    TrailATRPeriod      = 14;
+input double TrailATRMult        = 2.0;
+input double TrailStepUSD        = 0.30;
+input double TrailStartRR        = 1.0;   // start trailing after R multiple reached
+input bool   UsePyramid          = false;
+input int    MaxAdds             = 0;
+input double AddSpacingUSD       = 0.40;
+input double AddSizeFactor       = 0.6;   // 0..1 volume for each add
+input int    CooldownSec         = 0;     // block new entries for N seconds after open
+
+//=== ------------------------ GLOBAL STATE --------------------------- ===
+CTrade         trade;
+MqlRates       rates[];
+datetime       last_bar_time = 0;
+
+enum StateEnum { ST_IDLE=0, ST_BOS_CONF };
+StateEnum      state = ST_IDLE;
+
+bool           bosIsShort = false;
+double         bosLevel   = 0.0;
+datetime       bosBarTime = 0;
+double         sweepHigh  = 0.0;
+double         sweepLow   = 0.0;
+
+//=== GLOBAL OVERRIDES (used instead of inputs) ===
+// These will be set by CSV or input defaults, and used by all logic
+double         g_PartialClosePct = 50.0;     // Override for PartialClosePct input
+double         g_MaxSpreadUSD = 0.50;        // Override for MaxSpreadUSD input
+int            g_TimeStopMinutes = 5;        // Override for TimeStopMinutes input
+double         g_MinProgressR = 0.5;         // Override for MinProgressR input
+double         g_RiskPerTradePct = 0.5;      // Override for RiskPerTradePct input
+double         g_SL_BufferUSD = 0.50;        // Override for SL_BufferUSD input
+double         g_TP1_R = 1.0;                // Override for TP1_R input
+double         g_TP2_R = 2.0;                // Override for TP2_R input
+double         g_BE_Activate_R = 0.8;        // Override for BE_Activate_R input
+
+
+// --- diagnostics counters (GLOBAL SCOPE) ---
+int g_block_rn     = 0;
+int g_block_kz     = 0;
+int g_block_spread = 0;
+
+// Tạo RunID tự động (độc nhất cho mỗi lần nhấn Start)
+string g_run_id;
+string g_log_file;
+
+//=== MULTI-AGENT SAFE LOGGING SYSTEM ===
+string NowStamp()
+  {
+   datetime t = TimeLocal();
+   return TimeToString(t, TIME_DATE|TIME_MINUTES|TIME_SECONDS);
+  }
+
+// Mở file CSV để append, có retry ngắn để tránh tranh chấp handle
+int OpenCsvForAppend(const string fname, const bool use_common, bool &newfile)
+  {
+   int flags = FILE_READ|FILE_WRITE|FILE_CSV;
+   if(use_common)
+      flags |= FILE_COMMON;
+
+   const int max_attempts = 200; // ~2s
+   for(int i=0;i<max_attempts;i++)
+     {
+      ResetLastError();
+      int h = FileOpen(fname, flags);
+      if(h!=INVALID_HANDLE)
+        {
+         newfile = (FileSize(h)==0);
+         FileSeek(h, 0, SEEK_END); // append
+         return h;
+        }
+      int err = GetLastError();
+      // 5019/5004: file busy / cannot open -> đợi 10ms rồi thử lại
+      if(err==5019 || err==5004 || err==5018 || err==5001)
+        {
+         Sleep(10);
+         continue;
+        }
+      // lỗi khác -> báo luôn
+      PrintFormat("Open '%s' fail (err=%d)", fname, err);
+      break;
+     }
+   return INVALID_HANDLE;
+  }
+
+// Ghi 1 dòng vào CSV (auto header khi file trống hoặc không có header)
+bool AppendCsvRow(const string fname, const bool use_common, const string header, const string row)
+  {
+   bool newfile=false;
+   int h = OpenCsvForAppend(fname, use_common, newfile);
+   if(h==INVALID_HANDLE)
+      return false;
+
+   bool needHeader = newfile;
+
+// Check if existing file needs header (first line doesn't start with "RunID")
+   if(!newfile && header!="")
+     {
+      FileSeek(h, 0, SEEK_SET);
+      string firstLine = FileReadString(h);
+      if(StringFind(firstLine, "RunID") != 0) // First line doesn't start with "RunID"
+         needHeader = true;
+      FileSeek(h, 0, SEEK_END); // Back to append position
+     }
+
+   bool ok=true;
+   if(needHeader && header!="")
+      ok &= (FileWrite(h, header)>0);
+   ok &= (FileWrite(h, row)>0);
+
+   FileFlush(h);
+   FileClose(h);
+   return ok;
+  }
+
+// Tạo header chuẩn cho usecase logging
+string CsvHeader()
+  {
+   return "RunID,PresetID,Symbol,"
+          "NetProfit,ProfitFactor,TotalTrades,WinTrades,LossTrades,WinRate,AvgWin,AvgLoss,LargestWin,LargestLoss,"
+          "FilterBlocks_RN,FilterBlocks_KZ,FilterBlocks_Spr,"
+          "K_swing,N_bos,M_retest,EqTol_pips,UseRoundNumber,RNDelta_pips,UseKillzones,RiskPerTradePct,TrailMode,"
+          "SL_Buffer_pips,BOSBuffer_points,UsePendingRetest,RetestOffset_pips,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,"
+          "UsePyramid,MaxAdds,AddSizeFactor,AddSpacing_pips,MaxOpenPositions,TimeStopMinutes,MinProgressR,Tag";
+  }
+
+// Build dòng dữ liệu từ kết quả backtest
+string BuildDataRow(double netProfit, double profitFactor, int totalTrades, int winTrades, int lossTrades,
+                    double winRate, double avgWin, double avgLoss, double largestWin, double largestLoss)
+  {
+   double pipSize = SymbolPipSize(SelectedSymbol);
+
+   string row = StringFormat(
+                   "%d,%d,%s,"                                   // RunID, PresetID, Symbol
+                   "%.2f,%.2f,%d,%d,%d,%.1f,%.2f,%.2f,%.2f,%.2f,"// stats
+                   "%d,%d,%d,"                                   // FilterBlocks
+                   "%d,%d,%d,%.1f,%d,%.1f,%d,%.2f,%d,"           // core + filters
+                   "%.1f,%.1f,%d,%.1f,%.1f,%.1f,%.1f,"           // risk + BOS/pending + exits
+                   "%d,%d,%.2f,%.1f,%d,%d,%.2f,%s",              // pyramid + misc + tag
+                   g_run_id, PresetID, SelectedSymbol,
+                   netProfit, profitFactor, totalTrades, winTrades, lossTrades,
+                   winRate, avgWin, avgLoss, largestWin, largestLoss,
+                   g_block_rn, g_block_kz, g_block_spread,
+                   P.K_swing, P.N_bos, P.M_retest,
+                   P.EqTol/pipSize, (P.UseRoundNumber?1:0), P.RNDelta/pipSize, (P.UseKillzones?1:0), P.RiskPerTradePct, P.TrailMode,
+                   P.SL_BufferUSD/pipSize,
+                   P.BOSBufferPoints * pipSize / SymbolPoint() / pipSize,  // giữ cách tính bạn đang dùng
+                   (P.UsePendingRetest?1:0), P.RetestOffsetUSD/pipSize,
+                   P.TP1_R, P.TP2_R, P.BE_Activate_R, (int)P.PartialClosePct,
+                   (P.UsePyramid?1:0), P.MaxAdds, P.AddSizeFactor, P.AddSpacingUSD/pipSize,
+                   P.MaxOpenPositions, P.TimeStopMinutes, P.MinProgressR,
+                   "OptimizationRun"
+                );
+   return row;
+  }
+
+struct TradeStats
+  {
+   double            netProfit;
+   double            grossProfit;
+   double            grossLoss;
+   double            profitFactor;
+   int               totalTrades;
+   int               winTrades;
+   int               lossTrades;
+   double            winRate;
+   double            avgWin;
+   double            avgLoss;
+   double            largestWin;
+   double            largestLoss;
+  };
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void ResetTradeStats(TradeStats &stats)
+  {
+   stats.netProfit   = 0.0;
+   stats.grossProfit = 0.0;
+   stats.grossLoss   = 0.0;
+   stats.profitFactor= 0.0;
+   stats.totalTrades = 0;
+   stats.winTrades   = 0;
+   stats.lossTrades  = 0;
+   stats.winRate     = 0.0;
+   stats.avgWin      = 0.0;
+   stats.avgLoss     = 0.0;
+   stats.largestWin  = 0.0;
+   stats.largestLoss = 0.0;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void CollectTradeStats(TradeStats &stats)
+  {
+   ResetTradeStats(stats);
+
+   const double eps = 1e-8;
+   bool isTester = (MQLInfoInteger(MQL_TESTER) != 0 || MQLInfoInteger(MQL_OPTIMIZATION) != 0);
+
+// Pull core numbers from tester statistics when available (covers optimization runs even if deal history is empty)
+   if(isTester)
+     {
+      double testerNet         = TesterStatistics(STAT_PROFIT);
+      double testerGrossProfit = TesterStatistics(STAT_GROSS_PROFIT);
+      double testerGrossLoss   = TesterStatistics(STAT_GROSS_LOSS);
+      int    testerWins        = (int)TesterStatistics(STAT_PROFIT_TRADES);
+      int    testerLosses      = (int)TesterStatistics(STAT_LOSS_TRADES);
+      int    testerTotal       = (int)TesterStatistics(STAT_TRADES);
+      double testerPF          = TesterStatistics(STAT_PROFIT_FACTOR);
+
+      stats.netProfit   = testerNet;
+      stats.grossProfit = testerGrossProfit;
+      stats.grossLoss   = MathAbs(testerGrossLoss);
+      stats.winTrades   = testerWins;
+      stats.lossTrades  = testerLosses;
+      stats.totalTrades = testerTotal;
+      stats.profitFactor= testerPF;
+
+      if(stats.totalTrades > 0)
+         stats.winRate = (double)stats.winTrades / stats.totalTrades * 100.0;
+      if(stats.winTrades > 0)
+         stats.avgWin = stats.grossProfit / stats.winTrades;
+      if(stats.lossTrades > 0 && stats.grossLoss > 0.0)
+         stats.avgLoss = -stats.grossLoss / stats.lossTrades;
+     }
+
+// Walk trade history for largest win/loss and to supply stats when running outside of tester
+   double manualNet = 0.0;
+   double manualGrossProfit = 0.0;
+   double manualGrossLoss = 0.0;
+   double manualLossSum = 0.0;
+   int manualWins = 0;
+   int manualLosses = 0;
+
+
+   if(HistorySelect(0, TimeCurrent()))
+     {
+      int totalDeals = HistoryDealsTotal();
+      for(int i = 0; i < totalDeals; ++i)
+        {
+         ulong ticket = HistoryDealGetTicket(i);
+         if(ticket == 0)
+            continue;
+
+         if(HistoryDealGetString(ticket, DEAL_SYMBOL) != SelectedSymbol)
+            continue;
+
+         long dealType = HistoryDealGetInteger(ticket, DEAL_TYPE);
+         if(dealType != DEAL_TYPE_BUY && dealType != DEAL_TYPE_SELL)
+            continue;
+
+
+         double pnl = HistoryDealGetDouble(ticket, DEAL_PROFIT)
+                      + HistoryDealGetDouble(ticket, DEAL_SWAP)
+                      + HistoryDealGetDouble(ticket, DEAL_COMMISSION);
+
+         if(pnl > stats.largestWin)
+            stats.largestWin = pnl;
+         if(pnl < stats.largestLoss)
+            stats.largestLoss = pnl;
+
+         if(!isTester)
+           {
+            manualNet += pnl;
+            if(pnl > eps)
+              {
+               manualGrossProfit += pnl;
+               manualWins++;
+              }
+            else
+               if(pnl < -eps)
+                 {
+                  manualGrossLoss += MathAbs(pnl);
+                  manualLossSum += pnl;
+                  manualLosses++;
+                 }
+           }
+        }
+     }
+
+
+   if(!isTester)
+     {
+      stats.netProfit   = manualNet;
+      stats.grossProfit = manualGrossProfit;
+      stats.grossLoss   = manualGrossLoss;
+      stats.winTrades   = manualWins;
+      stats.lossTrades  = manualLosses;
+      stats.totalTrades = manualWins + manualLosses;
+
+      if(stats.totalTrades > 0)
+         stats.winRate = (double)stats.winTrades / stats.totalTrades * 100.0;
+      if(stats.winTrades > 0)
+         stats.avgWin = stats.grossProfit / stats.winTrades;
+      if(stats.lossTrades > 0)
+         stats.avgLoss = manualLossSum / stats.lossTrades;
+      if(stats.grossLoss > eps)
+         stats.profitFactor = stats.grossProfit / stats.grossLoss;
+     }
+
+   if(stats.totalTrades == 0)
+      stats.totalTrades = stats.winTrades + stats.lossTrades;
+   if(stats.totalTrades > 0)
+      stats.winRate = (double)stats.winTrades / stats.totalTrades * 100.0;
+  }
+
+
+// Preset container
+struct Params
+  {
+   // switches
+   bool              EnableLong;
+   bool              EnableShort;
+   // core
+   int               K_swing, N_bos, LookbackInternal, M_retest;
+   double            EqTol, BOSBufferPoints;
+   // filters
+   bool              UseKillzones, UseRoundNumber, UseVSA;
+   int               L_percentile;
+   double            RNDelta;
+   int               KZ1s,KZ1e,KZ2s,KZ2e,KZ3s,KZ3e,KZ4s,KZ4e;
+   // risk
+   double            RiskPerTradePct, SL_BufferUSD, TP1_R, TP2_R, BE_Activate_R, PartialClosePct;
+   int               TimeStopMinutes;
+   double            MinProgressR;
+   // exec
+   double            MaxSpreadUSD;
+   int               MaxOpenPositions;
+   // entry style
+   bool              UsePendingRetest;
+   double            RetestOffsetUSD;
+   int               PendingExpirySec;
+   // sprint1
+   bool              UseTrailing;
+   int               TrailMode, TrailATRPeriod;
+   double            TrailATRMult, TrailStepUSD, TrailStartRR;
+   bool              UsePyramid;
+   int               MaxAdds;
+   double            AddSpacingUSD, AddSizeFactor;
+   int               CooldownSec;
+  };
+Params P;
+
+// Initialize global overrides from input defaults
+void InitGlobalsFromInputs()
+  {
+   g_PartialClosePct = PartialClosePct;
+   g_MaxSpreadUSD = MaxSpreadUSD;
+   g_TimeStopMinutes = TimeStopMinutes;
+   g_MinProgressR = MinProgressR;
+   g_RiskPerTradePct = RiskPerTradePct;
+   g_SL_BufferUSD = SL_BufferUSD;
+   g_TP1_R = TP1_R;
+   g_TP2_R = TP2_R;
+   g_BE_Activate_R = BE_Activate_R;
+  }
+
+// Apply inputs to P (as defaults)
+void UseInputsAsParams()
+  {
+   P.EnableLong=EnableLong;
+   P.EnableShort=EnableShort;
+   P.K_swing=K_swing;
+   P.N_bos=N_bos;
+   P.LookbackInternal=LookbackInternal;
+   P.M_retest=M_retest;
+   P.EqTol=EqTol;
+   P.BOSBufferPoints=BOSBufferPoints;
+   P.UseKillzones=UseKillzones;
+   P.UseRoundNumber=UseRoundNumber;
+   P.UseVSA=UseVSA;
+   P.L_percentile=L_percentile;
+   P.RNDelta=RNDelta;
+   P.KZ1s=KZ1_StartMin;
+   P.KZ1e=KZ1_EndMin;
+   P.KZ2s=KZ2_StartMin;
+   P.KZ2e=KZ2_EndMin;
+   P.KZ3s=KZ3_StartMin;
+   P.KZ3e=KZ3_EndMin;
+   P.KZ4s=KZ4_StartMin;
+   P.KZ4e=KZ4_EndMin;
+   P.RiskPerTradePct=g_RiskPerTradePct;
+   P.SL_BufferUSD=g_SL_BufferUSD;
+   P.TP1_R=g_TP1_R;
+   P.TP2_R=g_TP2_R;
+   P.BE_Activate_R=g_BE_Activate_R;
+   P.PartialClosePct=(int)g_PartialClosePct;
+   P.TimeStopMinutes=g_TimeStopMinutes;
+   P.MinProgressR=g_MinProgressR;
+   P.MaxSpreadUSD=g_MaxSpreadUSD;
+   P.MaxOpenPositions=MaxOpenPositions;
+   P.UsePendingRetest=UsePendingRetest;
+   P.RetestOffsetUSD=RetestOffsetUSD;
+   P.PendingExpirySec=PendingExpirySec;
+   P.UseTrailing=UseTrailing;
+   P.TrailMode=(int)TrailMode;
+   P.TrailATRPeriod=TrailATRPeriod;
+   P.TrailATRMult=TrailATRMult;
+   P.TrailStepUSD=TrailStepUSD;
+   P.TrailStartRR=TrailStartRR;
+   P.UsePyramid=UsePyramid;
+   P.MaxAdds=MaxAdds;
+   P.AddSpacingUSD=AddSpacingUSD;
+   P.AddSizeFactor=AddSizeFactor;
+   P.CooldownSec=CooldownSec;
+  }
+
+//===================== USECASE GENERATOR (NO CSV) =====================//
+
+struct UCRow
+  {
+   string            SelectedSymbol;
+   int               K_swing, N_bos, LookbackInternal, M_retest;
+   double            EqTol, BOSBufferPoints;
+   int               UseKillzones, UseRoundNumber, UseVSA;
+   double            RNDelta;
+   int               L_percentile;
+   double            RiskPerTradePct;
+   double            SL_BufferUSD;
+   double            TP1_R, TP2_R, BE_Activate_R;
+   int               PartialClosePct;
+   int               TimeStopMinutes;
+   double            MinProgressR;
+   double            MaxSpreadUSD;
+   int               MaxOpenPositions;
+   int               UsePendingRetest;
+   double            RetestOffsetUSD;
+   int               PendingExpirySec;
+   int               UseTrailing;
+   int               TrailMode;
+   int               TrailATRPeriod;
+   double            TrailATRMult;
+   double            TrailStepUSD;
+   double            TrailStartRR;
+   int               UsePyramid;
+   int               MaxAdds;
+   double            AddSpacingUSD;
+   double            AddSizeFactor;
+   int               CooldownSec;
+  };
+
+
+// Helper functions removed - using CSV data directly
+
+// Apply CSV row to parameters
+void ApplyCSVRowToParams(const UCRow &r)
+  {
+   SelectedSymbol = r.SelectedSymbol;
+   SymbolSelect(SelectedSymbol, true);
+
+   P.K_swing          = r.K_swing;
+   P.N_bos            = r.N_bos;
+   P.LookbackInternal = r.LookbackInternal;
+   P.M_retest         = r.M_retest;
+   P.EqTol            = r.EqTol;
+   P.BOSBufferPoints  = r.BOSBufferPoints;
+   P.UseKillzones     = r.UseKillzones;
+   P.UseRoundNumber   = r.UseRoundNumber;
+   P.UseVSA           = r.UseVSA;
+   P.RNDelta          = r.RNDelta;
+   P.L_percentile     = r.L_percentile;
+   if(!P.UseKillzones)
+     {
+      P.KZ1s = KZ1_StartMin;
+      P.KZ1e = KZ1_EndMin;
+      P.KZ2s = KZ2_StartMin;
+      P.KZ2e = KZ2_EndMin;
+      P.KZ3s = KZ3_StartMin;
+      P.KZ3e = KZ3_EndMin;
+      P.KZ4s = KZ4_StartMin;
+      P.KZ4e = KZ4_EndMin;
+     }
+// Set global overrides first
+   g_RiskPerTradePct  = r.RiskPerTradePct;
+   g_SL_BufferUSD     = r.SL_BufferUSD;
+   g_TP1_R            = r.TP1_R;
+   g_TP2_R            = r.TP2_R;
+   g_BE_Activate_R    = r.BE_Activate_R;
+   g_PartialClosePct  = (double)r.PartialClosePct;
+   g_TimeStopMinutes  = r.TimeStopMinutes;
+   g_MinProgressR     = r.MinProgressR;
+   g_MaxSpreadUSD     = r.MaxSpreadUSD;
+
+// Then apply to P from globals
+   P.RiskPerTradePct  = g_RiskPerTradePct;
+   P.SL_BufferUSD     = g_SL_BufferUSD;
+   P.TP1_R            = g_TP1_R;
+   P.TP2_R            = g_TP2_R;
+   P.BE_Activate_R    = g_BE_Activate_R;
+   P.PartialClosePct  = (int)g_PartialClosePct;
+   P.TimeStopMinutes  = g_TimeStopMinutes;
+   P.MinProgressR     = g_MinProgressR;
+   P.MaxSpreadUSD     = g_MaxSpreadUSD;
+   P.MaxOpenPositions = r.MaxOpenPositions;
+   P.UsePendingRetest = r.UsePendingRetest;
+   P.RetestOffsetUSD  = r.RetestOffsetUSD;
+   P.PendingExpirySec = r.PendingExpirySec;
+   P.UseTrailing      = r.UseTrailing;
+   P.TrailMode        = r.TrailMode;
+   P.TrailATRPeriod   = r.TrailATRPeriod;
+   P.TrailATRMult     = r.TrailATRMult;
+   P.TrailStepUSD     = r.TrailStepUSD;
+   P.TrailStartRR     = r.TrailStartRR;
+   P.UsePyramid       = r.UsePyramid;
+   P.MaxAdds          = r.MaxAdds;
+   P.AddSpacingUSD    = r.AddSpacingUSD;
+   P.AddSizeFactor    = r.AddSizeFactor;
+   P.CooldownSec      = r.CooldownSec;
+  }
+
+// ==== CSV tools (in-memory) ====
+
+// Trim hai đầu
+string Trim(const string s)
+  {
+   string t = s;
+   StringTrimLeft(t);
+   StringTrimRight(t);
+   return t;
+  }
+
+// Convert string "true"/"false" to boolean
+bool StringToBool(const string s)
+  {
+   string trimmed = Trim(s);
+   StringToLower(trimmed);
+   return (trimmed == "true" || trimmed == "1");
+  }
+
+// Convert CSV value with *pip or *pipPoints multipliers
+double ParseCSVValue(const string csvValue, const string symbol)
+  {
+   string trimmed = Trim(csvValue);
+
+// Check for *pip multiplier
+   if(StringFind(trimmed, "*pip") >= 0 && StringFind(trimmed, "*pipPoints") < 0)
+     {
+      // Extract number before "*pip"
+      string numStr = trimmed;
+      StringReplace(numStr, "*pip", "");
+      double multiplier = StringToDouble(Trim(numStr));
+      double pip = SymbolPipSize(symbol);
+      return multiplier * pip;
+     }
+
+// Check for *pipPoints multiplier
+   if(StringFind(trimmed, "*pipPoints") >= 0)
+     {
+      // Extract number before "*pipPoints"
+      string numStr = trimmed;
+      StringReplace(numStr, "*pipPoints", "");
+      double multiplier = StringToDouble(Trim(numStr));
+      double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
+      if(point <= 0.0)
+         point = SymbolPoint();
+      double pip = SymbolPipSize(symbol);
+      double pipPoints = (point > 0.0 ? pip/point : 0.0);
+      return multiplier * pipPoints;
+     }
+
+// Regular numeric value
+   return StringToDouble(trimmed);
+  }
+
+// Tách 1 dòng CSV thành mảng fields, có hỗ trợ "quotes" và "" escape
+int SplitCsvQuoted(const string line, string &out[], const uchar delim=',')
+  {
+   ArrayResize(out, 0);
+   string field = "";
+   bool inQuotes = false;
+   int L = StringLen(line);
+
+   for(int i=0;i<L;i++)
+     {
+      uchar ch = (uchar)StringGetCharacter(line, i);
+
+      if(ch=='"')
+        {
+         // "" -> 1 dấu "
+         if(inQuotes && i+1<L && StringGetCharacter(line,i+1)=='"')
+           {
+            field += "\"";
+            i++;
+           }
+         else
+           {
+            inQuotes = !inQuotes;
+           }
+        }
+      else
+         if(ch==delim && !inQuotes)
+           {
+            int n = ArraySize(out);
+            ArrayResize(out, n+1);
+            out[n] = Trim(field);
+            field = "";
+           }
+         else
+           {
+            field += CharToString(ch);
+           }
+     }
+   int n = ArraySize(out);
+   ArrayResize(out, n+1);
+   out[n] = Trim(field);
+   return ArraySize(out);
+  }
+
+// Đọc usecase từ resource (#resource as string)
+bool LoadUsecaseFromResource(const int presetID, UCRow &row)
+  {
+   string csv = usecases_list;
+// Chuẩn hoá xuống dòng
+   StringReplace(csv, "\r", "");
+
+   string lines[];
+   int lineCount = StringSplit(csv, '\n', lines);
+   if(lineCount<=1)
+     {
+      Print("ERROR: Resource CSV seems empty or has no data lines.");
+      return false;
+     }
+
+   bool found=false;
+// Bỏ header (dòng 0). Nếu CSV không có header, vòng lặp vẫn parse được.
+   for(int i = 1; i < lineCount; i++)
+     {
+      string ln = lines[i];
+      if(ln == "" || ln == "\n")
+         continue;
+
+      string fields[];
+      int c = SplitCsvQuoted(ln, fields, ',');
+
+
+      // Case,Symbol,K_swing,N_bos,LookbackInternal,M_retest,EqTol,BOSBufferPoints,UseKillzones,UseRoundNumber,UseVSA,RNDelta,L_percentile,RiskPerTradePct,SL_BufferUSD,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,TimeStopMinutes,MinProgressR,MaxSpreadUSD,MaxOpenPositions,UsePendingRetest,RetestOffsetUSD,PendingExpirySec,UseTrailing,TrailMode,TrailATRPeriod,TrailATRMult,TrailStepUSD,TrailStartRR,UsePyramid,MaxAdds,AddSpacingUSD,AddSizeFactor,CooldownSec
+      int csvPresetID = (int)StringToInteger(fields[0]);
+      if(csvPresetID == presetID)
+        {
+         // Map fields according to CSV header order
+         row.SelectedSymbol       = fields[1];
+         row.K_swing              = (int)StringToInteger(fields[2]);
+         row.N_bos                = (int)StringToInteger(fields[3]);
+         row.LookbackInternal     = (int)StringToInteger(fields[4]);
+         row.M_retest             = (int)StringToInteger(fields[5]);
+         row.EqTol                = ParseCSVValue(fields[6], fields[1]);
+         row.BOSBufferPoints      = ParseCSVValue(fields[7], fields[1]);
+         row.UseKillzones         = StringToBool(fields[8]);
+         row.UseRoundNumber       = StringToBool(fields[9]);
+         row.UseVSA               = StringToBool(fields[10]);
+         row.RNDelta              = ParseCSVValue(fields[11], fields[1]);
+         row.L_percentile         = (int)StringToInteger(fields[12]);
+         row.RiskPerTradePct      = StringToDouble(fields[13]);
+         row.SL_BufferUSD         = ParseCSVValue(fields[14], fields[1]);
+         row.TP1_R                = StringToDouble(fields[15]);
+         row.TP2_R                = StringToDouble(fields[16]);
+         row.BE_Activate_R        = StringToDouble(fields[17]);
+         row.PartialClosePct      = (int)StringToInteger(fields[18]);
+         row.TimeStopMinutes      = (int)StringToInteger(fields[19]);
+         row.MinProgressR         = StringToDouble(fields[20]);
+         row.MaxSpreadUSD         = StringToDouble(fields[21]);
+         row.MaxOpenPositions     = (int)StringToInteger(fields[22]);
+         row.UsePendingRetest     = StringToBool(fields[23]);
+         row.RetestOffsetUSD      = ParseCSVValue(fields[24], fields[1]);
+         row.PendingExpirySec     = (int)StringToInteger(fields[25]);
+
+         // Debug pip parsing
+         if(Debug)
+           {
+            Print("DEBUG CSV PARSING: Symbol=", fields[1],
+                  ", EqTol=", fields[6], " -> ", row.EqTol,
+                  ", BOSBuffer=", fields[7], " -> ", row.BOSBufferPoints,
+                  ", RNDelta=", fields[11], " -> ", row.RNDelta,
+                  ", SL_Buffer=", fields[14], " -> ", row.SL_BufferUSD,
+                  ", RetestOffset=", fields[24], " -> ", row.RetestOffsetUSD);
+           }
+         row.UseTrailing          = StringToBool(fields[26]);
+         row.TrailMode            = (int)StringToInteger(fields[27]);
+         row.TrailATRPeriod       = (int)StringToInteger(fields[28]);
+         row.TrailATRMult         = StringToDouble(fields[29]);
+         row.TrailStepUSD         = StringToDouble(fields[30]);
+         row.TrailStartRR         = StringToDouble(fields[31]);
+         row.UsePyramid           = StringToBool(fields[32]);
+         row.MaxAdds              = (int)StringToInteger(fields[33]);
+         row.AddSpacingUSD        = StringToDouble(fields[34]);
+         row.AddSizeFactor        = StringToDouble(fields[35]);
+         row.CooldownSec          = (int)StringToInteger(fields[36]);
+
+         found = true;
+         break;
+        }
+     }
+
+   if(!found)
+     {
+      Print("ERROR: PresetID ", presetID, " not found in embedded resource CSV.");
+      return false;
+     }
+
+   Print("SUCCESS: Loaded PresetID=", presetID, " from embedded resource.");
+   return true;
+  }
+
+
+//=== ------------------------ UTILS ---------------------------------- ===
+// --- Symbol / Pip adapters ---
+double SymbolPipSize(const string sym="")
+  {
+   string symbol_name = (sym=="" ? SelectedSymbol : sym);
+// Metals
+   if(StringFind(symbol_name,"XAU",0)>=0)
+      return 0.1;           // 1 pip = 0.1 for XAU (2475.0 -> 2475.1)
+   if(StringFind(symbol_name,"XAG",0)>=0)
+      return 0.01;          // 1 pip = 0.01 for Silver
+// Crypto - FIXED VALUES
+   if(StringFind(symbol_name,"BTC",0)>=0)
+      return 10.0;          // 1 pip = 10.0 for BTC (65000 -> 65010)
+   if(StringFind(symbol_name,"ETH",0)>=0)
+      return 0.1;           // 1 pip = 0.1 for ETH (3500.0 -> 3500.1)
+// FX
+   bool isJPY = (StringFind(symbol_name,"JPY",0)>=0);
+   if(isJPY)
+      return 0.01;                             // 1 pip = 0.01 for JPY crosses (150.00 -> 150.01)
+   return 0.0001;                                     // 1 pip = 0.0001 for most FX (1.1750 -> 1.1751)
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double PipsToPrice(double pips, const string sym="")
+  {
+   return pips * SymbolPipSize(sym);
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double PriceToPips(double pricediff, const string sym="")
+  {
+   double pip = SymbolPipSize(sym);
+   if(pip<=0.0)
+      return 0.0;
+   return pricediff / pip;
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool DefaultSpreadForSymbol(string symbol_name, double &hi, double &lo)
+  {
+   string s = symbol_name;
+
+// ... (giữ nguyên các cặp FX sẵn có)
+
+// BTC/ETH – điển hình cho CFD (tùy broker, ông chỉnh lại theo thực tế spread live)
+   if(StringFind(s,"BTC",0) >= 0)
+     {
+      hi = 12.0;   // USD
+      lo = 6.0;
+      return true;
+     }
+   if(StringFind(s,"ETH",0) >= 0)
+     {
+      hi = 1.20;   // USD
+      lo = 0.60;
+      return true;
+     }
+
+// XAU giữ nguyên
+   if(StringFind(s,"XAU",0) >= 0)
+     {
+      hi = 0.60;
+      lo = 0.30;
+      return true;
+     }
+
+   return false;
+  }
+
+
+// Tự scale tham số theo symbol/pip (chỉ "điều chỉnh nhẹ" khi dùng Custom hoặc preset không chuyên EU)
+void ApplyAutoSymbolProfile()
+  {
+   if(!AutoSymbolProfile)
+      return;
+
+   double pip       = SymbolPipSize(SelectedSymbol);
+   double point     = SymbolPoint();
+   double pipPoints = (point>0.0 ? pip/point : 0.0);
+
+// Spread guard từ catalogue (nếu có)
+   double hi=0.0, lo=0.0;
+   if(DefaultSpreadForSymbol(SelectedSymbol, hi, lo))
+      P.MaxSpreadUSD = hi;
+
+   bool isXAU    = (StringFind(SelectedSymbol,"XAU",0)>=0);
+   bool isJPY    = (StringFind(SelectedSymbol,"JPY",0)>=0);
+   bool isCrypto = (StringFind(SelectedSymbol,"BTC",0)>=0 || StringFind(SelectedSymbol,"ETH",0)>=0);
+
+   if(isCrypto)
+     {
+      // Crypto 24/7 – scale rộng hơn FX, tắt KZ mặc định
+      P.UseKillzones      = false;
+      P.EqTol             = MathMax(P.EqTol,          1.5*pip);
+      P.RNDelta           = MathMax(P.RNDelta,        3.0*pip);   // BTC mặc định ±30$ (pip=10$)
+      P.SL_BufferUSD      = MathMax(P.SL_BufferUSD,   8.0*pip);
+      P.BOSBufferPoints   = MathMax(P.BOSBufferPoints,1.5*pipPoints);
+      P.RetestOffsetUSD   = MathMax(P.RetestOffsetUSD,1.5*pip);
+      P.AddSpacingUSD     = MathMax(P.AddSpacingUSD,  4.0*pip);
+     }
+   else
+      if(!isXAU) // FX generic (EUR, JPY…)
+        {
+         P.EqTol             = MathMax(P.EqTol,          2.0*pip);
+         P.RNDelta           = MathMax(P.RNDelta,        2.5*pip);
+         P.SL_BufferUSD      = MathMax(P.SL_BufferUSD,   8.0*pip);
+         P.BOSBufferPoints   = MathMax(P.BOSBufferPoints,2.0*pipPoints);
+         P.RetestOffsetUSD   = MathMax(P.RetestOffsetUSD,2.0*pip);
+         P.AddSpacingUSD     = MathMax(P.AddSpacingUSD,  6.0*pip);
+        }
+// XAU: giữ preset gốc
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool UpdateRates(int need_bars=400)
+  {
+   ArraySetAsSeries(rates,true);
+   int copied = CopyRates(SelectedSymbol, InpTF, 0, need_bars, rates);
+   return (copied>0);
+  }
+
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double SymbolPoint()
+  {
+   return SymbolInfoDouble(SelectedSymbol, SYMBOL_POINT);
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double SpreadUSD()
+  {
+   MqlTick t;
+   if(!SymbolInfoTick(SelectedSymbol,t))
+      return 0.0;
+   return (t.ask - t.bid);
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool IsKillzone(datetime t)
+  {
+   if(!P.UseKillzones)
+      return true;
+   MqlDateTime dt;
+   TimeToStruct(t, dt);
+   int hm = dt.hour*60 + dt.min;
+   if(hm>=P.KZ1s && hm<=P.KZ1e)
+      return true;
+   if(hm>=P.KZ2s && hm<=P.KZ2e)
+      return true;
+   if(hm>=P.KZ3s && hm<=P.KZ3e)
+      return true;
+   if(hm>=P.KZ4s && hm<=P.KZ4e)
+      return true;
+   return false;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double RoundMagnet(double price)
+  {
+   bool isXAU    = (StringFind(SelectedSymbol,"XAU",0)>=0);
+   bool isCrypto = (StringFind(SelectedSymbol,"BTC",0)>=0 || StringFind(SelectedSymbol,"ETH",0)>=0);
+
+   if(isXAU)
+     {
+      // XAU: 0.25
+      double base = MathFloor(price);
+      double arr[5] = {0.00,0.25,0.50,0.75,1.00};
+      double best = base, bestd = 1e9;
+      for(int i=0;i<5;i++)
+        {
+         double p=base+arr[i];
+         double d=MathAbs(price-p);
+         if(d<bestd)
+           {
+            best=p;
+            bestd=d;
+           }
+        }
+      return best;
+     }
+   if(isCrypto)
+     {
+      double inc = RN_GridUSD_CRYPTO;           // USD
+      return MathRound(price/inc)*inc;
+     }
+// FX mặc định: pips → USD
+   double pip = SymbolPipSize(SelectedSymbol);
+   double inc = RN_GridPips_FX * pip;          // giá
+   return MathRound(price/inc)*inc;
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool NearRound(double price, double delta)
+  {
+   return MathAbs(price - RoundMagnet(price)) <= delta;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int HighestIndex(int start_shift, int count)
+  {
+   int best = start_shift;
+   double h = rates[best].high;
+   for(int i=start_shift; i<start_shift+count && i<ArraySize(rates); ++i)
+     {
+      if(rates[i].high > h)
+        {
+         h = rates[i].high;
+         best = i;
+        }
+     }
+   return best;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int LowestIndex(int start_shift, int count)
+  {
+   int best = start_shift;
+   double l = rates[best].low;
+   for(int i=start_shift; i<start_shift+count && i<ArraySize(rates); ++i)
+     {
+      if(rates[i].low < l)
+        {
+         l = rates[i].low;
+         best = i;
+        }
+     }
+   return best;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double PercentileDouble(double &arr[], double p)
+  {
+   int n = ArraySize(arr);
+   if(n<=0)
+      return 0.0;
+   ArraySort(arr); // ASC by default
+   double idx = (p/100.0)*(n-1);
+   int lo = (int)MathFloor(idx);
+   int hi = (int)MathCeil(idx);
+   if(lo==hi)
+      return arr[lo];
+   double w = idx - lo;
+   return arr[lo]*(1.0-w) + arr[hi]*w;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool EffortResultOK(int bar)  // bar shift>=1
+  {
+   if(!P.UseVSA)
+      return true;
+   int from = bar+1;
+   int cnt  = MathMin(P.L_percentile, ArraySize(rates)-from);
+   if(cnt<30)
+      return false;
+   double vol[];
+   ArrayResize(vol,cnt);
+   double rng[];
+   ArrayResize(rng,cnt);
+   for(int i=0;i<cnt;i++)
+     {
+      int sh = from+i;
+      vol[i] = (double)rates[sh].tick_volume;
+      rng[i] = (rates[sh].high - rates[sh].low);
+     }
+   double vtmp[];
+   ArrayCopy(vtmp,vol);
+   double rtmp[];
+   ArrayCopy(rtmp,rng);
+   double v90 = PercentileDouble(vtmp, 90.0);
+   double r60 = PercentileDouble(rtmp, 60.0);
+   double thisVol = (double)rates[bar].tick_volume;
+   double thisRng = (rates[bar].high - rates[bar].low);
+   return (thisVol >= v90 && thisRng <= r60);
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+// Helper functions
+bool IsSweepHighBar(int bar)
+  {
+   int start = bar+1;
+   int cnt = MathMin(P.K_swing, ArraySize(rates)-start);
+   if(cnt<3)
+      return false;
+
+   int ih = HighestIndex(start, cnt);
+   double swingH = rates[ih].high;
+   double pt = SymbolPoint();
+
+   if(rates[bar].high > swingH + pt && rates[bar].close < swingH)
+      return true;
+   if(MathAbs(rates[bar].high - swingH) <= P.EqTol && rates[bar].close < swingH)
+      return true;
+   return false;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool IsSweepLowBar(int bar)
+  {
+   int start = bar+1;
+   int cnt = MathMin(P.K_swing, ArraySize(rates)-start);
+   if(cnt<3)
+      return false;
+
+   int il = LowestIndex(start, cnt);
+   double swingL = rates[il].low;
+   double pt = SymbolPoint();
+
+   if(rates[bar].low < swingL - pt && rates[bar].close > swingL)
+      return true;
+   if(MathAbs(rates[bar].low - swingL) <= P.EqTol && rates[bar].close > swingL)
+      return true;
+   return false;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int PriorInternalSwingLow(int bar)
+  {
+   int start = bar+1;
+   int cnt = MathMin(P.LookbackInternal, ArraySize(rates)-start);
+   if(cnt<3)
+      return -1;
+   return LowestIndex(start, cnt);
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int PriorInternalSwingHigh(int bar)
+  {
+   int start = bar+1;
+   int cnt = MathMin(P.LookbackInternal, ArraySize(rates)-start);
+   if(cnt<3)
+      return -1;
+   return HighestIndex(start, cnt);
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool HasBOSDownFrom(int sweepBar, int maxN, double &outLevel, int &bosBarOut)
+  {
+   int swing = PriorInternalSwingLow(sweepBar);
+   if(swing<0)
+      return false;
+
+   double level = rates[swing].low;
+   double buffer = P.BOSBufferPoints * SymbolPoint();
+   int from = sweepBar-1;
+   int to   = MathMax(1, sweepBar - maxN);
+
+   for(int i=from; i>=to; --i)
+     {
+      if(rates[i].close < level - buffer || rates[i].low < level - buffer)
+        {
+         outLevel = level;
+         bosBarOut = i;
+         return true;
+        }
+     }
+   return false;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool HasBOSUpFrom(int sweepBar, int maxN, double &outLevel, int &bosBarOut)
+  {
+   int swing = PriorInternalSwingHigh(sweepBar);
+   if(swing<0)
+      return false;
+
+   double level = rates[swing].high;
+   double buffer = P.BOSBufferPoints * SymbolPoint();
+   int from = sweepBar-1;
+   int to   = MathMax(1, sweepBar - maxN);
+
+   for(int i=from; i>=to; --i)
+     {
+      if(rates[i].close > level + buffer || rates[i].high > level + buffer)
+        {
+         outLevel = level;
+         bosBarOut = i;
+         return true;
+        }
+     }
+   return false;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool FiltersPass(int bar)
+  {
+   double sp = SpreadUSD();
+   if(P.UseRoundNumber && !NearRound(rates[bar].close, P.RNDelta))
+     {
+      g_block_rn++;
+      if(Debug)
+         Print("BLOCK RN @", rates[bar].close);
+      return false;
+     }
+   if(!IsKillzone(rates[bar].time))
+     {
+      g_block_kz++;
+      if(Debug)
+         Print("BLOCK KZ @", TimeToString(rates[bar].time));
+      return false;
+     }
+   if(sp > P.MaxSpreadUSD)
+     {
+      g_block_spread++;
+      if(Debug)
+         Print("BLOCK Spread=", DoubleToString(sp,2));
+      return false;
+     }
+   return true;
+  }
+
+// === Sprint-1 helpers ===
+datetime g_lastOpenTime = 0;
+double   g_lastAddPriceBuy = 0.0, g_lastAddPriceSell = 0.0;
+int      g_addCount = 0;
+int      atr_handle = INVALID_HANDLE;
+double   last_atr = 0.0;
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool AllowedToOpenNow()
+  {
+   if(P.CooldownSec<=0)
+      return true;
+   if(g_lastOpenTime==0)
+      return true;
+   return (TimeCurrent() - g_lastOpenTime) >= P.CooldownSec;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double GetATR()
+  {
+   if(P.TrailATRPeriod<=1)
+      return 0.0;
+   static int last_period = 0;
+   if(atr_handle==INVALID_HANDLE || last_period!=P.TrailATRPeriod)
+     {
+      if(atr_handle!=INVALID_HANDLE)
+         IndicatorRelease(atr_handle);
+      atr_handle = iATR(SelectedSymbol, InpTF, P.TrailATRPeriod);
+      last_period = P.TrailATRPeriod;
+     }
+   double buf[];
+   if(CopyBuffer(atr_handle, 0, 0, 2, buf) > 0)
+     {
+      last_atr = buf[0];
+     }
+   return last_atr;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void ManageTrailing(double entry, double &sl, long type, double curr, double risk_per_lot, double reachedR)
+  {
+   if(!P.UseTrailing || P.TrailMode==TRAIL_NONE)
+      return;
+   if(reachedR < P.TrailStartRR)
+      return;
+   double dist = 0.0;
+   if(P.TrailMode==TRAIL_ATR)
+     {
+      double atr = GetATR();
+      dist = atr * P.TrailATRMult;
+     }
+   else
+      if(P.TrailMode==TRAIL_STEP)
+        {
+         dist = P.TrailStepUSD;
+        }
+   if(dist<=0.0)
+      return;
+   double newSL = sl;
+   if(type==POSITION_TYPE_BUY)
+     {
+      double cand = curr - dist;
+      if(cand>newSL)
+         newSL = cand;
+     }
+   else
+     {
+      double cand = curr + dist;
+      if(cand<newSL || newSL==0.0)
+         newSL = cand;
+     }
+   if(newSL!=sl)
+     {
+      trade.PositionModify(SelectedSymbol, newSL, PositionGetDouble(POSITION_TP));
+     }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void ConsiderPyramidAdds(long type, double entry, double curr, double sl)
+  {
+   if(!P.UsePyramid || P.MaxAdds<=0)
+      return;
+   if(PositionsOnSymbol() >= P.MaxOpenPositions)
+      return;
+   double spacing = P.AddSpacingUSD;
+   if(spacing<=0)
+      return;
+// price moved in favor by spacing since last add / entry
+   if(type==POSITION_TYPE_BUY)
+     {
+      double base = (g_addCount==0 ? entry : g_lastAddPriceBuy);
+      if(curr - base >= spacing && AllowedToOpenNow())
+        {
+         double lots = PositionGetDouble(POSITION_VOLUME) * P.AddSizeFactor;
+         if(lots>0 && SpreadUSD()<=P.MaxSpreadUSD)
+           {
+            if(AllowedToOpenNow())
+              {
+               trade.Buy(lots, SelectedSymbol, 0.0, sl, 0.0);
+               g_lastOpenTime=TimeCurrent();
+               g_lastAddPriceBuy=SymbolInfoDouble(SelectedSymbol,SYMBOL_ASK);
+               g_addCount=0;
+              }
+            g_lastOpenTime = TimeCurrent();
+            g_lastAddPriceBuy = curr;
+            g_addCount++;
+           }
+        }
+     }
+   else
+      if(type==POSITION_TYPE_SELL)
+        {
+         double base = (g_addCount==0 ? entry : g_lastAddPriceSell);
+         if(base - curr >= spacing && AllowedToOpenNow())
+           {
+            double lots = PositionGetDouble(POSITION_VOLUME) * P.AddSizeFactor;
+            if(lots>0 && SpreadUSD()<=P.MaxSpreadUSD)
+              {
+               if(AllowedToOpenNow())
+                 {
+                  trade.Sell(lots, SelectedSymbol, 0.0, sl, 0.0);
+                  g_lastOpenTime=TimeCurrent();
+                  g_lastAddPriceSell=SymbolInfoDouble(SelectedSymbol,SYMBOL_BID);
+                  g_addCount=0;
+                 }
+               g_lastOpenTime = TimeCurrent();
+               g_lastAddPriceSell = curr;
+               g_addCount++;
+              }
+           }
+        }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int PositionsOnSymbol()
+  {
+   int total=0;
+   for(int i=0;i<PositionsTotal();++i)
+     {
+      string sym = PositionGetSymbol(i);
+      if(sym==SelectedSymbol)
+         total++;
+     }
+   return total;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double CalcLotByRisk(double stop_usd)
+  {
+   if(stop_usd<=0)
+      return 0.0;
+
+   double risk_amt = AccountInfoDouble(ACCOUNT_BALANCE) * P.RiskPerTradePct/100.0;
+   double tv=0, ts=0;
+   SymbolInfoDouble(SelectedSymbol, SYMBOL_TRADE_TICK_VALUE, tv);
+   SymbolInfoDouble(SelectedSymbol, SYMBOL_TRADE_TICK_SIZE, ts);
+   if(tv<=0 || ts<=0)
+      return 0.0;
+
+   double ticks = stop_usd / ts;
+   if(ticks<=0)
+      return 0.0;
+
+   double loss_per_lot = ticks * tv;
+   if(loss_per_lot<=0)
+      return 0.0;
+
+   double lots = risk_amt / loss_per_lot;
+   double minlot, maxlot, lotstep;
+   SymbolInfoDouble(SelectedSymbol, SYMBOL_VOLUME_MIN, minlot);
+   SymbolInfoDouble(SelectedSymbol, SYMBOL_VOLUME_MAX, maxlot);
+   SymbolInfoDouble(SelectedSymbol, SYMBOL_VOLUME_STEP, lotstep);
+
+   lots = MathMax(minlot, MathMin(lots, maxlot));
+   lots = MathFloor(lots/lotstep)*lotstep;
+
+// Final validation to prevent "Invalid volume" errors
+   if(lots < minlot)
+      lots = minlot;
+   if(lots > maxlot)
+      lots = maxlot;
+   if(lotstep > 0 && MathMod(lots, lotstep) != 0)
+     {
+      lots = MathFloor(lots/lotstep)*lotstep;
+     }
+
+   return lots;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void ManageOpenPosition()
+  {
+   if(!PositionSelect(SelectedSymbol))
+      return;
+
+   double entry = PositionGetDouble(POSITION_PRICE_OPEN);
+   double sl    = PositionGetDouble(POSITION_SL);
+   double tp    = PositionGetDouble(POSITION_TP);
+   double vol   = PositionGetDouble(POSITION_VOLUME);
+   long   type  = PositionGetInteger(POSITION_TYPE);
+   datetime opent= (datetime)PositionGetInteger(POSITION_TIME);
+
+   double bid = SymbolInfoDouble(SelectedSymbol, SYMBOL_BID);
+   double ask = SymbolInfoDouble(SelectedSymbol, SYMBOL_ASK);
+   double curr = (type==POSITION_TYPE_SELL ? bid : ask);
+
+   double risk_per_lot = MathAbs(entry - sl);
+   double reachedR = 0.0;
+   if(risk_per_lot>0)
+      reachedR = (type==POSITION_TYPE_SELL ? (entry-curr)/risk_per_lot : (curr-entry)/risk_per_lot);
+
+// BE move
+   if(P.BE_Activate_R>0 && reachedR >= P.BE_Activate_R)
+     {
+      double newSL = entry;
+      if(type==POSITION_TYPE_SELL && sl<newSL)
+         trade.PositionModify(SelectedSymbol, newSL, tp);
+      if(type==POSITION_TYPE_BUY  && sl>newSL)
+         trade.PositionModify(SelectedSymbol, newSL, tp);
+     }
+
+// Partial at TP1
+   if(P.TP1_R>0 && P.PartialClosePct>0 && reachedR >= P.TP1_R)
+     {
+      double closeVol = vol * (P.PartialClosePct/100.0);
+      double minlot, lotstep;
+      SymbolInfoDouble(SelectedSymbol, SYMBOL_VOLUME_MIN, minlot);
+      SymbolInfoDouble(SelectedSymbol, SYMBOL_VOLUME_STEP, lotstep);
+      if(closeVol >= minlot)
+        {
+         closeVol = MathFloor(closeVol/lotstep)*lotstep;
+         if(closeVol >= minlot)
+            trade.PositionClosePartial(SelectedSymbol, closeVol);
+        }
+     }
+
+// Time-stop
+   if(P.TimeStopMinutes>0 && P.MinProgressR>0)
+     {
+      datetime nowt = TimeCurrent();
+      if((nowt - opent) >= P.TimeStopMinutes*60)
+        {
+         if(reachedR < P.MinProgressR)
+            trade.PositionClose(SelectedSymbol);
+        }
+     }
+
+// Sprint-1 trailing & pyramiding
+   ManageTrailing(entry, sl, type, curr, risk_per_lot, reachedR);
+   ConsiderPyramidAdds(type, entry, curr, sl);
+  }
+
+//=== ------------------------ SIGNAL/ENTRY --------------------------- ===
+void DetectBOSAndArm()
+  {
+// Quét sweep cách đây 2..(N_bos+1) bar, rồi kiểm tra BOS xuất hiện sau đó (về phía hiện tại)
+   int maxS = MathMin(1 + P.N_bos, ArraySize(rates) - 2); // sweep candidate cách tối đa N_bos bar
+   for(int s = 2; s <= maxS; ++s) // s = shift của bar sweep trong quá khứ gần
+     {
+      // SHORT: sweep lên rồi BOS xuống
+      if(P.EnableShort && IsSweepHighBar(s) && EffortResultOK(s))
+        {
+         double level;
+         int bosbar;
+         if(HasBOSDownFrom(s, P.N_bos, level, bosbar))
+           {
+            // Lọc tại BAR BOS (không dùng spread/killzone ở thời điểm hiện tại để quyết định)
+            if(!FiltersPass(bosbar))
+               continue;
+
+            state = ST_BOS_CONF;
+            bosIsShort = true;
+            bosLevel   = level;
+            bosBarTime = rates[bosbar].time;
+            sweepHigh  = rates[s].high;
+            sweepLow   = rates[s].low;
+            if(Debug)
+               Print("BOS-Short armed | sweep@",TimeToString(rates[s].time),
+                     " BOS@",TimeToString(rates[bosbar].time));
+            return;
+           }
+        }
+      // LONG: sweep xuống rồi BOS lên
+      if(P.EnableLong && IsSweepLowBar(s) && EffortResultOK(s))
+        {
+         double level;
+         int bosbar;
+         if(HasBOSUpFrom(s, P.N_bos, level, bosbar))
+           {
+            if(!FiltersPass(bosbar))
+               continue;
+
+            state = ST_BOS_CONF;
+            bosIsShort = false;
+            bosLevel   = level;
+            bosBarTime = rates[bosbar].time;
+            sweepHigh  = rates[s].high;
+            sweepLow   = rates[s].low;
+            if(Debug)
+               Print("BOS-Long armed | sweep@",TimeToString(rates[s].time),
+                     " BOS@",TimeToString(rates[bosbar].time));
+            return;
+           }
+        }
+     }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int ShiftOfTime(datetime t)
+  {
+   int n = ArraySize(rates);
+   for(int i=1;i<n;i++)
+      if(rates[i].time==t)
+         return i;
+   return -1;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool PlacePendingAfterBOS(bool isShort)
+  {
+   datetime exp = TimeCurrent() + P.PendingExpirySec;
+   if(isShort)
+     {
+      double price = bosLevel - P.RetestOffsetUSD;
+      double sl    = sweepHigh + P.SL_BufferUSD;
+      double lots  = CalcLotByRisk(MathAbs(sl - price));
+      if(lots>0 && PositionsOnSymbol()<P.MaxOpenPositions && SpreadUSD()<=P.MaxSpreadUSD)
+        {
+         bool ok = false;
+         if(AllowedToOpenNow())
+           {
+            ok = trade.SellStop(lots, price, SelectedSymbol, sl, 0.0, ORDER_TIME_SPECIFIED, exp);
+            g_lastOpenTime=TimeCurrent();
+            g_lastAddPriceSell=price;
+            g_addCount=0;
+           }
+         if(Debug)
+            Print("Place SellStop ",ok?"OK":"FAIL"," @",DoubleToString(price,2));
+         return ok;
+        }
+     }
+   else
+     {
+      double price = bosLevel + P.RetestOffsetUSD;
+      double sl    = sweepLow - P.SL_BufferUSD;
+      double lots  = CalcLotByRisk(MathAbs(price - sl));
+      if(lots>0 && PositionsOnSymbol()<P.MaxOpenPositions && SpreadUSD()<=P.MaxSpreadUSD)
+        {
+         bool ok = false;
+         if(AllowedToOpenNow())
+           {
+            ok = trade.BuyStop(lots, price, SelectedSymbol, sl, 0.0, ORDER_TIME_SPECIFIED, exp);
+            g_lastOpenTime=TimeCurrent();
+            g_lastAddPriceBuy=price;
+            g_addCount=0;
+           }
+         if(Debug)
+            Print("Place BuyStop ",ok?"OK":"FAIL"," @",DoubleToString(price,2));
+         return ok;
+        }
+     }
+   return false;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void TryEnterAfterRetest()
+  {
+   if(state!=ST_BOS_CONF)
+      return;
+   int bosShift = ShiftOfTime(bosBarTime);
+   if(bosShift<0)
+      return;
+   int maxCheck = MathMin(P.M_retest, bosShift-1);
+   for(int i=1; i<=maxCheck; ++i)
+     {
+      if(bosIsShort)
+        {
+         if(rates[i].high >= bosLevel && rates[i].close <= bosLevel)
+           {
+            if(P.UsePendingRetest)
+              {
+               PlacePendingAfterBOS(true);
+              }
+            else
+              {
+               double sl = sweepHigh + P.SL_BufferUSD;
+               double entry = SymbolInfoDouble(SelectedSymbol, SYMBOL_BID);
+               double lots = CalcLotByRisk(MathAbs(sl - entry));
+               if(lots>0 && PositionsOnSymbol()<P.MaxOpenPositions && SpreadUSD()<=P.MaxSpreadUSD)
+                 {
+                  if(AllowedToOpenNow())
+                    {
+                     trade.Sell(lots, SelectedSymbol, 0.0, sl, 0.0);
+                     g_lastOpenTime=TimeCurrent();
+                     g_lastAddPriceSell=SymbolInfoDouble(SelectedSymbol,SYMBOL_BID);
+                     g_addCount=0;
+                    }
+                  if(Debug)
+                     Print("Market SELL placed");
+                 }
+              }
+            state = ST_IDLE;
+            return;
+           }
+        }
+      else
+        {
+         if(rates[i].low <= bosLevel && rates[i].close >= bosLevel)
+           {
+            if(P.UsePendingRetest)
+              {
+               PlacePendingAfterBOS(false);
+              }
+            else
+              {
+               double sl = sweepLow - P.SL_BufferUSD;
+               double entry = SymbolInfoDouble(SelectedSymbol, SYMBOL_ASK);
+               double lots = CalcLotByRisk(MathAbs(entry - sl));
+               if(lots>0 && PositionsOnSymbol()<P.MaxOpenPositions && SpreadUSD()<=P.MaxSpreadUSD)
+                 {
+                  if(AllowedToOpenNow())
+                    {
+                     trade.Buy(lots, SelectedSymbol, 0.0, sl, 0.0);
+                     g_lastOpenTime=TimeCurrent();
+                     g_lastAddPriceBuy=SymbolInfoDouble(SelectedSymbol,SYMBOL_ASK);
+                     g_addCount=0;
+                    }
+                  if(Debug)
+                     Print("Market BUY placed");
+                 }
+              }
+            state = ST_IDLE;
+            return;
+           }
+        }
+     }
+   if(Debug)
+      Print("Retest window expired");
+   state = ST_IDLE;
+  }
+
+
+//+------------------------------------------------------------------+
+//| Script program start function                                    |
+//+------------------------------------------------------------------+
+// Legacy BacktestResult struct removed - now using direct CSV logging
+
+// Helper for compatibility
+#define FilenameLog (InpUseCommonFile ? g_log_file : g_log_file)
+
+//+------------------------------------------------------------------+
+
+
+//=== ------------------------ INIT/TICK ------------------------------- ===
+int OnInit()
+  {
+// Initialize RunID for logging
+   string trimmed_tag = InpRunTag;
+   StringTrimLeft(trimmed_tag);
+   StringTrimRight(trimmed_tag);
+
+   if(StringLen(trimmed_tag)==0)
+     {
+      string t = NowStamp();
+      StringReplace(t, ":", "-");
+      StringReplace(t, " ", "_");
+      g_run_id = t + "_" + IntegerToString(PresetID);
+     }
+   else
+     {
+      g_run_id = trimmed_tag + "_" + IntegerToString(PresetID);
+     }
+
+   g_log_file = InpLogFileName;
+   Print("Logging setup: File=", g_log_file, ", UseCommon=", InpUseCommonFile, ", RunID=", g_run_id);
+
+
+
+
+// Initialize global overrides from input defaults first
+   InitGlobalsFromInputs();
+
+   UCRow r;
+   if(LoadUsecaseFromResource(PresetID, r))
+     {
+
+
+      InitGlobalsFromInputs();
+      UseInputsAsParams();        // baseline
+      ApplyCSVRowToParams(r);     // CSV override
+      ApplyAutoSymbolProfile();
+
+      Print("DEBUG: After CSV apply - g_PartialClosePct=", g_PartialClosePct, ", g_MaxSpreadUSD=", g_MaxSpreadUSD,
+            ", P.PartialClosePct=", P.PartialClosePct, ", P.MaxSpreadUSD=", P.MaxSpreadUSD);
+      Print("Applied UC", PresetID, " for symbol: ", SelectedSymbol, " RunID: ", g_run_id);
+      return(INIT_SUCCEEDED);
+     }
+   else
+     {
+      Print("ERROR: Failed to load usecase from CSV for PresetID=", PresetID);
+      // Fallback to manual settings
+      if(InpSymbolSelector > 0)
+        {
+         SelectedSymbol = SelectedSymbol;
+         switch(InpSymbolSelector)
+           {
+            case 1:
+               SelectedSymbol = "XAUUSD";
+               break;
+            case 2:
+               SelectedSymbol = "EURUSD";
+               break;
+            case 3:
+               SelectedSymbol = "USDJPY";
+               break;
+            case 4:
+               SelectedSymbol = "BTCUSD";
+               break;
+            case 5:
+               SelectedSymbol = "ETHUSD";
+               break;
+           }
+         Print("Symbol Selector: Using ", SelectedSymbol, " (selector=", InpSymbolSelector, ")");
+        }
+      else
+         SelectedSymbol = InpSymbol;
+
+      InitGlobalsFromInputs(); // Initialize globals from inputs
+      UseInputsAsParams(); // Apply input settings as fallback
+      ApplyAutoSymbolProfile(); // Apply symbol-specific adjustments
+      trade.SetAsyncMode(false);
+      return(INIT_SUCCEEDED);
+     }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnTesterPass()
+  {
+   Print("OnTesterPass() called for PresetID ", PresetID);
+
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+   if(!UpdateRates(450))
+      return;
+
+   if(ArraySize(rates)>=2 && rates[1].time != last_bar_time)
+     {
+      last_bar_time = rates[1].time;
+      DetectBOSAndArm();
+      TryEnterAfterRetest();
+     }
+   ManageOpenPosition();
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+  {
+   if(atr_handle!=INVALID_HANDLE)
+      IndicatorRelease(atr_handle);
+
+   TradeStats stats;
+   CollectTradeStats(stats);
+
+
+
+// Ghi log cho cả optimization và single run (OnTesterPass có thể không được gọi)
+   string header = CsvHeader();
+   string row = BuildDataRow(stats.netProfit, stats.profitFactor, stats.totalTrades, stats.winTrades, stats.lossTrades,
+                             stats.winRate, stats.avgWin, stats.avgLoss, stats.largestWin, stats.largestLoss);
+
+   if(!AppendCsvRow(g_log_file, InpUseCommonFile, header, row))
+      Print("OnDeinit: Failed to append CSV row for PresetID ", PresetID);
+   else
+      Print("OnDeinit: Logged UC", PresetID, " -> ", g_log_file, " (", InpUseCommonFile ? "Common" : "Local", ")");
+
+
+// === CSV FORMAT FOR COMPARISON ===
+   string csvLine = StringFormat("%d,%s,%d,%d,%d,%d,%.2f,%.1f,%s,%s,%s,%.2f,%d,%.1f,%.2f,%.1f,%.1f,%.1f,%d,%d,%.1f,%.2f,%d,%s,%.2f,%d,%s,%d,%d,%.1f,%.1f,%.1f,%s,%d,%.2f,%.1f,%d",
+                                 PresetID,
+                                 SelectedSymbol,
+                                 P.K_swing,
+                                 P.N_bos,
+                                 P.LookbackInternal,
+                                 P.M_retest,
+                                 P.EqTol,
+                                 P.BOSBufferPoints,
+                                 P.UseKillzones ? "true" : "false",
+                                 P.UseRoundNumber ? "true" : "false",
+                                 P.UseVSA ? "true" : "false",
+                                 P.RNDelta,
+                                 P.L_percentile,
+                                 g_RiskPerTradePct,
+                                 g_SL_BufferUSD,
+                                 g_TP1_R,
+                                 g_TP2_R,
+                                 g_BE_Activate_R,
+                                 (int)g_PartialClosePct,
+                                 g_TimeStopMinutes,
+                                 g_MinProgressR,
+                                 g_MaxSpreadUSD,
+                                 P.MaxOpenPositions,
+                                 P.UsePendingRetest ? "true" : "false",
+                                 P.RetestOffsetUSD,
+                                 P.PendingExpirySec,
+                                 P.UseTrailing ? "true" : "false",
+                                 P.TrailMode,
+                                 P.TrailATRPeriod,
+                                 P.TrailATRMult,
+                                 P.TrailStepUSD,
+                                 P.TrailStartRR,
+                                 P.UsePyramid ? "true" : "false",
+                                 P.MaxAdds,
+                                 P.AddSpacingUSD,
+                                 P.AddSizeFactor,
+                                 P.CooldownSec);
+   Print("CSV_LINE: ", csvLine);
+
+// === DETAILED ANALYSIS LOGS ===
+   Print("=== UC", PresetID, " (", SelectedSymbol, ") ANALYSIS ===");
+   Print("PERFORMANCE: Net $", DoubleToString(stats.netProfit, 2), ", PF ", DoubleToString(stats.profitFactor, 2),
+         ", Trades ", stats.totalTrades, " (", stats.winTrades, "W/", stats.lossTrades, "L)");
+   Print("PROFIT DETAILS: Gross $", DoubleToString(stats.grossProfit, 2), ", Loss $", DoubleToString(-stats.grossLoss, 2),
+         ", Avg Win $", DoubleToString(stats.avgWin, 2), ", Avg Loss $", DoubleToString(stats.avgLoss, 2));
+   Print("EXTREME TRADES: Largest Win $", DoubleToString(stats.largestWin, 2), ", Largest Loss $", DoubleToString(stats.largestLoss, 2));
+
+// Filter analysis with CORRECTED pip display
+   string filterStatus = "";
+   if(P.UseKillzones)
+      filterStatus += "KZ-ON ";
+   if(P.UseRoundNumber)
+      filterStatus += "RN-ON ";
+   if(P.UseVSA)
+      filterStatus += "VSA-ON ";
+   if(filterStatus == "")
+      filterStatus = "NO-FILTERS";
+   double pipSize = SymbolPipSize(SelectedSymbol);
+   double rnDeltaPips = P.RNDelta / pipSize; // CORRECT pip calculation
+   Print("FILTERS: ", filterStatus, ", RNDelta=", DoubleToString(rnDeltaPips, 1), "pips");
+
+// Trading style analysis
+   string styleInfo = "";
+   if(P.UseTrailing)
+      styleInfo += "TRAIL-" + IntegerToString(P.TrailMode) + " ";
+   if(P.UsePyramid)
+      styleInfo += "PYRAMID-" + IntegerToString(P.MaxAdds) + " ";
+   styleInfo += "Risk" + DoubleToString(P.RiskPerTradePct, 1) + "%";
+   Print("STYLE: ", styleInfo, ", TP ", DoubleToString(P.TP1_R, 1), "R/", DoubleToString(P.TP2_R, 1), "R");
+
+// Detection settings with CORRECTED pip display
+   double eqTolPips = P.EqTol / pipSize; // CORRECT pip calculation
+   Print("DETECTION: K=", P.K_swing, ", N=", P.N_bos, ", M=", P.M_retest,
+         ", EqTol=", DoubleToString(eqTolPips, 1), "pips");
+
+// Đếm "BLOCK RN/KZ/Spread" để chẩn đoán nhanh
+   Print("FILTER BLOCKS: RN=", g_block_rn, ", KZ=", g_block_kz, ", Spread=", g_block_spread);
+
+// SUMMARY STATS (requested by user)
+   string summary = "SUMMARY: WinRate=" + DoubleToString(stats.winRate, 1) + "%, ";
+   summary += "AvgR=" + DoubleToString((stats.avgLoss != 0) ? (stats.avgWin / MathAbs(stats.avgLoss)) : 0, 2) + ", ";
+   summary += "MaxDD=" + DoubleToString(stats.largestLoss, 2);
+   Print(summary);
+   Print("=== END UC", PresetID, " ===");
+  }
+//+------------------------------------------------------------------+
