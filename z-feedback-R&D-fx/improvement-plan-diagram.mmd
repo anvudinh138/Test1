@@ -1,0 +1,28 @@
+```mermaid
+flowchart TD
+    A[Baseline Capture
+    - Record XAU metrics
+    - Export EURUSD failures]
+    A --> B[Normalize Parameters
+    - Pip/ATR conversions
+    - CSV parser upgrades]
+    B --> C[Volatility Adapters
+    - ATR-driven buffers
+    - Dynamic risk sizing]
+    C --> D[Symbol Filters
+    - Killzone overrides
+    - Spread & RN tuning]
+    D --> E[Test & Presets
+    - Regression matrix
+    - Preset library refresh]
+    E --> F[Release Readiness
+    - Ops checklist
+    - Demo forward test]
+
+    subgraph Support Systems
+        B --- G[VolatilityProfile module]
+        C --- H[ATR monitor]
+        D --- I[Session config]
+        E --- J[Automation scripts]
+    end
+```

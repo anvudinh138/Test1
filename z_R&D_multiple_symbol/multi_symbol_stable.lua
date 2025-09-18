@@ -20,12 +20,23 @@ string SelectedSymbol = "XAUUSD";
 input ENUM_TIMEFRAMES InpTF      = PERIOD_M1;
 input bool   AutoSymbolProfile   = true;     // Auto scale parameters by symbol
 
+// Multi-Symbol Controls
+input bool   UseMultiSymbol   = true;
+input string InpSymbolsCSV    = "";         // Optional override list when preset lacks symbols
+input bool   UseMsTimer       = true;
+input int    InpTimerMs       = 200;
+input int    InpTimerSeconds  = 1;
+input bool   UseFixedLot      = true;
+input double InpFixedLot      = 0.01;
+input double MarginBufferPct  = 5.0;
+input int    MagicBase        = 532100;
+
 // Preset System
 input bool   UsePreset           = true;
 input int    PresetID            = 1;
 
 // Logging
-input string InpLogFileName   = "OptimizationResults.csv";
+input string InpLogFileName   = "OptimizationResults1.csv";
 input string InpRunTag        = "";
 input bool   InpUseCommonFile = true;
 
@@ -97,6 +108,34 @@ datetime       last_bar_time = 0;
 
 enum StateEnum { ST_IDLE=0, ST_BOS_CONF };
 StateEnum      state = ST_IDLE;
+
+// Multi-symbol runtime state
+string   CurrSymbol   = "";
+int      CurrSymIndex = -1;
+
+struct SymState
+  {
+   string   sym;
+   datetime last_bar_time;
+   int      state_val;
+   bool     bosIsShort;
+   double   bosLevel;
+   datetime bosBarTime;
+   double   sweepHigh;
+   double   sweepLow;
+   datetime g_lastOpenTime;
+   double   g_lastAddPriceBuy;
+   double   g_lastAddPriceSell;
+   int      g_addCount;
+   int      atr_handle;
+   double   last_atr;
+  };
+
+SymState gSymStates[];
+string   gPresetSymbolsCSV = "";
+string   gPresetSymbols[];
+string   gSymbolsLogLabel = "";
+bool     gTimerActive = false;
 
 // BOS State
 bool           bosIsShort = false;
@@ -179,7 +218,29 @@ bool AppendCsvRow(const string fname, const bool use_common, const string header
 //+------------------------------------------------------------------+
 string CsvHeader()
   {
-   return "PresetID,Symbol,NetProfit,ProfitFactor,TotalTrades,WinTrades,LossTrades,WinRate,AvgWin,AvgLoss,LargestWin,LargestLoss,MaxDrawdownPercent,MaxDrawdownMoney,SharpeRatio,RecoveryFactor,ExpectedPayoff,MaxConsecutiveLosses,MaxConsecutiveLossesCount,FilterBlocks_RN,FilterBlocks_KZ,FilterBlocks_Spr,K_swing,N_bos,LookbackInternal,M_retest,EqTol,BOSBufferPoints,UseKillzones,UseRoundNumber,UseVSA,RNDelta,L_percentile,RiskPerTradePct,SL_BufferUSD,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,TimeStopMinutes,MinProgressR,MaxSpreadUSD,MaxOpenPositions,UsePendingRetest,RetestOffsetUSD,PendingExpirySec,UseTrailing,TrailMode,TrailATRPeriod,TrailATRMult,TrailStepUSD,TrailStartRR,UsePyramid,MaxAdds,AddSpacingUSD,AddSizeFactor,CooldownSec";
+   return "PresetID,Symbols,NetProfit,ProfitFactor,TotalTrades,WinTrades,LossTrades,WinRate,AvgWin,AvgLoss,LargestWin,LargestLoss,MaxDrawdownPercent,MaxDrawdownMoney,SharpeRatio,RecoveryFactor,ExpectedPayoff,MaxConsecutiveLosses,MaxConsecutiveLossesCount,FilterBlocks_RN,FilterBlocks_KZ,FilterBlocks_Spr,K_swing,N_bos,LookbackInternal,M_retest,EqTol,BOSBufferPoints,UseKillzones,UseRoundNumber,UseVSA,RNDelta,L_percentile,RiskPerTradePct,SL_BufferUSD,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,TimeStopMinutes,MinProgressR,MaxSpreadUSD,MaxOpenPositions,UsePendingRetest,RetestOffsetUSD,PendingExpirySec,UseTrailing,TrailMode,TrailATRPeriod,TrailATRMult,TrailStepUSD,TrailStartRR,UsePyramid,MaxAdds,AddSpacingUSD,AddSizeFactor,CooldownSec";
+  }
+
+string JoinSymbols(const string &symbols[])
+  {
+   int count = ArraySize(symbols);
+   if(count <= 0)
+      return "";
+   string acc = symbols[0];
+   for(int i=1; i<count; ++i)
+      acc += "_" + symbols[i];
+   return acc;
+  }
+
+string SymbolsLogLabel()
+  {
+   if(gSymbolsLogLabel != "")
+      return gSymbolsLogLabel;
+   if(gPresetSymbolsCSV != "")
+      return gPresetSymbolsCSV;
+   if(ArraySize(gPresetSymbols) > 0)
+      return JoinSymbols(gPresetSymbols);
+   return SelectedSymbol;
   }
 
 // Build dòng dữ liệu từ kết quả backtest
@@ -190,7 +251,7 @@ string BuildDataRow(double netProfit, double profitFactor, int totalTrades, int 
   {
    string row =
       IntegerToString(PresetID) + "," +
-      SelectedSymbol + "," +
+      SymbolsLogLabel() + "," +
       DoubleToString(netProfit, 2) + "," +
       DoubleToString(profitFactor, 2) + "," +
       IntegerToString(totalTrades) + "," +
@@ -339,7 +400,11 @@ void CollectTradeStats(TradeStats &stats)
          if(ticket == 0)
             continue;
 
-         if(HistoryDealGetString(ticket, DEAL_SYMBOL) != SelectedSymbol)
+         string dealSym="";
+         HistoryDealGetString(ticket, DEAL_SYMBOL, dealSym);
+         long dealMagic=0;
+         HistoryDealGetInteger(ticket, DEAL_MAGIC, dealMagic);
+         if(!IncludeDealForStats(dealSym, dealMagic))
             continue;
 
          long dealType = HistoryDealGetInteger(ticket, DEAL_TYPE);
@@ -494,7 +559,8 @@ void UseInputsAsParams()
 
 struct UCRow
   {
-   string            SelectedSymbol;
+   string            SymbolsCSV;
+   string            PrimarySymbol;
    int               K_swing, N_bos, LookbackInternal, M_retest;
    double            EqTol, BOSBufferPoints;
    int               UseKillzones, UseRoundNumber, UseVSA;
@@ -530,8 +596,20 @@ struct UCRow
 // Apply CSV row to parameters
 void ApplyCSVRowToParams(const UCRow &r)
   {
-   SelectedSymbol = r.SelectedSymbol;
-   SymbolSelect(SelectedSymbol, true);
+   string primary = r.PrimarySymbol;
+   if(primary == "")
+      primary = SelectedSymbol;
+   if(primary == "")
+      primary = InpSymbol;
+   SelectedSymbol = primary;
+
+   ConfigureSymbolUniverse(r.SymbolsCSV);
+
+   if(ArraySize(gPresetSymbols) > 0)
+      SelectedSymbol = gPresetSymbols[0];
+
+   for(int i=0; i<ArraySize(gPresetSymbols); ++i)
+      SymbolSelect(gPresetSymbols[i], true);
 
    P.K_swing          = r.K_swing;
    P.N_bos            = r.N_bos;
@@ -593,6 +671,179 @@ bool StringToBool(const string s)
    string trimmed = Trim(s);
    StringToLower(trimmed);
    return (trimmed == "true" || trimmed == "1");
+  }
+
+int ParseSymbolsString(const string raw, string &out[])
+  {
+   ArrayResize(out, 0);
+   string work = Trim(raw);
+   if(work == "")
+      return 0;
+
+   string normalized = work;
+   StringReplace(normalized, "\r", "");
+   StringReplace(normalized, "\n", "");
+   StringReplace(normalized, " ", "");
+   // Allow both comma and underscore separated lists
+   StringReplace(normalized, ",", "_");
+
+   string parts[];
+   int tokens = StringSplit(normalized, '_', parts);
+   for(int i=0; i<tokens; ++i)
+     {
+      string token = Trim(parts[i]);
+      if(token == "")
+         continue;
+      int cur = ArraySize(out);
+      ArrayResize(out, cur+1);
+      out[cur] = token;
+     }
+   return ArraySize(out);
+  }
+
+void ConfigureSymbolUniverse(const string presetSymbols)
+  {
+   string rawLabel = Trim(presetSymbols);
+   string candidate = rawLabel;
+   if(candidate == "" && InpSymbolsCSV != "")
+      candidate = Trim(InpSymbolsCSV);
+   if(candidate == "")
+      candidate = SelectedSymbol;
+
+   gPresetSymbolsCSV = candidate;
+   ParseSymbolsString(candidate, gPresetSymbols);
+   if(ArraySize(gPresetSymbols) == 0)
+     {
+      ArrayResize(gPresetSymbols, 1);
+      gPresetSymbols[0] = (SelectedSymbol != "" ? SelectedSymbol : InpSymbol);
+     }
+   gSymbolsLogLabel = (rawLabel != "" ? rawLabel : JoinSymbols(gPresetSymbols));
+   if(gSymbolsLogLabel == "" && ArraySize(gPresetSymbols) > 0)
+      gSymbolsLogLabel = JoinSymbols(gPresetSymbols);
+  }
+
+int FindConfiguredSymbolIndex(const string sym)
+  {
+   for(int i=0; i<ArraySize(gPresetSymbols); ++i)
+      if(gPresetSymbols[i] == sym)
+         return i;
+   return -1;
+  }
+
+bool IncludeDealForStats(const string sym, long magic)
+  {
+   int idx = FindConfiguredSymbolIndex(sym);
+   if(idx < 0)
+      return false;
+   if(UseMultiSymbol)
+      return (magic == MagicBase + idx);
+   return (sym == SelectedSymbol);
+  }
+
+bool CanAfford(const string s, bool isShort, double vol, double bufferPct)
+  {
+   double price = SymbolInfoDouble(s, isShort ? SYMBOL_BID : SYMBOL_ASK);
+   double marginNeeded = 0.0;
+   if(!OrderCalcMargin(isShort ? ORDER_TYPE_SELL : ORDER_TYPE_BUY, s, vol, price, marginNeeded))
+     {
+      PrintFormat("[%s] OrderCalcMargin failed (vol=%.2f) err=%d", s, vol, GetLastError());
+      return false;
+     }
+   double free = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
+   double required = marginNeeded * (1.0 + bufferPct/100.0);
+   if(free < required)
+     {
+      PrintFormat("[%s] Not enough margin: need=%.2f (buffer %.1f%%) free=%.2f", s, required, bufferPct, free);
+      return false;
+     }
+   return true;
+  }
+
+void InitSymbolStates()
+  {
+   int count = ArraySize(gPresetSymbols);
+   ArrayResize(gSymStates, count);
+   for(int i=0; i<count; ++i)
+     {
+      gSymStates[i].sym              = gPresetSymbols[i];
+      gSymStates[i].last_bar_time    = 0;
+      gSymStates[i].state_val        = (int)ST_IDLE;
+      gSymStates[i].bosIsShort       = false;
+      gSymStates[i].bosLevel         = 0.0;
+      gSymStates[i].bosBarTime       = 0;
+      gSymStates[i].sweepHigh        = 0.0;
+      gSymStates[i].sweepLow         = 0.0;
+      gSymStates[i].g_lastOpenTime   = 0;
+      gSymStates[i].g_lastAddPriceBuy  = 0.0;
+      gSymStates[i].g_lastAddPriceSell = 0.0;
+      gSymStates[i].g_addCount       = 0;
+      gSymStates[i].atr_handle       = INVALID_HANDLE;
+      gSymStates[i].last_atr         = 0.0;
+     }
+   if(count>0)
+     {
+      CurrSymIndex = 0;
+      CurrSymbol   = gSymStates[0].sym;
+      SelectedSymbol = CurrSymbol;
+     }
+  }
+
+void SelectConfiguredSymbols()
+  {
+   for(int i=0; i<ArraySize(gPresetSymbols); ++i)
+      SymbolSelect(gPresetSymbols[i], true);
+  }
+
+void LoadStateFromIndex(int idx)
+  {
+   if(idx < 0 || idx >= ArraySize(gSymStates))
+      return;
+   CurrSymIndex = idx;
+   CurrSymbol   = gSymStates[idx].sym;
+   SelectedSymbol = CurrSymbol;
+
+   last_bar_time       = gSymStates[idx].last_bar_time;
+   state               = (StateEnum)gSymStates[idx].state_val;
+   bosIsShort          = gSymStates[idx].bosIsShort;
+   bosLevel            = gSymStates[idx].bosLevel;
+   bosBarTime          = gSymStates[idx].bosBarTime;
+   sweepHigh           = gSymStates[idx].sweepHigh;
+   sweepLow            = gSymStates[idx].sweepLow;
+   g_lastOpenTime      = gSymStates[idx].g_lastOpenTime;
+   g_lastAddPriceBuy   = gSymStates[idx].g_lastAddPriceBuy;
+   g_lastAddPriceSell  = gSymStates[idx].g_lastAddPriceSell;
+   g_addCount          = gSymStates[idx].g_addCount;
+   atr_handle          = gSymStates[idx].atr_handle;
+   last_atr            = gSymStates[idx].last_atr;
+  }
+
+void SaveStateToIndex(int idx)
+  {
+   if(idx < 0 || idx >= ArraySize(gSymStates))
+      return;
+   gSymStates[idx].last_bar_time      = last_bar_time;
+   gSymStates[idx].state_val          = (int)state;
+   gSymStates[idx].bosIsShort         = bosIsShort;
+   gSymStates[idx].bosLevel           = bosLevel;
+   gSymStates[idx].bosBarTime         = bosBarTime;
+   gSymStates[idx].sweepHigh          = sweepHigh;
+   gSymStates[idx].sweepLow           = sweepLow;
+   gSymStates[idx].g_lastOpenTime     = g_lastOpenTime;
+   gSymStates[idx].g_lastAddPriceBuy  = g_lastAddPriceBuy;
+   gSymStates[idx].g_lastAddPriceSell = g_lastAddPriceSell;
+   gSymStates[idx].g_addCount         = g_addCount;
+   gSymStates[idx].atr_handle         = atr_handle;
+   gSymStates[idx].last_atr           = last_atr;
+  }
+
+long ActiveMagic()
+  {
+   int idx = CurrSymIndex;
+   if(idx < 0)
+      idx = 0;
+   if(!UseMultiSymbol)
+      idx = 0;
+   return MagicBase + idx;
   }
 
 //+------------------------------------------------------------------+
@@ -699,21 +950,30 @@ bool LoadUsecaseFromResource(const int presetID, UCRow &row)
       int csvPresetID = (int)StringToInteger(fields[0]);
       if(csvPresetID == presetID)
         {
-         // Map fields according to CSV header order
-         row.SelectedSymbol       = fields[1];
+         row.SymbolsCSV          = fields[1];
+         string tmpSyms[];
+         ParseSymbolsString(row.SymbolsCSV, tmpSyms);
+         if(ArraySize(tmpSyms) > 0)
+            row.PrimarySymbol = tmpSyms[0];
+         else
+            row.PrimarySymbol = Trim(fields[1]);
+         string refSymbol = (row.PrimarySymbol != "" ? row.PrimarySymbol : SelectedSymbol);
+         if(refSymbol == "")
+            refSymbol = InpSymbol;
+
          row.K_swing              = (int)StringToInteger(fields[2]);
          row.N_bos                = (int)StringToInteger(fields[3]);
          row.LookbackInternal     = (int)StringToInteger(fields[4]);
          row.M_retest             = (int)StringToInteger(fields[5]);
-         row.EqTol                = ParseCSVValue(fields[6], fields[1]);
-         row.BOSBufferPoints      = ParseCSVValue(fields[7], fields[1]);
+         row.EqTol                = ParseCSVValue(fields[6], refSymbol);
+         row.BOSBufferPoints      = ParseCSVValue(fields[7], refSymbol);
          row.UseKillzones         = StringToBool(fields[8]);
          row.UseRoundNumber       = StringToBool(fields[9]);
          row.UseVSA               = StringToBool(fields[10]);
-         row.RNDelta              = ParseCSVValue(fields[11], fields[1]);
+         row.RNDelta              = ParseCSVValue(fields[11], refSymbol);
          row.L_percentile         = (int)StringToInteger(fields[12]);
          row.RiskPerTradePct      = StringToDouble(fields[13]);
-         row.SL_BufferUSD         = ParseCSVValue(fields[14], fields[1]);
+         row.SL_BufferUSD         = ParseCSVValue(fields[14], refSymbol);
          row.TP1_R                = StringToDouble(fields[15]);
          row.TP2_R                = StringToDouble(fields[16]);
          row.BE_Activate_R        = StringToDouble(fields[17]);
@@ -723,19 +983,20 @@ bool LoadUsecaseFromResource(const int presetID, UCRow &row)
          row.MaxSpreadUSD         = StringToDouble(fields[21]);
          row.MaxOpenPositions     = (int)StringToInteger(fields[22]);
          row.UsePendingRetest     = StringToBool(fields[23]);
-         row.RetestOffsetUSD      = ParseCSVValue(fields[24], fields[1]);
+         row.RetestOffsetUSD      = ParseCSVValue(fields[24], refSymbol);
          row.PendingExpirySec     = (int)StringToInteger(fields[25]);
 
-         // Debug pip parsing
          if(Debug)
            {
-            Print("DEBUG CSV PARSING: Symbol=", fields[1],
+            Print("DEBUG CSV PARSING: Symbols=", row.SymbolsCSV,
+                  ", Ref=", refSymbol,
                   ", EqTol=", fields[6], " -> ", row.EqTol,
                   ", BOSBuffer=", fields[7], " -> ", row.BOSBufferPoints,
                   ", RNDelta=", fields[11], " -> ", row.RNDelta,
                   ", SL_Buffer=", fields[14], " -> ", row.SL_BufferUSD,
                   ", RetestOffset=", fields[24], " -> ", row.RetestOffsetUSD);
            }
+
          row.UseTrailing          = StringToBool(fields[26]);
          row.TrailMode            = (int)StringToInteger(fields[27]);
          row.TrailATRPeriod       = (int)StringToInteger(fields[28]);
@@ -779,6 +1040,30 @@ double SymbolPipSize(const string sym="")
       return 0.1;
    bool isJPY = (StringFind(symbol_name,"JPY",0)>=0);
    return isJPY ? 0.01 : 0.0001;
+  }
+
+double ComputeFixedLot(const string s, double desired)
+  {
+   double minlot=0.0, maxlot=0.0, lotstep=0.0;
+   SymbolInfoDouble(s, SYMBOL_VOLUME_MIN, minlot);
+   SymbolInfoDouble(s, SYMBOL_VOLUME_MAX, maxlot);
+   SymbolInfoDouble(s, SYMBOL_VOLUME_STEP, lotstep);
+
+   double vol = desired;
+   if(lotstep > 0.0)
+      vol = MathFloor(vol / lotstep) * lotstep;
+   if(vol < minlot)
+      vol = minlot;
+   if(maxlot > 0.0 && vol > maxlot)
+      vol = maxlot;
+
+   int lotDigits = 2;
+   if(lotstep > 0.0)
+     {
+      double stepDigits = MathLog10(1.0 / lotstep);
+      lotDigits = (int)MathMax(0.0, MathRound(stepDigits));
+     }
+   return NormalizeDouble(vol, lotDigits);
   }
 
 //+------------------------------------------------------------------+
@@ -1152,6 +1437,24 @@ bool AllowedToOpenNow()
    return (P.CooldownSec <= 0 || g_lastOpenTime == 0 || (TimeCurrent() - g_lastOpenTime) >= P.CooldownSec);
   }
 
+void ProcessActiveSymbol()
+  {
+   trade.SetExpertMagicNumber(ActiveMagic());
+
+   if(!UpdateRates(450))
+      return;
+
+   if(ArraySize(rates)>=2 && rates[1].time != last_bar_time)
+     {
+      last_bar_time = rates[1].time;
+      if(Debug && UseMultiSymbol)
+         PrintFormat("[%s] New bar close=%.5f", SelectedSymbol, rates[1].close);
+      DetectBOSAndArm();
+      TryEnterAfterRetest();
+     }
+   ManageOpenPosition();
+  }
+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -1237,7 +1540,7 @@ void ConsiderPyramidAdds(long type, double entry, double curr, double sl)
          double lots = PositionGetDouble(POSITION_VOLUME) * P.AddSizeFactor;
          if(lots>0 && SpreadUSD()<=P.MaxSpreadUSD)
            {
-            if(AllowedToOpenNow())
+            if(CanAfford(SelectedSymbol, false, lots, MarginBufferPct) && AllowedToOpenNow())
               {
                trade.Buy(lots, SelectedSymbol, 0.0, sl, 0.0);
                g_lastOpenTime=TimeCurrent();
@@ -1259,7 +1562,7 @@ void ConsiderPyramidAdds(long type, double entry, double curr, double sl)
             double lots = PositionGetDouble(POSITION_VOLUME) * P.AddSizeFactor;
             if(lots>0 && SpreadUSD()<=P.MaxSpreadUSD)
               {
-               if(AllowedToOpenNow())
+               if(CanAfford(SelectedSymbol, true, lots, MarginBufferPct) && AllowedToOpenNow())
                  {
                   trade.Sell(lots, SelectedSymbol, 0.0, sl, 0.0);
                   g_lastOpenTime=TimeCurrent();
@@ -1280,9 +1583,20 @@ void ConsiderPyramidAdds(long type, double entry, double curr, double sl)
 int PositionsOnSymbol()
   {
    int total = 0;
+   long myMagic = ActiveMagic();
    for(int i = 0; i < PositionsTotal(); ++i)
-      if(PositionGetSymbol(i) == SelectedSymbol)
+     {
+      if(!PositionSelectByIndex(i))
+         continue;
+      string psym="";
+      PositionGetString(POSITION_SYMBOL, psym);
+      if(psym != SelectedSymbol)
+         continue;
+      long mg=0;
+      PositionGetInteger(POSITION_MAGIC, mg);
+      if(mg == myMagic)
          total++;
+     }
    return total;
   }
 
@@ -1291,6 +1605,9 @@ int PositionsOnSymbol()
 //+------------------------------------------------------------------+
 double CalcLotByRisk(double stop_usd)
   {
+   if(UseFixedLot)
+      return ComputeFixedLot(SelectedSymbol, InpFixedLot);
+
    if(stop_usd<=0)
       return 0.0;
 
@@ -1316,19 +1633,18 @@ double CalcLotByRisk(double stop_usd)
    SymbolInfoDouble(SelectedSymbol, SYMBOL_VOLUME_STEP, lotstep);
 
    lots = MathMax(minlot, MathMin(lots, maxlot));
-   lots = MathFloor(lots/lotstep)*lotstep;
+   if(lotstep > 0.0)
+      lots = MathFloor(lots/lotstep)*lotstep;
 
 // Final validation to prevent "Invalid volume" errors
    if(lots < minlot)
       lots = minlot;
-   if(lots > maxlot)
+   if(maxlot > 0.0 && lots > maxlot)
       lots = maxlot;
-   if(lotstep > 0 && MathMod(lots, lotstep) != 0)
-     {
+   if(lotstep > 0.0 && MathMod(lots, lotstep) != 0.0)
       lots = MathFloor(lots/lotstep)*lotstep;
-     }
 
-   return lots;
+   return NormalizeDouble(lots, (lotstep>0.0 ? (int)MathMax(0.0, MathRound(MathLog10(1.0/lotstep))) : 2));
   }
 
 //+------------------------------------------------------------------+
@@ -1337,6 +1653,11 @@ double CalcLotByRisk(double stop_usd)
 void ManageOpenPosition()
   {
    if(!PositionSelect(SelectedSymbol))
+      return;
+
+   long posMagic = 0;
+   PositionGetInteger(POSITION_MAGIC, posMagic);
+   if(posMagic != ActiveMagic())
       return;
 
    double entry = PositionGetDouble(POSITION_PRICE_OPEN);
@@ -1477,7 +1798,7 @@ bool PlacePendingAfterBOS(bool isShort)
       if(lots>0 && PositionsOnSymbol()<P.MaxOpenPositions && SpreadUSD()<=P.MaxSpreadUSD)
         {
          bool ok = false;
-         if(AllowedToOpenNow())
+         if(CanAfford(SelectedSymbol, true, lots, MarginBufferPct) && AllowedToOpenNow())
            {
             ok = trade.SellStop(lots, price, SelectedSymbol, sl, 0.0, ORDER_TIME_SPECIFIED, exp);
             g_lastOpenTime=TimeCurrent();
@@ -1485,7 +1806,7 @@ bool PlacePendingAfterBOS(bool isShort)
             g_addCount=0;
            }
          if(Debug)
-            Print("Place SellStop ",ok?"OK":"FAIL"," @",DoubleToString(price,2));
+            PrintFormat("Place SellStop %s @%.2f", ok?"OK":"FAIL", price);
          return ok;
         }
      }
@@ -1497,7 +1818,7 @@ bool PlacePendingAfterBOS(bool isShort)
       if(lots>0 && PositionsOnSymbol()<P.MaxOpenPositions && SpreadUSD()<=P.MaxSpreadUSD)
         {
          bool ok = false;
-         if(AllowedToOpenNow())
+         if(CanAfford(SelectedSymbol, false, lots, MarginBufferPct) && AllowedToOpenNow())
            {
             ok = trade.BuyStop(lots, price, SelectedSymbol, sl, 0.0, ORDER_TIME_SPECIFIED, exp);
             g_lastOpenTime=TimeCurrent();
@@ -1505,7 +1826,7 @@ bool PlacePendingAfterBOS(bool isShort)
             g_addCount=0;
            }
          if(Debug)
-            Print("Place BuyStop ",ok?"OK":"FAIL"," @",DoubleToString(price,2));
+            PrintFormat("Place BuyStop %s @%.2f", ok?"OK":"FAIL", price);
          return ok;
         }
      }
@@ -1540,15 +1861,20 @@ void TryEnterAfterRetest()
                double lots = CalcLotByRisk(MathAbs(sl - entry));
                if(lots>0 && PositionsOnSymbol()<P.MaxOpenPositions && SpreadUSD()<=P.MaxSpreadUSD)
                  {
-                  if(AllowedToOpenNow())
+                  if(CanAfford(SelectedSymbol, true, lots, MarginBufferPct) && AllowedToOpenNow())
                     {
                      trade.Sell(lots, SelectedSymbol, 0.0, sl, 0.0);
                      g_lastOpenTime=TimeCurrent();
                      g_lastAddPriceSell=SymbolInfoDouble(SelectedSymbol,SYMBOL_BID);
                      g_addCount=0;
+                     if(Debug)
+                        Print("Market SELL placed");
                     }
-                  if(Debug)
-                     Print("Market SELL placed");
+                  else
+                    {
+                     if(Debug)
+                        Print("SELL blocked by margin or cooldown");
+                    }
                  }
               }
             state = ST_IDLE;
@@ -1570,15 +1896,20 @@ void TryEnterAfterRetest()
                double lots = CalcLotByRisk(MathAbs(entry - sl));
                if(lots>0 && PositionsOnSymbol()<P.MaxOpenPositions && SpreadUSD()<=P.MaxSpreadUSD)
                  {
-                  if(AllowedToOpenNow())
+                  if(CanAfford(SelectedSymbol, false, lots, MarginBufferPct) && AllowedToOpenNow())
                     {
                      trade.Buy(lots, SelectedSymbol, 0.0, sl, 0.0);
                      g_lastOpenTime=TimeCurrent();
                      g_lastAddPriceBuy=SymbolInfoDouble(SelectedSymbol,SYMBOL_ASK);
                      g_addCount=0;
+                     if(Debug)
+                        Print("Market BUY placed");
                     }
-                  if(Debug)
-                     Print("Market BUY placed");
+                  else
+                    {
+                     if(Debug)
+                        Print("BUY blocked by margin or cooldown");
+                    }
                  }
               }
             state = ST_IDLE;
@@ -1597,51 +1928,85 @@ void TryEnterAfterRetest()
 //=== ------------------------ INIT/TICK ------------------------------- ===
 int OnInit()
   {
+   trade.SetAsyncMode(false);
+
+   bool presetLoaded = false;
    UCRow r;
-   if(LoadUsecaseFromResource(PresetID, r))
+
+   if(UsePreset)
      {
-
-
-      UseInputsAsParams();        // baseline
-      ApplyCSVRowToParams(r);     // CSV override
-      ApplyAutoSymbolProfile();
-      return(INIT_SUCCEEDED);
+      if(LoadUsecaseFromResource(PresetID, r))
+        {
+         UseInputsAsParams();
+         ApplyCSVRowToParams(r);
+         ApplyAutoSymbolProfile();
+         presetLoaded = true;
+        }
+      else
+        {
+         Print("ERROR: Failed to load usecase from CSV for PresetID=", PresetID);
+        }
      }
-   else
+
+   if(!presetLoaded)
      {
-      Print("ERROR: Failed to load usecase from CSV for PresetID=", PresetID);
-      // Fallback to manual settings
       if(InpSymbolSelector > 0)
         {
-         SelectedSymbol = SelectedSymbol;
          switch(InpSymbolSelector)
            {
-            case 1:
-               SelectedSymbol = "XAUUSD";
-               break;
-            case 2:
-               SelectedSymbol = "EURUSD";
-               break;
-            case 3:
-               SelectedSymbol = "USDJPY";
-               break;
-            case 4:
-               SelectedSymbol = "BTCUSD";
-               break;
-            case 5:
-               SelectedSymbol = "ETHUSD";
-               break;
+            case 1: SelectedSymbol = "XAUUSD"; break;
+            case 2: SelectedSymbol = "EURUSD"; break;
+            case 3: SelectedSymbol = "USDJPY"; break;
+            case 4: SelectedSymbol = "BTCUSD"; break;
+            case 5: SelectedSymbol = "ETHUSD"; break;
+            default: SelectedSymbol = InpSymbol; break;
            }
          Print("Symbol Selector: Using ", SelectedSymbol, " (selector=", InpSymbolSelector, ")");
         }
       else
+        {
          SelectedSymbol = InpSymbol;
+        }
 
-      UseInputsAsParams(); // Apply input settings as fallback
-      ApplyAutoSymbolProfile(); // Apply symbol-specific adjustments
-      trade.SetAsyncMode(false);
-      return(INIT_SUCCEEDED);
+      UseInputsAsParams();
+      ConfigureSymbolUniverse(InpSymbolsCSV != "" ? InpSymbolsCSV : SelectedSymbol);
+      ApplyAutoSymbolProfile();
      }
+
+   if(ArraySize(gPresetSymbols) == 0)
+      ConfigureSymbolUniverse(SelectedSymbol);
+
+   SelectConfiguredSymbols();
+   InitSymbolStates();
+   if(ArraySize(gSymStates) > 0)
+      LoadStateFromIndex(0);
+
+   if(UseMultiSymbol)
+     {
+      if(UseMsTimer && InpTimerMs > 0)
+        {
+         EventSetMillisecondTimer(InpTimerMs);
+         gTimerActive = true;
+        }
+      else
+        {
+         int sec = (InpTimerSeconds > 0 ? InpTimerSeconds : 1);
+         EventSetTimer(sec);
+         gTimerActive = true;
+        }
+     }
+   else
+     {
+      gTimerActive = false;
+      CurrSymIndex = (ArraySize(gSymStates)>0 ? 0 : -1);
+      if(CurrSymIndex >= 0)
+        {
+         CurrSymbol = gSymStates[CurrSymIndex].sym;
+         SelectedSymbol = CurrSymbol;
+        }
+     }
+
+   return(INIT_SUCCEEDED);
   }
 
 //+------------------------------------------------------------------+
@@ -1649,16 +2014,26 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   if(!UpdateRates(450))
+   if(UseMultiSymbol)
       return;
+   ProcessActiveSymbol();
+  }
 
-   if(ArraySize(rates)>=2 && rates[1].time != last_bar_time)
+void OnTimer()
+  {
+   if(!UseMultiSymbol)
      {
-      last_bar_time = rates[1].time;
-      DetectBOSAndArm();
-      TryEnterAfterRetest();
+      ProcessActiveSymbol();
+      return;
      }
-   ManageOpenPosition();
+
+   int count = ArraySize(gSymStates);
+   for(int i=0; i<count; ++i)
+     {
+      LoadStateFromIndex(i);
+      ProcessActiveSymbol();
+      SaveStateToIndex(i);
+     }
   }
 
 
@@ -1669,20 +2044,32 @@ void OnTick()
 void OnTesterPass()
   {
    Print("OnTesterPass() called for PresetID ", PresetID);
-
-
-
   }
-
-
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
+   if(gTimerActive)
+     {
+      EventKillTimer();
+      gTimerActive = false;
+     }
+
+   for(int i=0; i<ArraySize(gSymStates); ++i)
+     {
+      if(gSymStates[i].atr_handle != INVALID_HANDLE)
+        {
+         IndicatorRelease(gSymStates[i].atr_handle);
+         gSymStates[i].atr_handle = INVALID_HANDLE;
+        }
+     }
+
    if(atr_handle != INVALID_HANDLE)
       IndicatorRelease(atr_handle);
+   atr_handle = INVALID_HANDLE;
+
    if(reason == REASON_INITFAILED)
       return;
 
@@ -1709,7 +2096,7 @@ void OnDeinit(const int reason)
 // === CSV FORMAT FOR COMPARISON ===
    string csvLine = StringFormat("%d,%s,%d,%d,%d,%d,%.2f,%.1f,%s,%s,%s,%.2f,%d,%.1f,%.2f,%.1f,%.1f,%.1f,%d,%d,%.1f,%.2f,%d,%s,%.2f,%d,%s,%d,%d,%.1f,%.1f,%.1f,%s,%d,%.2f,%.1f,%d",
                                  PresetID,
-                                 SelectedSymbol,
+                                 SymbolsLogLabel(),
                                  P.K_swing,
                                  P.N_bos,
                                  P.LookbackInternal,
