@@ -70,6 +70,16 @@ input double MinProgressR        = 0.5;
 input double MaxSpreadUSD        = 0.50;
 input int    MaxOpenPositions    = 1;
 
+// ATR Scaling (optional)
+input bool   UseATRScaling        = false;
+input int    ATRScalingPeriod     = 14;
+input double SL_ATR_Mult          = 0.60;
+input double Retest_ATR_Mult      = 0.25;
+input double AddSpacing_ATR_Mult  = 0.80;
+input double TrailStep_ATR_Mult   = 0.50;
+input double MaxSpread_ATR_Mult   = 0.15;
+input double RNDelta_ATR_Mult     = 0.40;
+
 // Entry Style
 input bool   UsePendingRetest    = false;
 input double RetestOffsetUSD     = 0.07;
@@ -114,6 +124,23 @@ double   g_lastAddPriceBuy = 0.0, g_lastAddPriceSell = 0.0;
 int      g_addCount = 0;
 int      atr_handle = INVALID_HANDLE;
 double   last_atr = 0.0;
+int      profile_atr_handle = INVALID_HANDLE;
+int      profile_atr_period = 0;
+string   profile_atr_symbol = "";
+ENUM_TIMEFRAMES profile_atr_tf = PERIOD_CURRENT;
+
+struct VolatilityProfile
+  {
+   double pipSize;
+   double pointSize;
+   double pipPoints;
+   double tickValue;
+   double tickSize;
+   double atrValue;
+   double atrPips;
+   int    atrPeriod;
+  };
+VolatilityProfile g_volProfile = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0};
 
 //=== LOGGING SYSTEM ===
 int OpenCsvForAppend(const string fname, const bool use_common, bool &newfile)
@@ -159,7 +186,7 @@ bool AppendCsvRow(const string fname, const bool use_common, const string header
      {
       FileSeek(h, 0, SEEK_SET);
       string firstLine = FileReadString(h);
-      if(StringFind(firstLine, "RunID") != 0)
+      if(StringFind(firstLine, "PresetID") != 0)
          needHeader = true;
       FileSeek(h, 0, SEEK_END);
      }
@@ -179,7 +206,7 @@ bool AppendCsvRow(const string fname, const bool use_common, const string header
 //+------------------------------------------------------------------+
 string CsvHeader()
   {
-   return "PresetID,Symbol,NetProfit,ProfitFactor,TotalTrades,WinTrades,LossTrades,WinRate,AvgWin,AvgLoss,LargestWin,LargestLoss,MaxDrawdownPercent,MaxDrawdownMoney,SharpeRatio,RecoveryFactor,ExpectedPayoff,MaxConsecutiveLosses,MaxConsecutiveLossesCount,FilterBlocks_RN,FilterBlocks_KZ,FilterBlocks_Spr,K_swing,N_bos,LookbackInternal,M_retest,EqTol,BOSBufferPoints,UseKillzones,UseRoundNumber,UseVSA,RNDelta,L_percentile,RiskPerTradePct,SL_BufferUSD,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,TimeStopMinutes,MinProgressR,MaxSpreadUSD,MaxOpenPositions,UsePendingRetest,RetestOffsetUSD,PendingExpirySec,UseTrailing,TrailMode,TrailATRPeriod,TrailATRMult,TrailStepUSD,TrailStartRR,UsePyramid,MaxAdds,AddSpacingUSD,AddSizeFactor,CooldownSec";
+   return "PresetID,Symbol,NetProfit,ProfitFactor,TotalTrades,WinTrades,LossTrades,WinRate,AvgWin,AvgLoss,LargestWin,LargestLoss,MaxDrawdownPercent,MaxDrawdownMoney,SharpeRatio,RecoveryFactor,ExpectedPayoff,MaxConsecutiveLosses,MaxConsecutiveLossesCount,FilterBlocks_RN,FilterBlocks_KZ,FilterBlocks_Spr,K_swing,N_bos,LookbackInternal,M_retest,EqTol,BOSBufferPoints,UseKillzones,UseRoundNumber,UseVSA,RNDelta,L_percentile,RiskPerTradePct,SL_BufferUSD,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,TimeStopMinutes,MinProgressR,MaxSpreadUSD,MaxOpenPositions,UsePendingRetest,RetestOffsetUSD,PendingExpirySec,UseTrailing,TrailMode,TrailATRPeriod,TrailATRMult,TrailStepUSD,TrailStartRR,UsePyramid,MaxAdds,AddSpacingUSD,AddSizeFactor,CooldownSec,UseATRScaling,ATRScalingPeriod,SL_ATR_Mult,Retest_ATR_Mult,AddSpacing_ATR_Mult,TrailStep_ATR_Mult,MaxSpread_ATR_Mult,RNDelta_ATR_Mult";
   }
 
 // Build dòng dữ liệu từ kết quả backtest
@@ -245,7 +272,15 @@ string BuildDataRow(double netProfit, double profitFactor, int totalTrades, int 
       IntegerToString(P.MaxAdds) + "," +
       DoubleToString(P.AddSpacingUSD, 2) + "," +
       DoubleToString(P.AddSizeFactor, 2) + "," +
-      IntegerToString(P.CooldownSec);
+      IntegerToString(P.CooldownSec) + "," +
+       (P.UseATRScaling ? "true" : "false") + "," +
+      IntegerToString(P.ATRScalingPeriod) + "," +
+      DoubleToString(P.SL_ATR_Mult, 2) + "," +
+      DoubleToString(P.Retest_ATR_Mult, 2) + "," +
+      DoubleToString(P.AddSpacing_ATR_Mult, 2) + "," +
+      DoubleToString(P.TrailStep_ATR_Mult, 2) + "," +
+      DoubleToString(P.MaxSpread_ATR_Mult, 2) + "," +
+      DoubleToString(P.RNDelta_ATR_Mult, 2);
    return row;
   }
 
@@ -423,6 +458,15 @@ struct Params
    // exec
    double            MaxSpreadUSD;
    int               MaxOpenPositions;
+   // atr scaling
+   bool              UseATRScaling;
+   int               ATRScalingPeriod;
+   double            SL_ATR_Mult;
+   double            Retest_ATR_Mult;
+   double            AddSpacing_ATR_Mult;
+   double            TrailStep_ATR_Mult;
+   double            MaxSpread_ATR_Mult;
+   double            RNDelta_ATR_Mult;
    // entry style
    bool              UsePendingRetest;
    double            RetestOffsetUSD;
@@ -474,6 +518,14 @@ void UseInputsAsParams()
    P.MinProgressR=MinProgressR;
    P.MaxSpreadUSD=MaxSpreadUSD;
    P.MaxOpenPositions=MaxOpenPositions;
+   P.UseATRScaling=UseATRScaling;
+   P.ATRScalingPeriod=ATRScalingPeriod;
+   P.SL_ATR_Mult=SL_ATR_Mult;
+   P.Retest_ATR_Mult=Retest_ATR_Mult;
+   P.AddSpacing_ATR_Mult=AddSpacing_ATR_Mult;
+   P.TrailStep_ATR_Mult=TrailStep_ATR_Mult;
+   P.MaxSpread_ATR_Mult=MaxSpread_ATR_Mult;
+   P.RNDelta_ATR_Mult=RNDelta_ATR_Mult;
    P.UsePendingRetest=UsePendingRetest;
    P.RetestOffsetUSD=RetestOffsetUSD;
    P.PendingExpirySec=PendingExpirySec;
@@ -508,6 +560,14 @@ struct UCRow
    double            MinProgressR;
    double            MaxSpreadUSD;
    int               MaxOpenPositions;
+   bool              UseATRScaling;
+   int               ATRScalingPeriod;
+   double            SL_ATR_Mult;
+   double            Retest_ATR_Mult;
+   double            AddSpacing_ATR_Mult;
+   double            TrailStep_ATR_Mult;
+   double            MaxSpread_ATR_Mult;
+   double            RNDelta_ATR_Mult;
    int               UsePendingRetest;
    double            RetestOffsetUSD;
    int               PendingExpirySec;
@@ -567,6 +627,14 @@ void ApplyCSVRowToParams(const UCRow &r)
    P.MinProgressR     = r.MinProgressR;
    P.MaxSpreadUSD     = r.MaxSpreadUSD;
    P.MaxOpenPositions = r.MaxOpenPositions;
+   P.UseATRScaling    = r.UseATRScaling;
+   P.ATRScalingPeriod = r.ATRScalingPeriod;
+   P.SL_ATR_Mult      = r.SL_ATR_Mult;
+   P.Retest_ATR_Mult  = r.Retest_ATR_Mult;
+   P.AddSpacing_ATR_Mult = r.AddSpacing_ATR_Mult;
+   P.TrailStep_ATR_Mult  = r.TrailStep_ATR_Mult;
+   P.MaxSpread_ATR_Mult  = r.MaxSpread_ATR_Mult;
+   P.RNDelta_ATR_Mult    = r.RNDelta_ATR_Mult;
    P.UsePendingRetest = r.UsePendingRetest;
    P.RetestOffsetUSD  = r.RetestOffsetUSD;
    P.PendingExpirySec = r.PendingExpirySec;
@@ -598,18 +666,49 @@ bool StringToBool(const string s)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+double SampleATR(const string symbol, ENUM_TIMEFRAMES tf, const int period)
+  {
+   int usePeriod = (period<=1 ? 14 : period);
+   if(profile_atr_handle==INVALID_HANDLE || profile_atr_symbol!=symbol || profile_atr_tf!=tf || profile_atr_period!=usePeriod)
+     {
+      if(profile_atr_handle!=INVALID_HANDLE)
+         IndicatorRelease(profile_atr_handle);
+      profile_atr_handle = iATR(symbol, tf, usePeriod);
+      profile_atr_symbol = symbol;
+      profile_atr_tf = tf;
+      profile_atr_period = usePeriod;
+     }
+
+   if(profile_atr_handle == INVALID_HANDLE)
+      return 0.0;
+
+   double buf[];
+   int copied = CopyBuffer(profile_atr_handle, 0, 0, 1, buf);
+   if(copied <= 0)
+      return 0.0;
+   return buf[0];
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 double ParseCSVValue(const string csvValue, const string symbol)
   {
    string trimmed = Trim(csvValue);
+   if(trimmed == "")
+      return 0.0;
 
-   if(StringFind(trimmed, "*pip") >= 0 && StringFind(trimmed, "*pipPoints") < 0)
+   string lowered = trimmed;
+   StringToLower(lowered);
+
+   if(StringFind(lowered, "*pip") >= 0 && StringFind(lowered, "*pippoints") < 0)
      {
       string numStr = trimmed;
       StringReplace(numStr, "*pip", "");
       return StringToDouble(Trim(numStr)) * SymbolPipSize(symbol);
      }
 
-   if(StringFind(trimmed, "*pipPoints") >= 0)
+   if(StringFind(lowered, "*pippoints") >= 0)
      {
       string numStr = trimmed;
       StringReplace(numStr, "*pipPoints", "");
@@ -619,6 +718,25 @@ double ParseCSVValue(const string csvValue, const string symbol)
          point = SymbolPoint();
       double pip = SymbolPipSize(symbol);
       return multiplier * (point > 0.0 ? pip/point : 0.0);
+     }
+
+   int atrIdx = StringFind(lowered, "*atr");
+   if(atrIdx >= 0)
+     {
+      string multiplierPart = Trim(StringSubstr(trimmed, 0, atrIdx));
+      string suffix = Trim(StringSubstr(trimmed, atrIdx + 4));
+
+      double multiplier = (multiplierPart=="" ? 1.0 : StringToDouble(multiplierPart));
+      int period = (suffix=="" ? 14 : (int)StringToInteger(suffix));
+
+      double atrValue = SampleATR(symbol, InpTF, period);
+      if(atrValue <= 0.0)
+         atrValue = SampleATR(symbol, PERIOD_H1, period); // Fallback timeframe
+
+      if(atrValue <= 0.0)
+         return 0.0;
+
+      return multiplier * atrValue;
      }
 
    return StringToDouble(trimmed);
@@ -693,12 +811,26 @@ bool LoadUsecaseFromResource(const int presetID, UCRow &row)
 
       string fields[];
       int c = SplitCsvQuoted(ln, fields, ',');
+      if(c < 37)
+        {
+         PrintFormat("WARN: Preset line %d has %d columns, expected at least 37", i, c);
+         continue;
+        }
 
 
       // Case,Symbol,K_swing,N_bos,LookbackInternal,M_retest,EqTol,BOSBufferPoints,UseKillzones,UseRoundNumber,UseVSA,RNDelta,L_percentile,RiskPerTradePct,SL_BufferUSD,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,TimeStopMinutes,MinProgressR,MaxSpreadUSD,MaxOpenPositions,UsePendingRetest,RetestOffsetUSD,PendingExpirySec,UseTrailing,TrailMode,TrailATRPeriod,TrailATRMult,TrailStepUSD,TrailStartRR,UsePyramid,MaxAdds,AddSpacingUSD,AddSizeFactor,CooldownSec
       int csvPresetID = (int)StringToInteger(fields[0]);
       if(csvPresetID == presetID)
         {
+         row.UseATRScaling        = UseATRScaling;
+         row.ATRScalingPeriod     = ATRScalingPeriod;
+         row.SL_ATR_Mult          = SL_ATR_Mult;
+         row.Retest_ATR_Mult      = Retest_ATR_Mult;
+         row.AddSpacing_ATR_Mult  = AddSpacing_ATR_Mult;
+         row.TrailStep_ATR_Mult   = TrailStep_ATR_Mult;
+         row.MaxSpread_ATR_Mult   = MaxSpread_ATR_Mult;
+         row.RNDelta_ATR_Mult     = RNDelta_ATR_Mult;
+         SymbolSelect(fields[1], true);
          // Map fields according to CSV header order
          row.SelectedSymbol       = fields[1];
          row.K_swing              = (int)StringToInteger(fields[2]);
@@ -720,7 +852,7 @@ bool LoadUsecaseFromResource(const int presetID, UCRow &row)
          row.PartialClosePct      = (int)StringToInteger(fields[18]);
          row.TimeStopMinutes      = (int)StringToInteger(fields[19]);
          row.MinProgressR         = StringToDouble(fields[20]);
-         row.MaxSpreadUSD         = StringToDouble(fields[21]);
+         row.MaxSpreadUSD         = ParseCSVValue(fields[21], fields[1]);
          row.MaxOpenPositions     = (int)StringToInteger(fields[22]);
          row.UsePendingRetest     = StringToBool(fields[23]);
          row.RetestOffsetUSD      = ParseCSVValue(fields[24], fields[1]);
@@ -740,13 +872,31 @@ bool LoadUsecaseFromResource(const int presetID, UCRow &row)
          row.TrailMode            = (int)StringToInteger(fields[27]);
          row.TrailATRPeriod       = (int)StringToInteger(fields[28]);
          row.TrailATRMult         = StringToDouble(fields[29]);
-         row.TrailStepUSD         = StringToDouble(fields[30]);
+         row.TrailStepUSD         = ParseCSVValue(fields[30], fields[1]);
          row.TrailStartRR         = StringToDouble(fields[31]);
          row.UsePyramid           = StringToBool(fields[32]);
          row.MaxAdds              = (int)StringToInteger(fields[33]);
-         row.AddSpacingUSD        = StringToDouble(fields[34]);
+         row.AddSpacingUSD        = ParseCSVValue(fields[34], fields[1]);
          row.AddSizeFactor        = StringToDouble(fields[35]);
          row.CooldownSec          = (int)StringToInteger(fields[36]);
+
+         int optIdx = 37;
+         if(optIdx < c)
+           row.UseATRScaling = StringToBool(fields[optIdx++]);
+         if(optIdx < c)
+           row.ATRScalingPeriod = (int)StringToInteger(fields[optIdx++]);
+         if(optIdx < c)
+           row.SL_ATR_Mult = StringToDouble(fields[optIdx++]);
+         if(optIdx < c)
+           row.Retest_ATR_Mult = StringToDouble(fields[optIdx++]);
+         if(optIdx < c)
+           row.AddSpacing_ATR_Mult = StringToDouble(fields[optIdx++]);
+         if(optIdx < c)
+           row.TrailStep_ATR_Mult = StringToDouble(fields[optIdx++]);
+         if(optIdx < c)
+           row.MaxSpread_ATR_Mult = StringToDouble(fields[optIdx++]);
+         if(optIdx < c)
+           row.RNDelta_ATR_Mult = StringToDouble(fields[optIdx++]);
 
          found = true;
          break;
@@ -806,6 +956,24 @@ double SpreadUSD()
 //+------------------------------------------------------------------+
 bool DefaultSpreadForSymbol(string symbol_name, double &hi, double &lo)
   {
+   if(StringFind(symbol_name,"EURUSD",0) >= 0)
+     {
+      hi = 0.00025;
+      lo = 0.00010;
+      return true;
+     }
+   if(StringFind(symbol_name,"GBPUSD",0) >= 0)
+     {
+      hi = 0.00035;
+      lo = 0.00015;
+      return true;
+     }
+   if(StringFind(symbol_name,"USDJPY",0) >= 0)
+     {
+      hi = 0.05;
+      lo = 0.02;
+      return true;
+     }
    if(StringFind(symbol_name,"BTC",0) >= 0)
      {
       hi = 12.0;
@@ -828,6 +996,181 @@ bool DefaultSpreadForSymbol(string symbol_name, double &hi, double &lo)
   }
 
 
+//+------------------------------------------------------------------+
+//| Utility: clamp price-distance fields using pip units             |
+//+------------------------------------------------------------------+
+void ClampPriceField(double &value, double pip, double minPips, double maxPips)
+  {
+   if(pip <= 0.0)
+      return;
+
+   double minValue = minPips * pip;
+   double maxValue = maxPips * pip;
+
+   if(value <= 0.0)
+     {
+      value = minValue;
+      return;
+     }
+
+   double asPips = value / pip;
+   if(asPips < minPips)
+      value = minValue;
+   else
+      if(asPips > maxPips)
+         value = maxValue;
+  }
+
+//+------------------------------------------------------------------+
+//| Utility: clamp point-based fields using pip-points               |
+//+------------------------------------------------------------------+
+void ClampPointField(double &value, double pipPoints, double minPips, double maxPips)
+  {
+   if(pipPoints <= 0.0)
+      return;
+
+   double minPts = minPips * pipPoints;
+   double maxPts = maxPips * pipPoints;
+
+   if(value <= 0.0)
+     {
+      value = minPts;
+      return;
+     }
+
+   if(value < minPts)
+      value = minPts;
+   else
+      if(value > maxPts)
+         value = maxPts;
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool RefreshVolatilityProfile()
+  {
+   g_volProfile.pipSize  = SymbolPipSize(SelectedSymbol);
+   g_volProfile.pointSize= SymbolPoint();
+   g_volProfile.pipPoints= (g_volProfile.pointSize>0.0 ? g_volProfile.pipSize/g_volProfile.pointSize : 0.0);
+   SymbolInfoDouble(SelectedSymbol, SYMBOL_TRADE_TICK_VALUE, g_volProfile.tickValue);
+   SymbolInfoDouble(SelectedSymbol, SYMBOL_TRADE_TICK_SIZE,  g_volProfile.tickSize);
+   int period = (P.ATRScalingPeriod>1 ? P.ATRScalingPeriod : 14);
+   double atr = SampleATR(SelectedSymbol, InpTF, period);
+   if(atr <= 0.0)
+      atr = SampleATR(SelectedSymbol, PERIOD_H1, period);
+   if(atr <= 0.0 && period != 14)
+      atr = SampleATR(SelectedSymbol, InpTF, 14);
+
+   g_volProfile.atrValue  = atr;
+   g_volProfile.atrPips   = (g_volProfile.pipSize>0.0 && atr>0.0) ? atr / g_volProfile.pipSize : 0.0;
+   g_volProfile.atrPeriod = period;
+
+   return (g_volProfile.pipSize > 0.0);
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void ApplyKillzoneDefaultsForSymbol()
+  {
+   if(!P.UseKillzones)
+      return;
+
+   const int defaultKZ1s = 13*60 + 55;
+   const int defaultKZ1e = 14*60 + 20;
+   const int defaultKZ2s = 16*60 + 25;
+   const int defaultKZ2e = 16*60 + 40;
+   const int defaultKZ3s = 19*60 + 25;
+   const int defaultKZ3e = 19*60 + 45;
+   const int defaultKZ4s = 20*60 + 55;
+   const int defaultKZ4e = 21*60 + 15;
+
+   bool usingXAUDefaults = (P.KZ1s==defaultKZ1s && P.KZ1e==defaultKZ1e &&
+                            P.KZ2s==defaultKZ2s && P.KZ2e==defaultKZ2e &&
+                            P.KZ3s==defaultKZ3s && P.KZ3e==defaultKZ3e &&
+                            P.KZ4s==defaultKZ4s && P.KZ4e==defaultKZ4e);
+
+   if(StringFind(SelectedSymbol, "EURUSD", 0) >= 0 && usingXAUDefaults)
+     {
+      P.KZ1s = 7*60;    P.KZ1e = 10*60 + 30;
+      P.KZ2s = 12*60;   P.KZ2e = 16*60;
+      P.KZ3s = 0;       P.KZ3e = 0;
+      P.KZ4s = 0;       P.KZ4e = 0;
+      return;
+     }
+
+   if(StringFind(SelectedSymbol, "GBPUSD", 0) >= 0 && usingXAUDefaults)
+     {
+      P.KZ1s = 8*60;    P.KZ1e = 11*60 + 30;
+      P.KZ2s = 13*60;   P.KZ2e = 17*60;
+      P.KZ3s = 0;       P.KZ3e = 0;
+      P.KZ4s = 0;       P.KZ4e = 0;
+      return;
+     }
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void NormalizeFXUnits()
+  {
+   bool isXAU    = (StringFind(SelectedSymbol,"XAU",0)>=0);
+   bool isCrypto = (StringFind(SelectedSymbol,"BTC",0)>=0 || StringFind(SelectedSymbol,"ETH",0)>=0);
+   if(isXAU || isCrypto)
+      return;
+
+   double pip = (g_volProfile.pipSize>0.0 ? g_volProfile.pipSize : SymbolPipSize(SelectedSymbol));
+   double pipPoints = (g_volProfile.pipPoints>0.0 ? g_volProfile.pipPoints : 0.0);
+   double atr = g_volProfile.atrValue;
+
+   if(pip <= 0.0)
+      return;
+
+   if(P.UseATRScaling && atr > 0.0)
+     {
+      if(P.SL_ATR_Mult > 0.0)
+         P.SL_BufferUSD = atr * P.SL_ATR_Mult;
+      if(P.Retest_ATR_Mult > 0.0)
+         P.RetestOffsetUSD = atr * P.Retest_ATR_Mult;
+      if(P.AddSpacing_ATR_Mult > 0.0)
+         P.AddSpacingUSD = atr * P.AddSpacing_ATR_Mult;
+      if(P.TrailStep_ATR_Mult > 0.0)
+         P.TrailStepUSD = atr * P.TrailStep_ATR_Mult;
+      if(P.MaxSpread_ATR_Mult > 0.0)
+         P.MaxSpreadUSD = atr * P.MaxSpread_ATR_Mult;
+      if(P.RNDelta_ATR_Mult > 0.0)
+         P.RNDelta = atr * P.RNDelta_ATR_Mult;
+     }
+
+   ClampPriceField(P.SL_BufferUSD,    pip, 6.0, 40.0);
+   ClampPriceField(P.RetestOffsetUSD, pip, 1.0, 15.0);
+   ClampPriceField(P.AddSpacingUSD,   pip, 4.0, 60.0);
+   ClampPriceField(P.MaxSpreadUSD,    pip, 0.8, 6.0);
+   ClampPriceField(P.TrailStepUSD,    pip, 1.0, 30.0);
+   ClampPriceField(P.RNDelta,         pip, 1.0, 20.0);
+   ClampPriceField(P.EqTol,           pip, 1.5, 25.0);
+   ClampPointField(P.BOSBufferPoints, pipPoints, 1.0, 6.0);
+
+   // If ATR is available make sure buffers are not tighter than 0.6x ATR
+   if(g_volProfile.atrValue > 0.0)
+     {
+      double minSL = 0.6 * g_volProfile.atrValue;
+      if(P.SL_BufferUSD < minSL)
+         P.SL_BufferUSD = minSL;
+
+      double minRetest = 0.25 * g_volProfile.atrValue;
+      if(P.RetestOffsetUSD < minRetest)
+         P.RetestOffsetUSD = minRetest;
+
+      double minSpacing = 0.8 * g_volProfile.atrValue;
+      if(P.AddSpacingUSD < minSpacing)
+         P.AddSpacingUSD = minSpacing;
+     }
+  }
+
+
 // Tự scale tham số theo symbol/pip (chỉ "điều chỉnh nhẹ" khi dùng Custom hoặc preset không chuyên EU)
 void ApplyAutoSymbolProfile()
   {
@@ -841,7 +1184,12 @@ void ApplyAutoSymbolProfile()
 // Spread guard từ catalogue (nếu có)
    double hi=0.0, lo=0.0;
    if(DefaultSpreadForSymbol(SelectedSymbol, hi, lo))
-      P.MaxSpreadUSD = hi;
+     {
+      if(P.MaxSpreadUSD <= 0.0)
+         P.MaxSpreadUSD = lo;
+      else
+         P.MaxSpreadUSD = MathMin(P.MaxSpreadUSD, hi);
+     }
 
    bool isXAU    = (StringFind(SelectedSymbol,"XAU",0)>=0);
    bool isJPY    = (StringFind(SelectedSymbol,"JPY",0)>=0);
@@ -869,6 +1217,8 @@ void ApplyAutoSymbolProfile()
          P.AddSpacingUSD     = MathMax(P.AddSpacingUSD,  6.0*pip);
         }
 // XAU: giữ preset gốc
+
+   ApplyKillzoneDefaultsForSymbol();
   }
 
 
@@ -921,8 +1271,15 @@ double RoundMagnet(double price)
    if(isCrypto)
       return MathRound(price/RN_GridUSD_CRYPTO)*RN_GridUSD_CRYPTO;
 
-   double pip = SymbolPipSize(SelectedSymbol);
-   double inc = RN_GridPips_FX * pip;
+   double pip = (g_volProfile.pipSize>0.0 ? g_volProfile.pipSize : SymbolPipSize(SelectedSymbol));
+   double gridPips = RN_GridPips_FX;
+   if(g_volProfile.atrPips > 0.0)
+      gridPips = MathMax(5.0, MathMin(gridPips, g_volProfile.atrPips * 5.0));
+   if(StringFind(SelectedSymbol,"EURUSD",0)>=0)
+      gridPips = MathMin(gridPips, 5.0);
+   if(StringFind(SelectedSymbol,"GBPUSD",0)>=0)
+      gridPips = MathMin(gridPips, 8.0);
+   double inc = MathMax(pip, gridPips * pip);
    return MathRound(price/inc)*inc;
   }
 
@@ -1237,13 +1594,12 @@ void ConsiderPyramidAdds(long type, double entry, double curr, double sl)
          double lots = PositionGetDouble(POSITION_VOLUME) * P.AddSizeFactor;
          if(lots>0 && SpreadUSD()<=P.MaxSpreadUSD)
            {
-            if(AllowedToOpenNow())
-              {
-               trade.Buy(lots, SelectedSymbol, 0.0, sl, 0.0);
-               g_lastOpenTime=TimeCurrent();
-               g_lastAddPriceBuy=SymbolInfoDouble(SelectedSymbol,SYMBOL_ASK);
-               g_addCount=0;
-              }
+               if(AllowedToOpenNow())
+                 {
+                  trade.Buy(lots, SelectedSymbol, 0.0, sl, 0.0);
+                  g_lastOpenTime=TimeCurrent();
+                  g_lastAddPriceBuy=SymbolInfoDouble(SelectedSymbol,SYMBOL_ASK);
+                 }
             g_lastOpenTime = TimeCurrent();
             g_lastAddPriceBuy = curr;
             g_addCount++;
@@ -1264,7 +1620,6 @@ void ConsiderPyramidAdds(long type, double entry, double curr, double sl)
                   trade.Sell(lots, SelectedSymbol, 0.0, sl, 0.0);
                   g_lastOpenTime=TimeCurrent();
                   g_lastAddPriceSell=SymbolInfoDouble(SelectedSymbol,SYMBOL_BID);
-                  g_addCount=0;
                  }
                g_lastOpenTime = TimeCurrent();
                g_lastAddPriceSell = curr;
@@ -1598,14 +1953,11 @@ void TryEnterAfterRetest()
 int OnInit()
   {
    UCRow r;
-   if(LoadUsecaseFromResource(PresetID, r))
+   bool loaded = LoadUsecaseFromResource(PresetID, r);
+   if(loaded)
      {
-
-
       UseInputsAsParams();        // baseline
       ApplyCSVRowToParams(r);     // CSV override
-      ApplyAutoSymbolProfile();
-      return(INIT_SUCCEEDED);
      }
    else
      {
@@ -1638,10 +1990,14 @@ int OnInit()
          SelectedSymbol = InpSymbol;
 
       UseInputsAsParams(); // Apply input settings as fallback
-      ApplyAutoSymbolProfile(); // Apply symbol-specific adjustments
-      trade.SetAsyncMode(false);
-      return(INIT_SUCCEEDED);
+      SymbolSelect(SelectedSymbol, true);
      }
+
+   ApplyAutoSymbolProfile(); // Apply symbol-specific adjustments
+   RefreshVolatilityProfile();
+   NormalizeFXUnits();
+   trade.SetAsyncMode(false);
+   return(INIT_SUCCEEDED);
   }
 
 //+------------------------------------------------------------------+
@@ -1655,6 +2011,8 @@ void OnTick()
    if(ArraySize(rates)>=2 && rates[1].time != last_bar_time)
      {
       last_bar_time = rates[1].time;
+      RefreshVolatilityProfile();
+      NormalizeFXUnits();
       DetectBOSAndArm();
       TryEnterAfterRetest();
      }
@@ -1681,8 +2039,16 @@ void OnTesterPass()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-   if(atr_handle != INVALID_HANDLE)
-      IndicatorRelease(atr_handle);
+  if(atr_handle != INVALID_HANDLE)
+     IndicatorRelease(atr_handle);
+  if(profile_atr_handle != INVALID_HANDLE)
+     {
+      IndicatorRelease(profile_atr_handle);
+      profile_atr_handle = INVALID_HANDLE;
+      profile_atr_symbol = "";
+      profile_atr_period = 0;
+      profile_atr_tf = PERIOD_CURRENT;
+     }
    if(reason == REASON_INITFAILED)
       return;
 
@@ -1707,7 +2073,7 @@ void OnDeinit(const int reason)
    AppendCsvRow(InpLogFileName, InpUseCommonFile, header, row);
 
 // === CSV FORMAT FOR COMPARISON ===
-   string csvLine = StringFormat("%d,%s,%d,%d,%d,%d,%.2f,%.1f,%s,%s,%s,%.2f,%d,%.1f,%.2f,%.1f,%.1f,%.1f,%d,%d,%.1f,%.2f,%d,%s,%.2f,%d,%s,%d,%d,%.1f,%.1f,%.1f,%s,%d,%.2f,%.1f,%d",
+   string csvLine = StringFormat("%d,%s,%d,%d,%d,%d,%.2f,%.1f,%s,%s,%s,%.2f,%d,%.1f,%.2f,%.1f,%.1f,%.1f,%d,%d,%.1f,%.2f,%d,%s,%.2f,%d,%s,%d,%d,%.1f,%.1f,%.1f,%s,%d,%.2f,%.1f,%d,%s,%d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
                                  PresetID,
                                  SelectedSymbol,
                                  P.K_swing,
@@ -1744,7 +2110,15 @@ void OnDeinit(const int reason)
                                  P.MaxAdds,
                                  P.AddSpacingUSD,
                                  P.AddSizeFactor,
-                                 P.CooldownSec);
+                                 P.CooldownSec,
+                                 P.UseATRScaling ? "true" : "false",
+                                 P.ATRScalingPeriod,
+                                 P.SL_ATR_Mult,
+                                 P.Retest_ATR_Mult,
+                                 P.AddSpacing_ATR_Mult,
+                                 P.TrailStep_ATR_Mult,
+                                 P.MaxSpread_ATR_Mult,
+                                 P.RNDelta_ATR_Mult);
    Print("CSV_LINE: ", csvLine);
 
 // Enhanced summary log with key metrics
