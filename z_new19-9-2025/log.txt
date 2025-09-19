@@ -1,0 +1,138 @@
+EURUSD: history data begins from 2024.01.01 00:00
+EURUSD: ticks data begins from 2025.07.01 00:00
+EURGBP: history data begins from 2023.09.12 00:00
+EURGBP: ticks data begins from 2025.07.01 00:00
+GBPUSD: history data begins from 2023.09.15 00:00
+GBPUSD: ticks data begins from 2025.07.01 00:00
+connecting to 127.0.0.1:3000
+connected
+authorized (agent build 5264)
+EURUSD,M1 (Exness-MT5Trial17): testing of Experts\gemini.ex5 from 2025.07.01 00:00 to 2025.09.17 00:00
+common synchronization completed
+test Experts\gemini.ex5 on EURUSD,M1 thread finished
+prepare for shutdown
+shutdown finished
+login (build 5264)
+account info found with currency GBP
+initial deposit 10000.00 GBP, leverage 1:500
+successfully initialized
+172 bytes of total initialization data received
+VirtualApple @ 2.50GHz, 16383 MB
+EURUSD: symbol to be synchronized
+EURUSD: symbol synchronized already, 18 bytes received
+EURUSD,M1: history cached from 2024.01.01 22:05
+EURUSD,M1 (Exness-MT5Trial17): generating based on real ticks
+testing with execution delay 50 milliseconds
+EURUSD,M1: testing of Experts\gemini.ex5 from 2025.07.01 00:00 to 2025.09.17 00:00 started with inputs:
+  InpSymbol=EURUSD
+  InpSymbolSelector=0
+  InpTF=1
+  UsePreset=false
+  PresetID=1001
+  InpLogFileName=OptimizationResults_Adaptive.csv
+  InpRunTag=
+  InpUseCommonFile=true
+  EnableLong=true
+  EnableShort=true
+  K_swing=50
+  N_bos=6
+  LookbackInternal=12
+  M_retest=3
+  EqTol_ATR_Mult=0.1
+  BOSBuffer_ATR_Mult=0.05
+  UseKillzones=true
+  UseRoundNumber=true
+  UseVSA=false
+  RNDelta_ATR_Mult=0.2
+  RN_GridPips_FX=25.0
+  RN_GridUSD_CRYPTO=100.0
+  L_percentile=150
+  KZ1_StartMin=835
+  KZ1_EndMin=860
+  KZ2_StartMin=985
+  KZ2_EndMin=1000
+  KZ3_StartMin=1165
+  KZ3_EndMin=1185
+  KZ4_StartMin=1255
+  KZ4_EndMin=1275
+  RiskPerTradePct=0.5
+  SL_ATR_Mult=1.5
+  TP1_R=1.0
+  TP2_R=2.0
+  BE_Activate_R=0.8
+  PartialClosePct=50.0
+  TimeStopMinutes=120
+  MinProgressR=0.5
+  MaxSpread_ATR_Mult=0.15
+  MaxOpenPositions=1
+  ATRScalingPeriod=14
+  UsePendingRetest=true
+  RetestOffset_ATR_Mult=0.1
+  PendingExpirySec=300
+  Debug=true
+  UseTrailing=false
+  TrailMode=1
+  TrailATRPeriod=14
+  TrailATRMult=2.0
+  TrailStep_ATR_Mult=0.5
+  TrailStartRR=1.0
+  UsePyramid=false
+  MaxAdds=0
+  AddSpacing_ATR_Mult=0.8
+  AddSizeFactor=0.6
+  CooldownSec=0
+EURGBP : real ticks begin from 2025.07.01 00:00:00
+EURUSD : real ticks begin from 2025.07.01 00:00:00
+GBPUSD : real ticks begin from 2025.07.01 00:00:00
+2025.08.05 14:01:00   BOS-Long armed | sweep@2025.08.05 13:59 BOS@2025.08.05 14:00
+GBPUSD: symbol to be synchronized
+GBPUSD: symbol synchronized already, 18 bytes received
+2025.08.05 14:01:00   failed buy limit 0.01 EURUSD at 1.15508 sl: 1.15250 [Invalid price]
+2025.08.05 14:01:00   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.15508 sl: 1.15250 [invalid price]
+2025.08.05 14:02:00   BOS-Long armed | sweep@2025.08.05 13:59 BOS@2025.08.05 14:00
+2025.08.05 14:02:00   failed buy limit 0.01 EURUSD at 1.15508 sl: 1.15244 [Invalid price]
+2025.08.05 14:02:00   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.15508 sl: 1.15244 [invalid price]
+2025.08.05 14:03:00   BOS-Long armed | sweep@2025.08.05 13:59 BOS@2025.08.05 14:00
+2025.08.05 14:03:00   failed buy limit 0.01 EURUSD at 1.15508 sl: 1.15241 [Invalid price]
+2025.08.05 14:03:00   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.15508 sl: 1.15241 [invalid price]
+2025.08.05 14:04:00   BOS-Long armed | sweep@2025.08.05 13:59 BOS@2025.08.05 14:00
+2025.08.05 14:04:00   Retest window expired for signal at 2025.08.05 14:00
+2025.08.05 14:05:00   BOS-Long armed | sweep@2025.08.05 13:59 BOS@2025.08.05 14:00
+2025.08.05 14:05:00   Retest window expired for signal at 2025.08.05 14:00
+2025.08.05 14:06:00   BOS-Long armed | sweep@2025.08.05 13:59 BOS@2025.08.05 14:00
+2025.08.05 14:06:00   Retest window expired for signal at 2025.08.05 14:00
+2025.08.22 14:01:00   BOS-Long armed | sweep@2025.08.22 13:59 BOS@2025.08.22 14:00
+2025.08.22 14:02:00   BOS-Long armed | sweep@2025.08.22 13:59 BOS@2025.08.22 14:00
+2025.08.22 14:03:00   BOS-Long armed | sweep@2025.08.22 13:59 BOS@2025.08.22 14:00
+2025.08.22 14:03:01   Retest window expired for signal at 2025.08.22 14:00
+2025.08.22 14:04:00   BOS-Long armed | sweep@2025.08.22 13:59 BOS@2025.08.22 14:00
+2025.08.22 14:04:00   Retest window expired for signal at 2025.08.22 14:00
+2025.08.22 14:05:00   BOS-Long armed | sweep@2025.08.22 13:59 BOS@2025.08.22 14:00
+2025.08.22 14:05:00   Retest window expired for signal at 2025.08.22 14:00
+2025.08.22 14:06:00   BOS-Long armed | sweep@2025.08.22 13:59 BOS@2025.08.22 14:00
+2025.08.22 14:06:00   Retest window expired for signal at 2025.08.22 14:00
+2025.09.05 14:08:00   BOS-Short armed | sweep@2025.09.05 14:03 BOS@2025.09.05 14:07
+EURGBP: symbol to be synchronized
+EURGBP: symbol synchronized already, 18 bytes received
+2025.09.05 14:08:28   sell limit 0.01 EURUSD at 1.17436 sl: 1.17652 (1.17434 / 1.17440)
+2025.09.05 14:08:28   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.17436 sl: 1.17652 [done]
+2025.09.05 14:08:34   order [#2 sell limit 0.01 EURUSD at 1.17436] triggered
+2025.09.05 14:08:34   deal #2 sell 0.01 EURUSD at 1.17437 done (based on order #2)
+2025.09.05 14:08:34   deal performed [#2 sell 0.01 EURUSD at 1.17437]
+2025.09.05 14:08:34   order performed sell 0.01 at 1.17437 [#2 sell limit 0.01 EURUSD at 1.17436]
+2025.09.05 14:09:00   BOS-Short armed | sweep@2025.09.05 14:03 BOS@2025.09.05 14:07
+2025.09.05 14:10:00   BOS-Short armed | sweep@2025.09.05 14:03 BOS@2025.09.05 14:07
+2025.09.08 19:02:35   stop loss triggered #2 sell 0.01 EURUSD 1.17437 sl: 1.17652 [#3 buy 0.01 EURUSD at 1.17652]
+2025.09.08 19:02:35   deal #3 buy 0.01 EURUSD at 1.17652 done (based on order #3)
+2025.09.08 19:02:35   deal performed [#3 buy 0.01 EURUSD at 1.17652]
+2025.09.08 19:02:35   order performed buy 0.01 at 1.17652 [#3 buy 0.01 EURUSD at 1.17652]
+final balance 9998.41 GBP
+EURUSD,M1: 3289616 ticks, 80541 bars generated. Environment synchronized in 0:00:00.023. Test passed in 0:00:08.241 (including ticks preprocessing 0:00:00.537).
+EURUSD,M1: total time from login to stop testing 0:00:08.264 (including 0:00:00.023 for history data synchronization)
+5214614 total ticks for all symbols
+EURGBP: generate 1198197 ticks in 0:00:00.220, passed to tester 152157 ticks
+EURUSD: passed to tester 3289616 ticks
+GBPUSD: generate 3602384 ticks in 0:00:00.317, passed to tester 1772842 ticks
+1 Mb memory used including 36 Mb of history data, 256 Mb of tick data
+log file "C:\Program Files\MetaTrader 5\Tester\Agent-127.0.0.1-3000\logs\20250919.log" written
+connection closed
