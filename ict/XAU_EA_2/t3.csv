@@ -1,0 +1,2 @@
+Case,Symbol,K_swing,N_bos,LookbackInternal,M_retest,EqTol,BOSBufferPoints,UseKillzones,UseRoundNumber,RNDelta,RiskPerTradePct,SL_BufferUSD,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,TimeStopMinutes,MinProgressR,MaxSpreadUSD,MaxOpenPositions,UsePendingRetest,RetestOffsetUSD,PendingExpirySec,CooldownSec,ATRScalingPeriod,SL_ATR_Mult,Retest_ATR_Mult,MaxSpread_ATR_Mult,RNDelta_ATR_Mult,PendingExpiryMinutes,UseHTFFilter,HTF_EMA_Period,EntryOffsetPips
+1,XAUUSD,20,3,8,2,0.1,1.0,false,false,0.2,0.5,0.3,1.0,1.5,0.5,50,3,0.3,1.0,1,false,0.05,60,0,14,0.4,0.15,0.10,0.2,120,false,20,0.0

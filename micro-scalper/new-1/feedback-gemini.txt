@@ -1,0 +1,70 @@
+Of course. After reviewing the provided MQL5 code, I've identified the likely cause for the "spam entry" behavior you're seeing at the start of a backtest.
+
+The issue is not a single bug, but rather a combination of three factors: a persistent entry signal at the start of the test, how the backtester handles time, and the EA's configuration.
+
+Root Cause Analysis
+Persistent Entry Signal: At the very beginning of a backtest, especially if there's a price gap from the previous session, the first few ticks create a sharp price movement. Your DetectSpike() function correctly identifies this as a valid entry signal. Because the function looks at a moving window of the last 3 ticks, this "spike" condition can remain true for several consecutive ticks as new data comes in.
+
+Immediate Profit/Loss: With a very tight Take Profit (IN_TP_TICKS = 2) and Stop Loss (IN_SL_TICKS = 6), a newly opened position can be closed almost instantly by the ManagePositions() function, often within the next tick or two in a fast-moving backtest.
+
+Bypassed Cooldown Timers: The combination of a persistent signal and immediate closing creates a loop: Open Trade -> Immediate Close -> Re-enter. Your code has several excellent mechanisms to prevent this, but they are likely being bypassed in your test setup:
+
+
+Post-Close Cooldown: A setting (IN_POST_CLOSE_COOLDOWN_SECS) is designed to block new entries for 120 seconds after a trade closes.
+
+
+Inter-Trade Cooldown: Another setting (IN_MIN_SECS_BETWEEN_OPENS) blocks new entries for 120 seconds after a trade opens.
+
+
+One-Trade-Per-Bar: This filter prevents more than one trade in the same M5 bar.
+
+
+Millisecond Throttle: A 1000ms hard-coded throttle (IN_MIN_MSC_BETWEEN_SENDS) exists to prevent sending orders faster than once per second.
+
+The spam behavior strongly indicates that the main cooldown parameters (IN_POST_CLOSE_COOLDOWN_SECS, IN_MIN_SECS_BETWEEN_OPENS, etc.) have been set to 0 or false in your Strategy Tester settings. Furthermore, the millisecond throttle may not function in backtest modes that do not provide high-resolution timestamps, effectively disabling the final safeguard.
+
+Solution and Code Improvement
+The primary solution is to ensure you are running the backtest with the EA's protective cooldowns enabled.
+
+1. Check Your Backtest Parameters
+When you run the backtest, go to the "Inputs" tab and ensure the following parameters are set to non-zero values. The code's defaults are sensible starting points:
+
+IN_MIN_SECS_BETWEEN_OPENS: 120
+
+IN_POST_CLOSE_COOLDOWN_SECS: 120
+
+IN_ONE_TRADE_PER_BAR: true
+
+Enabling these settings will activate the core logic that prevents rapid-fire trading and will stop the spam entries.
+
+2. Code Hardening (Optional)
+To make the EA more robust against accidental misconfiguration, you can add a simple, non-configurable 1-second "hard throttle" that works even if millisecond timestamps are unavailable.
+
+Find this block of code in the OnTick() function (around line 520):
+
+Code snippet
+
+  // Hard throttle by tick time (ms)
+  MqlTick tk_now;
+  if(SymbolInfoTick(G_SYMBOL,tk_now)){
+    if(g_last_send_msc>0 && (long)tk_now.time_msc - g_last_send_msc < IN_MIN_MSC_BETWEEN_SENDS){ if(IN_TRACE_LEVEL>=2) DecisionLog("GATE_FAIL","min_msc_between_sends",0,0,dir); return; }
+  }
+And add the following improved logic right after it. This modification introduces a fallback check using the standard TimeCurrent() function, ensuring at least one second passes between trade attempts, regardless of backtest mode or user settings.
+
+Code snippet
+
+  // Hard throttle by tick time (ms)
+  MqlTick tk_now;
+  if(SymbolInfoTick(G_SYMBOL,tk_now) && tk_now.time_msc > 0){
+    if(g_last_send_msc > 0 && (long)tk_now.time_msc - g_last_send_msc < IN_MIN_MSC_BETWEEN_SENDS){
+        if(IN_TRACE_LEVEL>=2) DecisionLog("GATE_FAIL","min_msc_between_sends",0,0,dir);
+        return;
+    }
+  } else {
+    // Fallback for testers without millisecond data: use TimeCurrent()
+    if(ts > g_last_open_time && (ts - g_last_open_time) < 1) {
+        if(IN_TRACE_LEVEL>=2) DecisionLog("GATE_FAIL","hard_throttle_fallback",0,0,dir);
+        return;
+    }
+  }
+By adjusting your backtest parameters and applying this optional code enhancement, you will resolve the spam entry issue and get a much clearer picture of the EA's performance.
