@@ -1,0 +1,23 @@
+G_CONSECUTIVE_BARS   = 2;
+      G_MIN_BAR_BODY_TICKS = 10;
+      G_TP_TICKS           = 60;
+      G_SL_TICKS           = 20;
+      G_TRAIL_ENABLED      = true;
+      G_TRAIL_START_TICKS    = 25;
+      G_TRAIL_DISTANCE_TICKS = 10;
+      G_MAX_PYRAMID_ENTRIES = 3;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      G_SPREAD_MAX_TICKS   = 10; // 6 spread EUR
