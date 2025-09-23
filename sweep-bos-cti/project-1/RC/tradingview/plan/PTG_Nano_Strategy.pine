@@ -1,0 +1,316 @@
+//@version=6
+strategy("PTG Nano Plus Strategy – Push • Test • Go", overlay=true, max_bars_back=200, 
+         default_qty_type=strategy.percent_of_equity, default_qty_value=100,
+         commission_type=strategy.commission.cash_per_contract, commission_value=0.02)
+
+// ===== Strategy Inputs =====
+// Trading Pair Selection
+pairSelection = input.string("EUR/USD", "Select Trading Pair", options=["EUR/USD", "XAU/USD"])
+
+// Auto-configure based on selected pair
+isPairEURUSD = pairSelection == "EUR/USD"
+isPairXAUUSD = pairSelection == "XAU/USD"
+
+// Auto pip size based on pair
+pipSize = isPairEURUSD ? 0.0001 : 0.01
+
+// Trend filter settings
+useEMA      = input.bool(true,  "Lọc trend EMA34/55")
+useVWAP     = input.bool(false, "Lọc trend VWAP (intraday) - Turn ON for Gold")
+lookback    = input.int(20,  "So sánh trong N nến", minval=10)
+
+// Auto-optimized Push criteria based on pair
+pushRangePct= input.float(0.75,"Range ≥ 75% range lớn nhất N nến", step=0.05)
+closePct    = input.float(0.75,"Close nằm ở 75–100% cực trị (scalping tighter)", step=0.05)
+oppWickPct  = input.float(0.25,"Bóng ngược ≤ 25% range (scalping stricter)", step=0.05)
+
+// Auto volume multiplier based on pair (Gold more volatile)
+volHighMult = input.float(1.8, "Vol ≥ X× SMA Vol (1.8 EUR, 2.0 Gold)", step=0.1)
+
+// VSA-inspired filters with pair-specific defaults
+useSpreadFilter = input.bool(true, "Filter spread (scalping essential)")
+maxSpreadPip = input.float(0.8, "Max spread (0.8 EUR, 0.3 Gold)", step=0.1)
+minVolSpike = input.float(2.0, "Min volume spike (2.0 EUR, 2.2 Gold)", step=0.1)
+
+testBars    = input.int(3,  "Cho phép TEST trong 1–3 nến", minval=1, maxval=5)
+pullbackMax = input.float(0.35,"Pullback ≤ X% range PUSH (35% EUR, 30% Gold)", step=0.01)
+volLowMult  = input.float(0.8, "Vol TEST ≤ 0.8× SMA Vol", step=0.05)
+confirmNext = input.bool(true, "Test cần 1 nến xác nhận (close theo hướng)")
+
+// Entry/exit settings with pair guidance
+entryBufPip = input.float(0.1, "Đệm Entry (0.1 EUR, 0.05 Gold)", step=0.01)
+slBufPip    = input.float(0.2, "Đệm SL (0.2 EUR, 0.1 Gold)", step=0.01)
+
+// Scalping-optimized TP ratios
+tpRatio1 = input.float(1.0, "TP1 ratio (1.0 EUR, 0.8 Gold)", step=0.1, minval=0.5)
+tpRatio2 = input.float(2.0, "TP2 ratio (2.0 EUR, 1.5 Gold)", step=0.1, minval=1.0) 
+tpRatio3 = input.float(3.0, "TP3 ratio (3.0 EUR, 2.5 Gold)", step=0.1, minval=2.0)
+
+// Dynamic SL based on volatility
+useDynamicSL = input.bool(true, "Dynamic SL based on ATR")
+atrMultSL = input.float(0.5, "ATR multiplier for SL (0.5 EUR, 0.3 Gold)", step=0.1)
+
+// Strategy-specific inputs
+riskPercent = input.float(2.0, "Risk per trade % (2% EUR, 1.5% Gold)", step=0.1, minval=0.1, maxval=10.0)
+maxConcurrent = input.int(1, "Max concurrent positions", minval=1, maxval=3)
+usePartialTPs = input.bool(true, "Use partial TPs (33% each level)")
+
+// Phiên & News (disabled for now - will implement later)
+// useSession  = input.bool(true, "Chỉ trade phiên London/NY overlap")
+// lonNYStart  = input.session("1200-1600", "Giờ overlap (sàn UTC)")
+// noTradeWin  = input.bool(false, "Block khung giờ tin (tự nhập)")
+// noTradeSess = input.session("1150-1215", "Khung no-trade (UTC, ví dụ quanh news)")
+
+// ===== Core series =====
+ema34 = ta.ema(close, 34)
+ema55 = ta.ema(close, 55)
+vwap  = ta.vwap
+
+// Auto-apply VWAP for Gold pairs
+actualUseVWAP = useVWAP or isPairXAUUSD
+upOK = (not useEMA or ema34 > ema55) and (not actualUseVWAP or close > vwap)
+dnOK = (not useEMA or ema34 < ema55) and (not actualUseVWAP or close < vwap)
+
+// phiên - disabled for now (will implement later)
+// inOverlap = not useSession or bool(time(timeframe.period, lonNYStart))
+// inNoNews  = not noTradeWin or not bool(time(timeframe.period, noTradeSess))
+inOverlap = true  // Always allow trading for now
+inNoNews  = true  // No news filter for now
+
+// Enhanced metrics for scalping
+rng   = high - low
+rngHi = ta.highest(rng, lookback)
+volMA = ta.sma(volume, lookback)
+rngMA = ta.sma(rng, lookback)
+atr14 = ta.atr(14)
+
+// Auto-apply optimized parameters based on pair selection
+actualVolHighMult = isPairXAUUSD ? math.max(volHighMult, 2.0) : volHighMult
+actualMaxSpread = isPairXAUUSD ? math.min(maxSpreadPip, 0.3) : maxSpreadPip
+actualMinVolSpike = isPairXAUUSD ? math.max(minVolSpike, 2.2) : minVolSpike
+actualPullbackMax = isPairXAUUSD ? math.min(pullbackMax, 0.30) : pullbackMax
+actualEntryBuf = isPairXAUUSD ? math.min(entryBufPip, 0.05) : entryBufPip
+actualSlBuf = isPairXAUUSD ? math.min(slBufPip, 0.1) : slBufPip
+actualTP1 = isPairXAUUSD ? math.min(tpRatio1, 0.8) : tpRatio1
+actualTP2 = isPairXAUUSD ? math.min(tpRatio2, 1.5) : tpRatio2
+actualTP3 = isPairXAUUSD ? math.min(tpRatio3, 2.5) : tpRatio3
+actualATRMult = isPairXAUUSD ? math.min(atrMultSL, 0.3) : atrMultSL
+actualRiskPercent = isPairXAUUSD ? math.min(riskPercent, 1.5) : riskPercent
+
+// Spread filter for scalping (auto-adjust calculation based on pair)
+currentSpread = isPairEURUSD ? (high - low) * 10000 : (high - low) // EUR=points, Gold=direct
+spreadOK = not useSpreadFilter or currentSpread <= actualMaxSpread
+
+// VSA volume analysis with auto-optimized values
+volSpike = volume >= volMA * actualMinVolSpike
+volPrev2 = volume > math.max(volume[1], volume[2]) // Higher than last 2 bars
+
+closePosHi = (close - low) / math.max(rng, 1e-6)
+closePosLo = (high - close) / math.max(rng, 1e-6)
+lowWick    = (math.min(open, close) - low) / math.max(rng, 1e-6)
+upWick     = (high - math.max(open, close)) / math.max(rng, 1e-6)
+
+bigRange = rng >= rngHi * pushRangePct
+hiVol    = volume >= volMA * actualVolHighMult and volume > volume[1]
+
+// VSA-inspired signals for enhanced Push detection
+isGreenBar = close > open
+isRedBar = close < open
+bodySize = math.abs(close - open) / math.max(rng, 1e-6)
+
+// Selling Climax (bearish after push up) - Volume spike + pullback from high
+sellingClimax = isGreenBar and volSpike and closePosHi >= 0.7 and upWick >= 0.2 and bigRange
+// Buying Climax (bullish after push down) - Volume spike + pullback from low  
+buyingClimax = isRedBar and volSpike and closePosLo >= 0.7 and lowWick >= 0.2 and bigRange
+
+// Enhanced Push conditions with spread filter
+pushUpRaw = inOverlap and inNoNews and upOK and bigRange and hiVol and closePosHi >= closePct and upWick <= oppWickPct
+pushDnRaw = inOverlap and inNoNews and dnOK and bigRange and hiVol and closePosLo >= closePct and lowWick <= oppWickPct
+
+pushUp = pushUpRaw and spreadOK and not sellingClimax
+pushDn = pushDnRaw and spreadOK and not buyingClimax
+
+plotshape(pushUp, title="Push Up", style=shape.triangleup, location=location.belowbar,
+     color=color.new(color.lime, 0), size=size.tiny, text="Push↑", textcolor=color.black)
+plotshape(pushDn, title="Push Down", style=shape.triangledown, location=location.abovebar,
+     color=color.new(color.red, 0), size=size.tiny, text="Push↓", textcolor=color.white)
+
+var bool  waitTest = false
+var bool  longDir  = false
+var int   iPush    = na
+var float hiPush   = na
+var float loPush   = na
+var float rngPush  = na
+
+if (pushUp or pushDn)
+    waitTest := true
+    longDir  := pushUp
+    iPush    := bar_index
+    hiPush   := high
+    loPush   := low
+    rngPush  := rng
+
+win = waitTest and (bar_index - iPush) >= 1 and (bar_index - iPush) <= testBars
+
+pullOKLong  = win and  longDir     and (hiPush - low)  <= actualPullbackMax * rngPush
+pullOKShort = win and (not longDir) and (high  - loPush) <= actualPullbackMax * rngPush
+lowVol      = volume <= volMA * volLowMult
+smallRng    = rng <= rngMA * 0.8
+
+// VSA-inspired Test conditions
+// No Supply (bullish) - small down bar, low volume
+noSupply = isRedBar and smallRng and lowVol and bodySize <= 0.6
+// No Demand (bearish) - small up bar, low volume  
+noDemand = isGreenBar and smallRng and lowVol and bodySize <= 0.6
+
+// Testing phase - narrow range, low volume, opposite to push direction
+testingLong = smallRng and lowVol and not isGreenBar // Not pushing higher
+testingShort = smallRng and lowVol and not isRedBar  // Not pushing lower
+
+rawTestLong  = pullOKLong  and (noSupply or testingLong) and spreadOK
+rawTestShort = pullOKShort and (noDemand or testingShort) and spreadOK
+
+// Xác nhận nến sau (nếu bật)
+confLong  = not confirmNext or (close > open and high >= high[1])
+confShort = not confirmNext or (close < open and low  <= low[1])
+
+testLong  = rawTestLong  and confLong
+testShort = rawTestShort and confShort
+
+plotshape(testLong,  title="Test Long",  style=shape.circle, location=location.belowbar,
+     color=color.new(color.lime, 0), size=size.tiny, text="Test", textcolor=color.black)
+plotshape(testShort, title="Test Short", style=shape.circle, location=location.abovebar,
+     color=color.new(color.red, 0), size=size.tiny, text="Test", textcolor=color.white)
+
+var float testHi = na
+var float testLo = na
+if testLong
+    testHi := high
+    testLo := low
+if testShort
+    testHi := high
+    testLo := low
+
+useHi = na(testHi) ? hiPush : testHi
+useLo = na(testLo) ? loPush : testLo
+
+buf   = actualEntryBuf * pipSize
+slBuf = actualSlBuf    * pipSize
+
+longEntry  = useHi + buf
+shortEntry = useLo - buf
+
+// Fix crossover warnings by calculating on every bar
+longCross = ta.crossover(high, longEntry)
+shortCross = ta.crossunder(low, shortEntry)
+
+goLong  = waitTest and  longDir     and longCross
+goShort = waitTest and (not longDir) and shortCross
+
+// Enhanced SL calculation with dynamic ATR option using auto-optimized values
+baseSLLong  = (na(testLo) ? loPush : testLo) - slBuf
+baseSLShort = (na(testHi) ? hiPush : testHi) + slBuf
+atrSL = atr14 * actualATRMult
+
+slLong  = useDynamicSL ? math.min(baseSLLong, longEntry - atrSL) : baseSLLong
+slShort = useDynamicSL ? math.max(baseSLShort, shortEntry + atrSL) : baseSLShort
+
+// Scalping-optimized TP levels using auto-optimized ratios
+tp1L = longEntry  + pipSize * actualTP1
+tp2L = longEntry  + pipSize * actualTP2
+tp3L = longEntry  + pipSize * actualTP3
+tp1S = shortEntry - pipSize * actualTP1
+tp2S = shortEntry - pipSize * actualTP2
+tp3S = shortEntry - pipSize * actualTP3
+
+// ===== STRATEGY LOGIC =====
+// Position size calculation based on auto-optimized risk percentage
+getRiskBasedQty(entryPrice, stopPrice) =>
+    riskAmount = strategy.equity * actualRiskPercent / 100
+    priceRisk = math.abs(entryPrice - stopPrice)
+    math.max(1, math.floor(riskAmount / priceRisk))
+
+// Check if we can open new positions
+canOpenLong = strategy.position_size == 0 or (strategy.position_size > 0 and strategy.opentrades < maxConcurrent)
+canOpenShort = strategy.position_size == 0 or (strategy.position_size < 0 and strategy.opentrades < maxConcurrent)
+
+// Entry conditions
+if (goLong and canOpenLong)
+    qty = getRiskBasedQty(longEntry, slLong)
+    strategy.entry("Long", strategy.long, qty=qty, stop=longEntry, comment="PTG Long")
+    strategy.exit("Long SL", "Long", stop=slLong, comment="SL Hit")
+    
+    if usePartialTPs
+        // Partial TPs: 33% at each level
+        strategy.exit("Long TP1", "Long", limit=tp1L, qty_percent=33, comment="TP1")
+        strategy.exit("Long TP2", "Long", limit=tp2L, qty_percent=50, comment="TP2") // 50% of remaining
+        strategy.exit("Long TP3", "Long", limit=tp3L, comment="TP3")
+    else
+        strategy.exit("Long TP", "Long", limit=tp1L, comment="TP Hit")
+
+if (goShort and canOpenShort)
+    qty = getRiskBasedQty(shortEntry, slShort)
+    strategy.entry("Short", strategy.short, qty=qty, stop=shortEntry, comment="PTG Short")
+    strategy.exit("Short SL", "Short", stop=slShort, comment="SL Hit")
+    
+    if usePartialTPs
+        // Partial TPs: 33% at each level
+        strategy.exit("Short TP1", "Short", limit=tp1S, qty_percent=33, comment="TP1")
+        strategy.exit("Short TP2", "Short", limit=tp2S, qty_percent=50, comment="TP2") // 50% of remaining
+        strategy.exit("Short TP3", "Short", limit=tp3S, comment="TP3")
+    else
+        strategy.exit("Short TP", "Short", limit=tp1S, comment="TP Hit")
+
+// Reset waitTest after entry or timeout
+if (goLong or goShort) or (win and (bar_index - iPush) == testBars)
+    waitTest := false
+    testHi := na
+    testLo := na
+
+// ===== VISUALIZATION =====
+plotshape(goLong,  title="GO Long",  style=shape.labelup,   location=location.belowbar,
+     color=color.new(color.lime, 0), text="GO Long", textcolor=color.black, size=size.tiny)
+plotshape(goShort, title="GO Short", style=shape.labeldown, location=location.abovebar,
+     color=color.new(color.red, 0),  text="GO Short", textcolor=color.white, size=size.tiny)
+
+// Plot levels only when we have signals
+plot(goLong  ? slLong : na, title="SL Long",  style=plot.style_circles, color=color.orange, linewidth=2)
+plot(goShort ? slShort: na, title="SL Short", style=plot.style_circles, color=color.orange, linewidth=2)
+plot(goLong  ? longEntry  : na, title="Entry Long",  style=plot.style_linebr, color=color.green, linewidth=2)
+plot(goShort ? shortEntry : na, title="Entry Short", style=plot.style_linebr, color=color.maroon, linewidth=2)
+
+// TP levels
+plot(goLong  ? tp1L : na, title="TP1 L", style=plot.style_linebr, color=color.lime, linewidth=1)
+plot(goLong  ? tp2L : na, title="TP2 L", style=plot.style_linebr, color=color.lime, linewidth=1)
+plot(goLong  ? tp3L : na, title="TP3 L", style=plot.style_linebr, color=color.lime, linewidth=1)
+plot(goShort ? tp1S: na, title="TP1 S", style=plot.style_linebr, color=color.red, linewidth=1)
+plot(goShort ? tp2S: na, title="TP2 S", style=plot.style_linebr, color=color.red, linewidth=1)
+plot(goShort ? tp3S: na, title="TP3 S", style=plot.style_linebr, color=color.red, linewidth=1)
+
+// ===== PERFORMANCE METRICS =====
+// Calculate some additional metrics for analysis
+var int totalTrades = 0
+var int winningTrades = 0
+var float totalPnL = 0.0
+
+if strategy.closedtrades > strategy.closedtrades[1]
+    totalTrades := totalTrades + 1
+    lastTradePnL = strategy.closedtrades.exit_price(strategy.closedtrades - 1) - strategy.closedtrades.entry_price(strategy.closedtrades - 1)
+    if strategy.closedtrades.profit(strategy.closedtrades - 1) > 0
+        winningTrades := winningTrades + 1
+    totalPnL := totalPnL + strategy.closedtrades.profit(strategy.closedtrades - 1)
+
+// Display current stats
+winRate = totalTrades > 0 ? winningTrades / totalTrades * 100 : 0
+avgPnL = totalTrades > 0 ? totalPnL / totalTrades : 0
+
+var table statsTable = table.new(position.top_right, 2, 4, bgcolor=color.white, border_width=1)
+if barstate.islast
+    table.cell(statsTable, 0, 0, "Metric", text_color=color.black, bgcolor=color.gray)
+    table.cell(statsTable, 1, 0, "Value", text_color=color.black, bgcolor=color.gray)
+    table.cell(statsTable, 0, 1, "Win Rate", text_color=color.black)
+    table.cell(statsTable, 1, 1, str.tostring(winRate, "#.##") + "%", text_color=color.black)
+    table.cell(statsTable, 0, 2, "Total Trades", text_color=color.black)
+    table.cell(statsTable, 1, 2, str.tostring(totalTrades), text_color=color.black)
+    table.cell(statsTable, 0, 3, "Avg PnL", text_color=color.black)
+    table.cell(statsTable, 1, 3, str.tostring(avgPnL, "#.##"), text_color=color.black)

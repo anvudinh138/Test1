@@ -1,0 +1,71 @@
+để bạn khỏi phải nghĩ nhiều, đây là kịch bản test nhanh cho v4.0.0 (presets 0–49):
+
+plan 15 phút (chạy theo cặp)
+
+Baseline
+
+InpUsecase=18 (strict)
+
+InpUsecase=19 (strict + adaptive)
+→ chọn bên nào PF/Sharpe tốt hơn làm mốc.
+
+High-vol / chất lượng cao
+
+42 (High-vol only, hard sweep, bias 40 no-contra)
+
+47 (Momentum-only, hard sweep, spread 10/9)
+→ ít lệnh, nhưng PF thường cao nhất nếu thị trường chạy.
+
+Low-vol / mở độ phủ
+
+43 (low-vol friendly)
+
+25 (spread relaxed 15/12 + push chặt)
+→ tăng số lệnh khi thị trường hiền hoặc broker spread hơi lớn.
+
+Trend carry vs Protective
+
+48 (trend carry, trail muộn, no-contra)
+
+49 (protective/mean-revert, exits nhanh, RN 5/3)
+→ chọn theo ngày trending hay mean-revert.
+
+Chop control (nếu log thấy cancel nhiều)
+
+35 (engine kiên nhẫn: dwell 14s/ buf 5p / cd 60s)
+
+45 (engine rất kiên nhẫn: 18s/6p/75s)
+
+tiêu chí chọn preset (lọc nhanh)
+
+PF ≥ 1.15, WR ≥ 46%, Sharpe > 2.5
+
+MaxDD ≤ ~1.8× median win (đừng chỉ nhìn số tuyệt đối)
+
+Cancels/Trades < 0.55 (nếu cao → thử 35/45)
+
+Early-cut rate 10–25% là vừa; >30% → thử exits “bảo thủ” (38) hoặc engine kiên nhẫn (35/45)
+
+khi nào đổi preset?
+
+Log “⚠️ Round number nearby” nhiều → 24 (RN nhẹ) hoặc 28 (RN off) hoặc 32/44 (RN rất chặt/bất đối xứng).
+
+Log “⛔ Spread too wide” → 25 (15/12) hoặc nếu ECN xịn → 34/47 (10/9).
+
+“bias block” nhiều mà tín hiệu vẫn ngon → 21 (slope 25) hoặc 30/40 (bias off/soft).
+
+Không có lệnh: tăng độ phủ bằng 21, 30, 40 hoặc hạ ATRmin (43).
+
+nhắc lại tên file để bạn tạo tay
+
+EA: PTG_BALANCED_v4.0.0.mq5 ← (mình đã gửi full code ở trên)
+
+Preset docs:
+
+PRESETS_UC_TABLE_30-39.md
+
+PRESETS_UC_TABLE_40-49.md
+
+(nếu cần) PTG_PROJECT_README.md, QUICK_REFERENCE.md, LOG_DECODER.md, OPTIMIZATION_PLAYBOOK.md, CHANGELOG.md, AI_ANALYSIS_PROMPT_TEMPLATE.md
+
+cứ copy–paste là chạy được. nếu sau khi test bạn gửi 1 file log + ảnh kết quả, mình đọc và đề xuất batch 50–59 (ma trận RN × slope × spread) để “vít” thêm nữa. chạy thôi! 🚀

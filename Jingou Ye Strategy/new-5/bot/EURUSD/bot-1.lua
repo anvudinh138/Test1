@@ -1,0 +1,15 @@
+InpEntryMethod=2
+InpTrendTimeframe=16385
+InpEntryTimeframe=4
+InpFastEMA_Period=7
+InpSlow1EMA_Period=30
+InpSlow2EMA_Period=60
+InpStopLossPoints=250
+InpTakeProfit1_Points=250
+InpTakeProfit2_Points=700
+InpUseTrailingSL=true
+InpTrailingStartPoints=300
+InpTrailingStopPoints=150
+InpRiskPercent=0.3
+InpUseDailyFilter=false
+InpUseAdxFilter=true
