@@ -533,12 +533,11 @@ bool FindAnchorFVG(const bool isBuy, FVGZone &fvg)
     }
     else
     {
-      double top = ar[k+2].low;
-      double bot = ar[k].high;
-      if(top - bot < -minSize)
+      double top = ar[k].high;
+      double bot = ar[k+2].low;
+      if(top - bot > minSize)
       {
-        // For sell, ensure zone top<bottom to preserve band later normalize
-        fvg.top=bot; fvg.bottom=top; fvg.anchorIndex=k; return true;
+        fvg.top=top; fvg.bottom=bot; fvg.anchorIndex=k; return true;
       }
     }
   }
