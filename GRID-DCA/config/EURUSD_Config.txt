@@ -10,9 +10,11 @@ InpEnableDCATrading = true      # Enable DCA averaging
 
 === RISK MANAGEMENT ===
 InpMaxAccountRisk = 10.0        # Maximum 10% account risk
-InpProfitTargetPercent = 5.0    # 5% profit target per cycle
-InpMaxSpreadPips = 3.0          # Max 3 pips spread
-InpUseVolatilityFilter = true   # Filter high volatility
+InpProfitTargetPercent = 1.0    # 1% profit target
+InpProfitTargetUSD = 3.0        # $3 USD profit target
+InpUseTotalProfitTarget = true  # Use TOTAL profit (both directions combined)  
+InpMaxSpreadPips = 8.0          # Max 8 pips spread (more realistic for EURUSD)
+InpUseVolatilityFilter = false  # Disable volatility filter initially
 
 === TIME FILTERS ===
 InpUseTimeFilter = false        # Disable for 24/7 trading
@@ -27,14 +29,15 @@ InpEAComment = "FlexGridDCA"    # Position comment
 
 # RECOMMENDED SETTINGS FOR EURUSD:
 # - Start with demo account
-# - Use 0.01 lot size for safety
-# - Monitor for at least 1 week
-# - Gradually increase lot size if successful
+# - Use 0.01 lot size (always fixed)
+# - $5 USD target = easy to achieve with 0.01 lots
+# - 1% of $500 account = $5, so both targets aligned
+# - Monitor profit taking frequency (should see resets)
 # - ATR H1 typically 50-150 pips for EURUSD
-# - Grid spacing will be dynamic based on ATR
 
 # SAFETY NOTES:
-# - Fixed lot size prevents account explosion
-# - Maximum 5 levels = max 0.05 lots exposure
-# - Profit target ensures regular profit taking
-# - Volatility filter avoids dangerous conditions
+# - Fixed 0.01 lot size prevents account explosion
+# - Maximum 5 levels = max 0.05 lots per direction
+# - $5 USD target is achievable and frequent
+# - Lower target = more frequent profit cycles
+# - Each direction operates independently

@@ -9,14 +9,14 @@
 #property description "Universal Grid + DCA EA with ATR-based calculations"
 
 #include <Trade\Trade.mqh>
-#include "../includes/ATRCalculator.mqh"
-#include "../includes/GridManager.mqh"
+#include <ATRCalculator.mqh>
+#include <GridManager_v2.mqh>
 
 //+------------------------------------------------------------------+
 //| Expert Properties                                                |
 //+------------------------------------------------------------------+
 input group "=== BASIC SETTINGS ==="
-input double      InpFixedLotSize = 0.01;           // Fixed Lot Size (Safe for high margin)
+input double      InpFixedLotSize = 0.01;           // Fixed Lot Size (Always 0.01 - Broker minimum)
 input int         InpMaxGridLevels = 5;             // Maximum Grid Levels
 input double      InpATRMultiplier = 1.0;           // ATR Multiplier for Grid Spacing
 input bool        InpEnableGridTrading = true;      // Enable Grid Trading
@@ -24,9 +24,11 @@ input bool        InpEnableDCATrading = true;       // Enable DCA Trading
 
 input group "=== RISK MANAGEMENT ==="
 input double      InpMaxAccountRisk = 10.0;         // Maximum Account Risk %
-input double      InpProfitTargetPercent = 5.0;     // Profit Target %
-input double      InpMaxSpreadPips = 3.0;           // Maximum Spread (pips)
-input bool        InpUseVolatilityFilter = true;    // Use Volatility Filter
+input double      InpProfitTargetPercent = 1.0;     // Profit Target % (Per Direction)
+input double      InpProfitTargetUSD = 3.0;         // Profit Target USD (Per Direction)
+input bool        InpUseTotalProfitTarget = true;   // Use Total Profit Target (Both Directions)
+input double      InpMaxSpreadPips = 8.0;           // Maximum Spread (pips)
+input bool        InpUseVolatilityFilter = false;   // Use Volatility Filter
 
 input group "=== TIME FILTERS ==="
 input bool        InpUseTimeFilter = false;         // Enable Time Filter
@@ -43,7 +45,7 @@ input string      InpEAComment = "FlexGridDCA";     // EA Comment
 //| Global Variables                                                 |
 //+------------------------------------------------------------------+
 CATRCalculator   *g_atr_calculator;
-CGridManager     *g_grid_manager;
+CGridManagerV2   *g_grid_manager;
 CTrade           g_trade;
 
 datetime         g_last_grid_update;
@@ -79,13 +81,16 @@ int OnInit()
         return(INIT_FAILED);
     }
     
-    // Initialize Grid Manager
-    g_grid_manager = new CGridManager();
-    if(!g_grid_manager.Initialize(_Symbol, InpFixedLotSize, InpMaxGridLevels))
+    // Initialize Grid Manager V2
+    g_grid_manager = new CGridManagerV2();
+    if(!g_grid_manager.Initialize(_Symbol, InpFixedLotSize, InpMaxGridLevels, InpMagicNumber))
     {
-        Print("ERROR: Failed to initialize Grid Manager");
+        Print("ERROR: Failed to initialize Grid Manager V2");
         return(INIT_FAILED);
     }
+    
+    // Set profit targets
+    g_grid_manager.SetProfitTargets(InpProfitTargetUSD, InpProfitTargetPercent, InpUseTotalProfitTarget);
     
     // Initial setup
     if(!InitialSetup())
@@ -100,7 +105,8 @@ int OnInit()
     Print("Max Grid Levels: ", InpMaxGridLevels);
     Print("ATR Multiplier: ", InpATRMultiplier);
     Print("Account Balance: ", g_account_start_balance);
-    Print("Profit Target: ", g_current_profit_target);
+    Print("Profit Target USD: $", InpProfitTargetUSD);
+    Print("Profit Target %: ", InpProfitTargetPercent, "%");
     
     return(INIT_SUCCEEDED);
 }
@@ -143,6 +149,12 @@ void OnTick()
     // Update ATR values
     g_atr_calculator.UpdateATRValues();
     
+    // Setup grid if needed (first time or after reset) - Do this BEFORE trading checks
+    if(ShouldSetupGrid())
+    {
+        SetupGridSystem();
+    }
+    
     // Check trading conditions
     if(!IsTradingAllowed())
         return;
@@ -151,17 +163,12 @@ void OnTick()
     if(CheckProfitTarget())
     {
         CloseAllPositions("Profit Target Reached");
-        return;
+        g_last_grid_update = 0;  // Force SetupGridSystem() to run in next tick
+        return;                  // CRITICAL: Don't place new grid orders in same tick
     }
     
     // Update grid status
     g_grid_manager.UpdateGridStatus();
-    
-    // Setup grid if needed (first time or after reset)
-    if(ShouldSetupGrid())
-    {
-        SetupGridSystem();
-    }
     
     // Place pending orders
     if(InpEnableGridTrading)
@@ -227,7 +234,8 @@ bool IsTradingAllowed()
         return false;
         
     // Check spread
-    double spread = SymbolInfoDouble(_Symbol, SYMBOL_SPREAD) * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+    int spread_points = (int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+    double spread = spread_points * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
     double max_spread = InpMaxSpreadPips * SymbolInfoDouble(_Symbol, SYMBOL_POINT) * 10;
     if(spread > max_spread)
     {
@@ -289,19 +297,145 @@ void SetupGridSystem()
         Sleep(1000);  // Wait for orders to close
     }
     
-    // Setup new grid
-    if(g_grid_manager.SetupGrid(0.0, InpATRMultiplier))
+    // CRITICAL: CONFIRMATION CHECK - Only create grid if orders are truly cleared
+    int buy_count = CountBuyOrdersAndPositions();
+    int sell_count = CountSellOrdersAndPositions();
+    
+    Print("🔍 CONFIRMATION CHECK:");
+    Print("BUY orders/positions: ", buy_count);
+    Print("SELL orders/positions: ", sell_count);
+    
+    if(buy_count > 0 || sell_count > 0)
+    {
+        Print("⚠️ ORDERS NOT CLEARED YET - Waiting for cleanup completion");
+        Print("BUY remaining: ", buy_count, " | SELL remaining: ", sell_count);
+        return; // Don't create new grid until old orders are completely cleared
+    }
+    
+    Print("✅ CONFIRMATION: All orders cleared - Safe to create new grid");
+    
+    // Setup new grid only after confirmation
+    if(g_grid_manager.SetupDualGrid(0.0, InpATRMultiplier))
     {
         g_last_grid_update = TimeCurrent();
-        Print("Grid system setup completed");
+        Print("Dual Grid system setup completed");
         
         // Print grid information
         g_grid_manager.PrintGridInfo();
     }
     else
     {
-        Print("ERROR: Failed to setup grid system");
+        Print("ERROR: Failed to setup dual grid system");
     }
+}
+
+//+------------------------------------------------------------------+
+//| Count BUY orders/positions for our EA                           |
+//+------------------------------------------------------------------+
+int CountBuyOrdersAndPositions()
+{
+    int count = 0;
+    
+    // Count BUY positions
+    for(int pos_idx = PositionsTotal() - 1; pos_idx >= 0; pos_idx--)
+    {
+        ulong ticket = PositionGetTicket(pos_idx);
+        if(ticket == 0) continue;
+        if(!PositionSelectByTicket(ticket)) continue;
+        if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
+        
+        ulong magic = (ulong)PositionGetInteger(POSITION_MAGIC);
+        string comment = PositionGetString(POSITION_COMMENT);
+        ENUM_POSITION_TYPE pos_type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+        
+        if(pos_type == POSITION_TYPE_BUY && (IsOurGridMagic(magic) || StringFind(comment, "Grid_") == 0 || StringFind(comment, "IMMEDIATE_") == 0))
+        {
+            count++;
+        }
+    }
+    
+    // Count BUY pending orders
+    for(int i = OrdersTotal() - 1; i >= 0; i--)
+    {
+        if(!OrderSelect(OrderGetTicket(i))) continue;
+        if(OrderGetString(ORDER_SYMBOL) != _Symbol) continue;
+        
+        ulong magic = (ulong)OrderGetInteger(ORDER_MAGIC);
+        string comment = OrderGetString(ORDER_COMMENT);
+        ENUM_ORDER_TYPE order_type = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+        
+        if((order_type == ORDER_TYPE_BUY_LIMIT || order_type == ORDER_TYPE_BUY_STOP) && 
+           (IsOurGridMagic(magic) || StringFind(comment, "Grid_") == 0 || StringFind(comment, "IMMEDIATE_") == 0))
+        {
+            count++;
+        }
+    }
+    
+    return count;
+}
+
+//+------------------------------------------------------------------+
+//| Count SELL orders/positions for our EA                          |
+//+------------------------------------------------------------------+
+int CountSellOrdersAndPositions()
+{
+    int count = 0;
+    
+    // Count SELL positions
+    for(int pos_idx = PositionsTotal() - 1; pos_idx >= 0; pos_idx--)
+    {
+        ulong ticket = PositionGetTicket(pos_idx);
+        if(ticket == 0) continue;
+        if(!PositionSelectByTicket(ticket)) continue;
+        if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
+        
+        ulong magic = (ulong)PositionGetInteger(POSITION_MAGIC);
+        string comment = PositionGetString(POSITION_COMMENT);
+        ENUM_POSITION_TYPE pos_type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+        
+        if(pos_type == POSITION_TYPE_SELL && (IsOurGridMagic(magic) || StringFind(comment, "Grid_") == 0 || StringFind(comment, "IMMEDIATE_") == 0))
+        {
+            count++;
+        }
+    }
+    
+    // Count SELL pending orders
+    for(int i = OrdersTotal() - 1; i >= 0; i--)
+    {
+        if(!OrderSelect(OrderGetTicket(i))) continue;
+        if(OrderGetString(ORDER_SYMBOL) != _Symbol) continue;
+        
+        ulong magic = (ulong)OrderGetInteger(ORDER_MAGIC);
+        string comment = OrderGetString(ORDER_COMMENT);
+        ENUM_ORDER_TYPE order_type = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+        
+        if((order_type == ORDER_TYPE_SELL_LIMIT || order_type == ORDER_TYPE_SELL_STOP) && 
+           (IsOurGridMagic(magic) || StringFind(comment, "Grid_") == 0 || StringFind(comment, "IMMEDIATE_") == 0))
+        {
+            count++;
+        }
+    }
+    
+    return count;
+}
+
+//+------------------------------------------------------------------+
+//| Check if magic number belongs to our EA                         |
+//+------------------------------------------------------------------+
+bool IsOurGridMagic(ulong magic)
+{
+    // Original EA magic number
+    if(magic == InpMagicNumber) return true;
+    
+    // Grid BUY magic: InpMagic + 1000 + level_index  
+    // Grid SELL magic: InpMagic + 2000 + level_index
+    for(int i = 0; i < InpMaxGridLevels * 2; i++) // *2 for potential DCA expansion
+    {
+        if(magic == (InpMagicNumber + 1000 + i)) return true; // BUY grid
+        if(magic == (InpMagicNumber + 2000 + i)) return true; // SELL grid
+    }
+    
+    return false;
 }
 
 //+------------------------------------------------------------------+
@@ -333,34 +467,61 @@ void CloseAllPositions(string reason)
     Print("=== Closing All Positions ===");
     Print("Reason: ", reason);
     
-    // Close grid positions
-    g_grid_manager.CloseAllGridPositions();
-    
-    // Close any remaining positions
-    for(int i = PositionsTotal() - 1; i >= 0; i--)
+    // 1) Close ALL positions belonging to our EA (all magic numbers)
+    int closed_positions = 0;
+    for(int pos_idx = PositionsTotal() - 1; pos_idx >= 0; pos_idx--)
     {
-        if(PositionGetTicket(i) > 0)
+        ulong ticket = PositionGetTicket(pos_idx);
+        if(ticket == 0) continue;
+        if(!PositionSelectByTicket(ticket)) continue;
+        if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
+        
+        ulong magic = (ulong)PositionGetInteger(POSITION_MAGIC);
+        string comment = PositionGetString(POSITION_COMMENT);
+        
+        // Check if this is our EA's position
+        if(IsOurGridMagic(magic) || StringFind(comment, "Grid_") == 0 || StringFind(comment, "IMMEDIATE_") == 0)
         {
-            if(PositionGetInteger(POSITION_MAGIC) == InpMagicNumber)
+            if(g_trade.PositionClose(ticket))
             {
-                g_trade.PositionClose(PositionGetTicket(i));
+                closed_positions++;
+                Print("✅ Closed position #", ticket, " (Magic: ", magic, ", Comment: ", comment, ")");
+            }
+            else
+            {
+                Print("❌ Failed to close position #", ticket);
             }
         }
     }
     
-    // Cancel pending orders
+    // 2) Cancel ALL pending orders belonging to our EA  
+    int cancelled_orders = 0;
     for(int i = OrdersTotal() - 1; i >= 0; i--)
     {
-        if(OrderGetTicket(i) > 0)
+        if(!OrderSelect(OrderGetTicket(i))) continue;
+        if(OrderGetString(ORDER_SYMBOL) != _Symbol) continue;
+        
+        ulong magic = (ulong)OrderGetInteger(ORDER_MAGIC);
+        string comment = OrderGetString(ORDER_COMMENT);
+        
+        // Check if this is our EA's order
+        if(IsOurGridMagic(magic) || StringFind(comment, "Grid_") == 0 || StringFind(comment, "IMMEDIATE_") == 0)
         {
-            if(OrderGetInteger(ORDER_MAGIC) == InpMagicNumber)
+            ulong ticket = OrderGetTicket(i);
+            if(g_trade.OrderDelete(ticket))
             {
-                g_trade.OrderDelete(OrderGetTicket(i));
+                cancelled_orders++;
+                Print("✅ Cancelled order #", ticket, " (Magic: ", magic, ", Comment: ", comment, ")");
+            }
+            else
+            {
+                Print("❌ Failed to cancel order #", ticket);
             }
         }
     }
     
-    Print("All positions and orders closed");
+    Print("🎯 CLEANUP COMPLETE: ", closed_positions, " positions closed, ", cancelled_orders, " orders cancelled");
+    Print("All EA positions and orders cleaned up successfully");
 }
 
 //+------------------------------------------------------------------+
@@ -450,3 +611,4 @@ void PrintFinalStatistics()
     Print("Target Reached: ", (total_profit >= g_current_profit_target) ? "YES" : "NO");
 }
 //+------------------------------------------------------------------+
+

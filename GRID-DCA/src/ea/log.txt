@@ -1,0 +1,1582 @@
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   💰 SELL #11 (Grid_GRID_DIRECTION_SELL_2): $1.60
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   💰 SELL #10 (Grid_GRID_DIRECTION_SELL_1): $0.94
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🔍 SELL found 37 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   📊 SELL Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   📊 SELL All-positions P&L: $3.85
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🚨 EMERGENCY DEBUG for SELL - Checking ALL market positions:
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.32 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.44 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.26 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.94 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.60 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-3.78
+2025.09.26 01:53:23.330	2025.06.20 07:09:04   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🔍 BUY found 60 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   📊 BUY Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   📊 BUY All-positions P&L: $-7.63
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🚨 EMERGENCY DEBUG for BUY - Checking ALL market positions:
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.32 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.44 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.26 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.94 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.60 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-3.78
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   💰 SELL #11 (Grid_GRID_DIRECTION_SELL_2): $1.60
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   💰 SELL #10 (Grid_GRID_DIRECTION_SELL_1): $0.94
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🔍 SELL found 37 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   📊 SELL Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   📊 SELL All-positions P&L: $3.85
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🚨 EMERGENCY DEBUG for SELL - Checking ALL market positions:
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.32 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.44 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.26 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.94 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.60 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.09 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.10 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.22 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.21 | Comment: 
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-3.78
+2025.09.26 01:53:23.336	2025.06.20 07:09:10   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🔍 BUY found 60 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   📊 BUY Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   📊 BUY All-positions P&L: $-6.43
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🚨 EMERGENCY DEBUG for BUY - Checking ALL market positions:
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.34 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.46 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.24 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.92 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.58 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.23 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.342	2025.06.20 07:09:16   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-3.32
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   💰 SELL #11 (Grid_GRID_DIRECTION_SELL_2): $1.58
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   💰 SELL #10 (Grid_GRID_DIRECTION_SELL_1): $0.92
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🔍 SELL found 37 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   📊 SELL Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   📊 SELL All-positions P&L: $3.11
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🚨 EMERGENCY DEBUG for SELL - Checking ALL market positions:
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.34 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.46 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.24 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.92 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.58 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.23 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.11 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.05 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.08 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.20 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-3.32
+2025.09.26 01:53:23.343	2025.06.20 07:09:16   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🔍 BUY found 60 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   📊 BUY Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   📊 BUY All-positions P&L: $-5.23
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🚨 EMERGENCY DEBUG for BUY - Checking ALL market positions:
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.36 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.48 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.22 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.90 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.56 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.25 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-2.86
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   💰 SELL #11 (Grid_GRID_DIRECTION_SELL_2): $1.56
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   💰 SELL #10 (Grid_GRID_DIRECTION_SELL_1): $0.90
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🔍 SELL found 37 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   📊 SELL Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   📊 SELL All-positions P&L: $2.37
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🚨 EMERGENCY DEBUG for SELL - Checking ALL market positions:
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.36 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.48 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.22 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.90 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.56 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.25 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.13 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.09 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.03 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.05 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-2.86
+2025.09.26 01:53:23.352	2025.06.20 07:09:21   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🔍 BUY found 60 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   📊 BUY Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   📊 BUY All-positions P&L: $-5.83
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🚨 EMERGENCY DEBUG for BUY - Checking ALL market positions:
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.35 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.47 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.23 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.91 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.57 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.24 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-3.09
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   💰 SELL #11 (Grid_GRID_DIRECTION_SELL_2): $1.57
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   💰 SELL #10 (Grid_GRID_DIRECTION_SELL_1): $0.91
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🔍 SELL found 37 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   📊 SELL Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   📊 SELL All-positions P&L: $2.74
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🚨 EMERGENCY DEBUG for SELL - Checking ALL market positions:
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.35 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.47 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.23 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.91 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.358	2025.06.20 07:09:26   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.57 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.24 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.12 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.08 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.04 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.06 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.07 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.19 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.17 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.18 | Comment: 
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-3.09
+2025.09.26 01:53:23.359	2025.06.20 07:09:26   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🔍 BUY found 60 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   📊 BUY Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   📊 BUY All-positions P&L: $-2.83
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🚨 EMERGENCY DEBUG for BUY - Checking ALL market positions:
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.40 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.52 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.18 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.86 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.52 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.29 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-1.94
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   💰 SELL #11 (Grid_GRID_DIRECTION_SELL_2): $1.52
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   💰 SELL #10 (Grid_GRID_DIRECTION_SELL_1): $0.86
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   💰 SELL #3 (IMMEDIATE_SELL): $-0.52
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🔍 SELL found 37 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   📊 SELL Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   📊 SELL All-positions P&L: $0.89
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🚨 EMERGENCY DEBUG for SELL - Checking ALL market positions:
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.40 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.52 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.18 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.86 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.52 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.29 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-1.94
+2025.09.26 01:53:23.365	2025.06.20 07:09:32   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🔍 BUY found 60 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   📊 BUY Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   📊 BUY All-positions P&L: $-4.03
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🚨 EMERGENCY DEBUG for BUY - Checking ALL market positions:
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.38 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.50 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.20 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.88 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.54 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.27 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-2.40
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   💰 SELL #11 (Grid_GRID_DIRECTION_SELL_2): $1.54
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   💰 SELL #10 (Grid_GRID_DIRECTION_SELL_1): $0.88
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🔍 SELL found 37 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   📊 SELL Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   📊 SELL All-positions P&L: $1.63
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🚨 EMERGENCY DEBUG for SELL - Checking ALL market positions:
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.38 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.50 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.20 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.88 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.54 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.27 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.11 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $-0.01 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.03 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.04 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.16 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.15 | Comment: 
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-2.40
+2025.09.26 01:53:23.371	2025.06.20 07:09:38   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🔍 BUY found 60 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   📊 BUY Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   📊 BUY All-positions P&L: $-2.83
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🚨 EMERGENCY DEBUG for BUY - Checking ALL market positions:
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.40 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.52 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.18 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.86 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.52 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.29 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-1.94
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   💰 SELL #11 (Grid_GRID_DIRECTION_SELL_2): $1.52
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   💰 SELL #10 (Grid_GRID_DIRECTION_SELL_1): $0.86
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   💰 SELL #3 (IMMEDIATE_SELL): $-0.52
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🔍 SELL found 37 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   📊 SELL Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   📊 SELL All-positions P&L: $0.89
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🔧 FIXED: Including ALL positions for EURUSD (magic filter disabled) | Total positions: 97
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🚨 EMERGENCY DEBUG for SELL - Checking ALL market positions:
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #2 | Type: BUY | Magic: 421421 | P&L: $0.40 | Comment: IMMEDIATE_BUY
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #3 | Type: SELL | Magic: 421421 | P&L: $-0.52 | Comment: IMMEDIATE_SELL
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #9 | Type: SELL | Magic: 14345 | P&L: $0.18 | Comment: Grid_GRID_DIRECTION_SELL_0
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #10 | Type: SELL | Magic: 14346 | P&L: $0.86 | Comment: Grid_GRID_DIRECTION_SELL_1
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #11 | Type: SELL | Magic: 14347 | P&L: $1.52 | Comment: Grid_GRID_DIRECTION_SELL_2
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #14 | Type: SELL | Magic: 421421 | P&L: $-0.29 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #15 | Type: BUY | Magic: 14345 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #16 | Type: BUY | Magic: 14346 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #17 | Type: BUY | Magic: 14347 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #18 | Type: BUY | Magic: 421421 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #19 | Type: BUY | Magic: 14347 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #20 | Type: BUY | Magic: 14346 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #21 | Type: BUY | Magic: 14345 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #22 | Type: BUY | Magic: 421421 | P&L: $0.17 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #33 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #34 | Type: SELL | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #35 | Type: SELL | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #36 | Type: SELL | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #37 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #38 | Type: SELL | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #39 | Type: SELL | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #40 | Type: SELL | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #41 | Type: SELL | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #42 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #43 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #44 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #45 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #46 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #47 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #48 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #49 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #50 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #51 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #52 | Type: BUY | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #53 | Type: BUY | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #54 | Type: BUY | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #55 | Type: BUY | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #66 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #67 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #68 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #69 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #70 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #71 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #72 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #73 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #74 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #75 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #76 | Type: SELL | Magic: 14347 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #77 | Type: SELL | Magic: 14346 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #78 | Type: SELL | Magic: 14345 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #79 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #80 | Type: SELL | Magic: 421421 | P&L: $0.01 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #81 | Type: SELL | Magic: 14345 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #82 | Type: SELL | Magic: 14346 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #83 | Type: SELL | Magic: 14347 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #84 | Type: SELL | Magic: 421421 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #85 | Type: SELL | Magic: 14347 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #86 | Type: SELL | Magic: 14346 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #87 | Type: SELL | Magic: 14345 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #88 | Type: SELL | Magic: 421421 | P&L: $0.02 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #89 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #90 | Type: BUY | Magic: 14345 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #91 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #92 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #93 | Type: BUY | Magic: 421421 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #94 | Type: BUY | Magic: 14347 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #95 | Type: BUY | Magic: 14346 | P&L: $-0.14 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #96 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #97 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #98 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #99 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #100 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #101 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #102 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #103 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #104 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #105 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #106 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #107 | Type: BUY | Magic: 421421 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #108 | Type: BUY | Magic: 14347 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #109 | Type: BUY | Magic: 14346 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #110 | Type: BUY | Magic: 14345 | P&L: $-0.12 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #111 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #112 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #113 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #114 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #115 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #116 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #117 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #118 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #119 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #120 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #121 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #122 | Type: BUY | Magic: 14347 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #123 | Type: BUY | Magic: 14346 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #124 | Type: BUY | Magic: 14345 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🎯 Position #125 | Type: BUY | Magic: 421421 | P&L: $-0.13 | Comment: 
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🔥 TOTAL ALL EURUSD positions: 97 | Total P&L: $-1.94
+2025.09.26 01:53:23.377	2025.06.20 07:09:43   🔥 Expected from MT5 chart: ~$17.67 | EA Magic filter: 421421
+2025.09.26 01:53:23.382	2025.06.20 07:09:48   🔍 BUY found 60 total positions vs 0 grid-tracked
+2025.09.26 01:53:23.382	2025.06.20 07:09:48   📊 BUY Grid-tracked P&L: $0.00
+2025.09.26 01:53:23.382	2025.06.20 07:09:48   📊 BUY All-positions P&L: $-3.43

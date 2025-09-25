@@ -127,7 +127,7 @@ public:
     //+------------------------------------------------------------------+
     //| Check if volatility is within acceptable range                  |
     //+------------------------------------------------------------------+
-    bool IsVolatilityNormal(double min_threshold = 0.5, double max_threshold = 3.0)
+    bool IsVolatilityNormal(double min_threshold = 0.05, double max_threshold = 5.0)
     {
         double normalized_atr = GetNormalizedATR(PERIOD_H1);
         return (normalized_atr >= min_threshold && normalized_atr <= max_threshold);
@@ -140,9 +140,9 @@ public:
     {
         double normalized_atr = GetNormalizedATR(PERIOD_H1);
         
-        if(normalized_atr < 0.5)
+        if(normalized_atr < 0.05)
             return "LOW_VOLATILITY";
-        else if(normalized_atr > 3.0)
+        else if(normalized_atr > 5.0)
             return "HIGH_VOLATILITY"; 
         else
             return "NORMAL_VOLATILITY";

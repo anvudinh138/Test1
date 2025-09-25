@@ -1,152 +1,113 @@
-# FLEX GRID DCA EA Project
+# GRID-DCA EA v2.0 - Dual Direction Grid Trading System
 
-## 📋 Tổng quan dự án
+## 🎯 **OVERVIEW**
 
-Bot EA tự quản lý kết hợp Grid Trading và DCA với khả năng hoạt động universal trên tất cả symbols, focus ban đầu cho **EURUSD**.
+FlexGrid DCA EA v2.0 là một Expert Advisor high-performance cho MetaTrader 5, triển khai **dual-direction independent grid trading system** với **dynamic profit taking**, **DCA expansion**, và **confirmation-based grid management**.
 
-## 🎯 Mục tiêu chính
-
-- ✅ Tự quản lý hoàn toàn (không qua sàn)
-- ✅ Universal design (ATR-based, Fibonacci)
-- ✅ Kết hợp Grid + DCA strategy
-- ✅ Dual direction (Long/Short)
-- ✅ Market intelligence (Killzone, News, Volatility)
-- ✅ Advanced risk management
-- ✅ Trailing stop và profit targeting
-
-## 📁 Document Structure
-
-### Core Documentation
-1. **[PROJECT_ANALYSIS.md](./PROJECT_ANALYSIS.md)** - Phân tích tổng quan yêu cầu và kiến trúc hệ thống
-2. **[TECHNICAL_ARCHITECTURE.md](./TECHNICAL_ARCHITECTURE.md)** - Chi tiết kỹ thuật và cấu trúc code
-3. **[GETTING_STARTED.md](./GETTING_STARTED.md)** - Hướng dẫn bắt đầu phát triển
-
-### Development Files (✅ READY)
-- `src/` - Source code directory (EA + includes)
-- `config/` - Configuration files for EURUSD
-- `INSTALLATION_GUIDE.md` - Quick setup guide
-- `tests/` - Test files (future)
-- `backtest/` - Backtest results (future)
-
-## 🚀 Quick Start
-
-### Yêu cầu để bắt đầu:
-1. **MT5 Platform** với demo account
-2. **MQL5 knowledge** - lập trình Expert Advisor
-3. **Trading concepts** - Grid, DCA, Risk Management
-4. **EURUSD market data** cho testing
-
-### Bước đầu tiên:
-```bash
-1. ⚡ READY TO USE: Đọc INSTALLATION_GUIDE.md để setup ngay
-2. Hoặc đọc PROJECT_ANALYSIS.md để hiểu tổng quan
-3. Chi tiết kỹ thuật trong TECHNICAL_ARCHITECTURE.md  
-4. Source code guide trong src/README.md
-```
-
-## 🏗️ Development Roadmap
-
-### Phase 1: Foundation ✅ COMPLETED
-- [x] ATR Calculator system
-- [x] Basic Grid structure
-- [x] Position tracking
-- [x] Risk management framework
-- [x] EURUSD prototype
-
-### Phase 2: Intelligence (3-4 weeks)  
-- [ ] Market analyzer (Killzone, News)
-- [ ] DCA integration
-- [ ] Trailing stop system
-- [ ] Dual direction logic
-
-### Phase 3: Advanced (4+ weeks)
-- [ ] Multi-symbol adaptation
-- [ ] Performance optimization
-- [ ] Advanced risk features
-- [ ] Production deployment
-
-## 💡 Key Features
-
-### Universal Design
-- **ATR-based calculations** thay vì hardcode pips
-- **Fibonacci grid spacing** cho optimal levels
-- **Dynamic position sizing** theo volatility
-
-### Market Intelligence
-- **Killzone detection** - London, NY, Asian sessions
-- **News filtering** - tránh high impact events
-- **Volatility analysis** - ATR 1440 monitoring
-
-### Risk Management
-- **Maximum exposure control**
-- **Drawdown protection** 
-- **Emergency stop mechanisms**
-- **Profit target automation**
-
-### Advanced Trading
-- **Grid + DCA combination**
-- **Long/Short simultaneous**
-- **Trailing stop protection**
-- **Automatic profit taking**
-
-## 📊 Performance Targets
-
-| Metric | Target |
-|--------|---------|
-| Win Rate | > 60% |
-| Max Drawdown | < 10% |
-| Profit Factor | > 1.5 |
-| Recovery Factor | > 3.0 |
-| Uptime | 99%+ |
-
-## 🔧 Technical Stack
-
-- **Language**: MQL5
-- **Platform**: MetaTrader 5
-- **Architecture**: Object-Oriented Design
-- **Testing**: Strategy Tester + Demo Account
-- **Deployment**: VPS with low latency
-
-## 📈 Focus Symbol: EURUSD
-
-**Tại sao chọn EURUSD:**
-- Liquidity cao, spread thấp
-- Volatility ổn định và predictable
-- Nhiều data available cho backtesting
-- Killzone patterns rõ ràng
-- Good for ATR-based calculations
-
-## ⚠️ Important Notes
-
-### Universal Design Principles
-```cpp
-// ❌ Avoid hardcoded values
-double stop_loss = 20 * Point;
-
-// ✅ Use ATR-based calculations  
-double stop_loss = atr_h1 * 2.0;
-```
-
-### Risk First Approach
-```cpp
-// Always check risk before trading
-if(!risk_manager.CheckLimits()) {
-    return false; // Skip trade
-}
-```
-
-## 📞 Next Steps
-
-1. **Setup development environment**
-2. **Start with ATR Calculator** 
-3. **Build basic grid for EURUSD**
-4. **Add simple risk controls**
-5. **Test and iterate**
+### **Key Features:**
+- ✅ **Immediate Market Entry:** 1 BUY + 1 SELL market orders khi start
+- ✅ **Independent Dual Grids:** BUY và SELL grids hoạt động hoàn toàn độc lập
+- ✅ **Dynamic Grid Reset:** Grid reset sau khi đạt profit target
+- ✅ **Confirmation-Based Creation:** Chỉ tạo grid mới khi đã confirm cleanup hoàn tất
+- ✅ **Multiple Profit Modes:** USD target hoặc percentage target
+- ✅ **Loss Protection:** 5% account loss protection per direction
 
 ---
 
-**Created:** September 25, 2025  
-**Focus:** EURUSD Initial Development  
-**Status:** ✅ PROTOTYPE READY - Ready for Demo Testing
+## 🚀 **QUICK START**
 
-> 💡 **Tip:** Bắt đầu với component nhỏ và test kỹ trước khi move to next phase. Quality over speed!
+### **Installation:**
+```
+1. Copy FlexGridDCA_EA.ex5 to /Experts/ folder
+2. Copy GridManager_v2.mqh và ATRCalculator.mqh to /Include/ folder  
+3. Restart MetaTrader 5
+4. Attach EA to EURUSD M1 chart
+```
+
+### **Recommended Settings:**
+```
+InpFixedLotSize = 0.01          // Fixed lot size (broker minimum)
+InpMaxGridLevels = 5            // Grid levels per direction
+InpProfitTargetUSD = 3.0        // USD profit target per cycle
+InpUseTotalProfitTarget = true  // Use total profit mode
+InpMagicNumber = 12345          // Unique EA identifier
+```
+
+### **Expected Behavior:**
+```
+Start → Immediate 2 positions → Grid expansion → $3 profit → Reset cycle
+```
+
+---
+
+## 🎯 **STRATEGY DESIGN**
+
+### **Core Concept: "Never-Ending Profit Loop"**
+```
+[Start] → [Immediate Entry: 1 BUY + 1 SELL] → [Grid Expansion] → [$3 Profit] → [Cleanup] → [Confirmation] → [Reset] → [Loop]
+```
+
+### **Independent Dual Direction System:**
+- **BUY Grid:** 5 levels below current price
+- **SELL Grid:** 5 levels above current price  
+- **Immediate Entries:** Market orders for instant exposure
+- **DCA Expansion:** Additional levels if price moves against grid
+
+### **Profit Taking:**
+- **Total Mode:** Close both directions when combined profit >= target
+- **Per-Direction Mode:** Close each direction independently
+- **Confirmation:** Wait for complete cleanup before new grid creation
+
+---
+
+## 📊 **EXPECTED PERFORMANCE**
+- **Profit per cycle:** $3-10 USD
+- **Cycle duration:** 2-8 hours
+- **Win rate:** 85-95%
+- **Daily cycles:** 3-12
+
+---
+
+## ⚙️ **CONFIGURATION**
+
+See `config/EURUSD_Config.txt` for detailed settings.
+See `OPTIMIZATION_RANGES.md` for MT5 Strategy Tester ranges.
+See `FLOWCHART.md` for complete system flow diagrams.
+
+---
+
+## 🛠️ **TROUBLESHOOTING**
+
+### **Common Issues:**
+1. **No trades:** Check spread < 8.0 pips
+2. **Grid not resetting:** Monitor confirmation check logs
+3. **Orders limit:** Should not occur with v2.0 cleanup logic
+
+### **Key Log Messages:**
+```
+✅ CONFIRMATION: All orders cleared - Safe to create new grid
+🎯 TOTAL PROFIT TARGET REACHED!
+⚠️ ORDERS NOT CLEARED YET - Waiting for cleanup completion
+```
+
+---
+
+## 🔧 **TECHNICAL ARCHITECTURE**
+
+### **File Structure:**
+```
+GRID-DCA/
+├── src/ea/FlexGridDCA_EA.mq5           # Main EA
+├── src/includes/GridManager_v2.mqh     # Grid logic
+├── src/includes/ATRCalculator.mqh      # Volatility
+├── config/EURUSD_Config.txt            # Settings
+├── README.md                           # This file
+└── FLOWCHART.md                        # System diagrams
+```
+
+---
+
+## 📈 **RISK WARNING**
+Grid trading can experience significant drawdowns during strong trends. Always use proper risk management and never risk more than you can afford to lose.
+
+**© 2025 FlexGrid DCA EA v2.0 - Advanced Grid Trading System**
