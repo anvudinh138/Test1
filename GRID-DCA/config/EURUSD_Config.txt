@@ -1,0 +1,40 @@
+# FlexGridDCA EA Configuration for EURUSD
+# Copy these settings to MT5 Expert Advisor inputs
+
+=== BASIC SETTINGS ===
+InpFixedLotSize = 0.01          # Safe for high margin accounts
+InpMaxGridLevels = 5            # Conservative start with 5 levels
+InpATRMultiplier = 1.0          # Standard ATR spacing
+InpEnableGridTrading = true     # Enable grid system
+InpEnableDCATrading = true      # Enable DCA averaging
+
+=== RISK MANAGEMENT ===
+InpMaxAccountRisk = 10.0        # Maximum 10% account risk
+InpProfitTargetPercent = 5.0    # 5% profit target per cycle
+InpMaxSpreadPips = 3.0          # Max 3 pips spread
+InpUseVolatilityFilter = true   # Filter high volatility
+
+=== TIME FILTERS ===
+InpUseTimeFilter = false        # Disable for 24/7 trading
+InpStartHour = 8                # London open
+InpEndHour = 18                 # NY close
+
+=== ADVANCED ===
+InpEnableTrailingStop = false   # Disable initially for simplicity
+InpTrailingStopATR = 2.0        # 2x ATR trailing if enabled
+InpMagicNumber = 12345          # Unique identifier
+InpEAComment = "FlexGridDCA"    # Position comment
+
+# RECOMMENDED SETTINGS FOR EURUSD:
+# - Start with demo account
+# - Use 0.01 lot size for safety
+# - Monitor for at least 1 week
+# - Gradually increase lot size if successful
+# - ATR H1 typically 50-150 pips for EURUSD
+# - Grid spacing will be dynamic based on ATR
+
+# SAFETY NOTES:
+# - Fixed lot size prevents account explosion
+# - Maximum 5 levels = max 0.05 lots exposure
+# - Profit target ensures regular profit taking
+# - Volatility filter avoids dangerous conditions
