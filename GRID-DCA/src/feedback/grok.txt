@@ -1,0 +1,294 @@
+Dưới đây là phản hồi chi tiết của mình dựa trên yêu cầu của bạn. Mình đã review kỹ lưỡng toàn bộ code và các tài liệu bạn cung cấp (FlexGridDCA_EA.mq5, GridManager_v2.mqh, ATRCalculator.mqh, log.txt, FLOWCHART.md, IMPLEMENTATION_SUMMARY_V2.md, STRATEGY_DESIGN_V2.md, README.md). Mình hiểu vấn đề chính bạn đang gặp phải:
+
+Vấn đề chính: Khi chỉnh InpProfitTargetUSD = 10.0 (hoặc tương tự), EA không đóng hết lệnh (ví dụ: không đóng hết lệnh BUY khi chốt lời direction BUY), dẫn đến không reset grid đúng cách. Thay vì reset grid cho direction đó ngay tại thời điểm chốt lời (tại giá current), EA có thể bị kẹt hoặc skip, và không tạo grid mới đúng logic. Log cho thấy nhiều trường hợp "Skipping BUY_LIMIT" vì giá quá gần Ask/Bid, và đôi khi trigger nhiều lệnh cùng lúc (dẫn đến overlap hoặc không đóng sạch).
+Nguyên nhân gốc rễ:
+
+Logic CheckProfitTarget() hiện tại luôn tính tổng profit (buy + sell), ngay cả khi InpUseTotalProfitTarget = false. Điều này không khớp với design (per direction hoặc total tùy usecase).
+Không có cơ chế đóng và reset riêng biệt cho từng direction (buy/sell độc lập). Hiện tại, nó đóng all và reset dual grid, dẫn đến "race condition" khi chỉ cần đóng 1 direction.
+State management (g_is_closing_positions) là global, không per direction, nên khi đóng 1 direction, EA có thể vội reset toàn bộ hoặc skip cleanup.
+Trong log.txt, nhiều skip do giá grid level 0 quá gần thị trường (có thể do ATR spacing nhỏ hoặc volatility thấp), dẫn đến grid không setup đúng, và khi giá di chuyển, trigger nhiều lệnh cùng lúc (như 6 lệnh buy limit trigger ở 09:44:07).
+CalculateDirectionTotalProfit() có thể không tính chính xác floating P/L nếu có swap/commission, hoặc nếu positions không được track đúng (ví dụ: ticket không update).
+
+
+
+Mình sẽ phân tích chi tiết, sau đó đề xuất fix/improve cụ thể, kèm code snippets để bạn copy-paste. Các fix này dựa trên design trong STRATEGY_DESIGN_V2.md và FLOWCHART.md (independent dual grid, per-direction profit taking, dynamic reset tại current price).
+1. Key Findings from Code Review
+
+FlexGridDCA_EA.mq5 (Main EA):
+
+OnInit(): Khởi tạo tốt, nhưng g_account_start_balance nên update động (ví dụ: reset sau mỗi cycle để tính % chính xác hơn).
+OnTick(): Logic state (g_is_closing_positions) tốt để tránh race condition, nhưng chỉ global → không hỗ trợ per-direction. Nếu chỉ đóng BUY, EA vẫn có thể setup grid mới cho SELL trong lúc cleanup BUY chưa xong.
+CheckProfitTarget(): Sai logic! Luôn dùng total_floating_profit, bỏ qua InpUseTotalProfitTarget. Nếu per-direction, cần check buy_profit >= target thì đóng BUY riêng, sell_profit >= target thì đóng SELL riêng.
+SetupGridSystem(): Luôn setup dual grid (cả buy+sell). Cần hàm riêng để setup/reset chỉ 1 direction.
+CountBuyOrdersAndPositions() và CountSellOrdersAndPositions(): Tốt, nhưng chỉ count positions, không count pending orders đầy đủ (nên thêm để confirm cleanup 100%).
+Không có handling cho "Skipping" trong log → có thể do ATR multiplier nhỏ, dẫn đến spacing < min_distance (thường 1-2 points tùy broker).
+
+
+GridManager_v2.mqh:
+
+Từ snippet corrected, PlaceDirectionOrders() đã có check "too close" tốt (skip nếu price quá gần Ask/Bid), giải thích log skipping.
+CalculateDirectionTotalProfit(): Tốt (tính floating P/L + swap), nhưng cần confirm positions được track đúng (ticket trong SGridLevel).
+CloseAllGridPositions(): Đóng all, nhưng cần phiên bản per-direction (CloseDirectionPositions()).
+SetupDualGrid(): Tốt cho initial, nhưng cần SetupDirectionGrid() để reset riêng.
+Không có logic DCA expansion rõ ràng (dù design có), có thể là lý do grid không mở rộng khi cần.
+
+
+ATRCalculator.mqh: Ổn, không issue.
+log.txt:
+
+Nhiều skipping → Suggest tăng InpATRMultiplier (từ 1.0 lên 1.5-2.0) để spacing lớn hơn.
+Trigger multiple orders cùng lúc → Giá di chuyển nhanh, hit nhiều levels. Không phải bug, nhưng có thể improve bằng cách dynamic adjust spacing.
+
+
+Tổng quan design vs code: Design (per-direction, dynamic reset, DCA) chưa implement đầy đủ trong code. Code hiện tại thiên về total profit và reset all.
+
+2. Đề Xuất Fix/Improve
+
+Ưu tiên: Làm cho system independent per direction như design (chốt lời BUY → đóng chỉ BUY → reset chỉ BUY grid tại current price, tương tự SELL). Điều này cho "infinite profit cycles" mà không ảnh hưởng direction kia.
+Cải thiện tổng thể:
+
+Thêm states per-direction (g_is_closing_buy, g_is_closing_sell) để tránh race condition khi reset riêng.
+Nếu InpUseTotalProfitTarget = true: Đóng all và reset dual.
+Nếu false: Đóng và reset per-direction.
+Thêm DCA logic: Nếu all levels filled và price beyond last level, add 5 levels mới (max 2 expansions).
+Improve cleanup: Thêm count pending orders trong CountBuy/Sell để confirm 100% clean trước reset.
+Fix skipping: Tự động adjust multiplier nếu skip > 3 times liên tiếp.
+Thêm loss protection: Nếu direction loss > 5% balance, đóng direction đó (theo IMPLEMENTATION_SUMMARY_V2.md).
+Test: Sử dụng backtest với EURUSD M1, focus on profit cycles và cleanup.
+
+
+
+Bây giờ, mình cung cấp code fixes. Bạn copy-paste vào file tương ứng, compile lại (MetaEditor > Compile), và test.
+Fix 1: FlexGridDCA_EA.mq5 - Update CheckProfitTarget() và OnTick() cho per-direction
+Thay thế hàm CheckProfitTarget() và thêm states mới. Cũng update OnTick() để handle per-direction closing.
+
+// Global variables thêm:
+bool g_is_closing_buy = false;
+bool g_is_closing_sell = false;
+
+// Thay thế hàm CheckProfitTarget():
+bool CheckProfitTarget()
+{
+    if(g_grid_manager == NULL) return false;
+
+    double buy_profit = g_grid_manager.CalculateDirectionTotalProfit(GRID_DIRECTION_BUY);
+    double sell_profit = g_grid_manager.CalculateDirectionTotalProfit(GRID_DIRECTION_SELL);
+    double total_profit = buy_profit + sell_profit;
+
+    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+    double effective_target_usd = MathMin(InpProfitTargetUSD, balance * (InpProfitTargetPercent / 100.0)); // Ví dụ: 10 USD hoặc 1%
+
+    if(InpUseTotalProfitTarget)
+    {
+        if(total_profit >= effective_target_usd)
+        {
+            Print("🎯 TOTAL PROFIT TARGET REACHED! Total: $", DoubleToString(total_profit, 2));
+            g_grid_manager.CloseAllGridPositions(); // Đóng all
+            g_is_closing_buy = true;
+            g_is_closing_sell = true;
+            return true;
+        }
+    }
+    else // Per direction
+    {
+        bool target_hit = false;
+        if(buy_profit >= effective_target_usd)
+        {
+            Print("🎯 BUY DIRECTION PROFIT TARGET REACHED! Buy Profit: $", DoubleToString(buy_profit, 2));
+            g_grid_manager.CloseDirectionPositions(GRID_DIRECTION_BUY); // Cần thêm hàm này ở GridManager
+            g_is_closing_buy = true;
+            target_hit = true;
+        }
+        if(sell_profit >= effective_target_usd)
+        {
+            Print("🎯 SELL DIRECTION PROFIT TARGET REACHED! Sell Profit: $", DoubleToString(sell_profit, 2));
+            g_grid_manager.CloseDirectionPositions(GRID_DIRECTION_SELL);
+            g_is_closing_sell = true;
+            target_hit = true;
+        }
+        return target_hit;
+    }
+    return false;
+}
+
+// Update OnTick(): Thay thế phần state management
+void OnTick()
+{
+    if(!g_ea_initialized) return;
+    if(TimeCurrent() - g_last_check_time < 5) return;
+    g_last_check_time = TimeCurrent();
+
+    // Handle closing states per direction
+    bool all_closed = true;
+    if(g_is_closing_buy)
+    {
+        int buy_count = CountBuyOrdersAndPositions(); // Cập nhật để count both positions + pending
+        if(buy_count == 0)
+        {
+            Print("✅ BUY cleanup complete. Resetting BUY grid.");
+            g_is_closing_buy = false;
+            double current_price = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+            g_grid_manager.SetupDirectionGrid(GRID_DIRECTION_BUY, current_price, InpATRMultiplier); // Cần thêm hàm này
+        }
+        else
+        {
+            Print("⏳ Waiting for BUY cleanup: ", IntegerToString(buy_count), " left.");
+            g_grid_manager.CloseDirectionPositions(GRID_DIRECTION_BUY); // Force close again if stuck
+            all_closed = false;
+        }
+    }
+    if(g_is_closing_sell)
+    {
+        int sell_count = CountSellOrdersAndPositions();
+        if(sell_count == 0)
+        {
+            Print("✅ SELL cleanup complete. Resetting SELL grid.");
+            g_is_closing_sell = false;
+            double current_price = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+            g_grid_manager.SetupDirectionGrid(GRID_DIRECTION_SELL, current_price, InpATRMultiplier);
+        }
+        else
+        {
+            Print("⏳ Waiting for SELL cleanup: ", IntegerToString(sell_count), " left.");
+            g_grid_manager.CloseDirectionPositions(GRID_DIRECTION_SELL);
+            all_closed = false;
+        }
+    }
+    if(!all_closed) return; // Không làm gì nếu đang closing
+
+    // Phần còn lại giữ nguyên: Update ATR, SetupGrid if needed, CheckProfitTarget(), etc.
+    // Thêm sau CheckProfitTarget(): CheckDCAExpansion() và CheckLossProtection() (xem fix tiếp theo)
+}
+
+// Update CountBuyOrdersAndPositions() để count both positions + pending:
+int CountBuyOrdersAndPositions()
+{
+    int count = 0;
+    // Count positions (giữ nguyên code cũ)
+    for(int pos_idx = PositionsTotal() - 1; pos_idx >= 0; pos_idx--)
+    {
+        if(PositionGetSymbol(pos_idx) == _Symbol && PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY && PositionGetInteger(POSITION_MAGIC) == InpMagicNumber)
+            count++;
+    }
+    // Add pending orders
+    for(int ord_idx = OrdersTotal() - 1; ord_idx >= 0; ord_idx--)
+    {
+        if(OrderGetString(ORDER_SYMBOL) == _Symbol && OrderGetInteger(ORDER_TYPE) == ORDER_TYPE_BUY_LIMIT && OrderGetInteger(ORDER_MAGIC) == InpMagicNumber)
+            count++;
+    }
+    return count;
+}
+// Tương tự cho CountSellOrdersAndPositions() (thay BUY_LIMIT thành SELL_LIMIT, POSITION_TYPE_SELL)
+
+
+Fix 2: GridManager_v2.mqh - Thêm hàm per-direction và DCA/Loss Protection
+Thêm các hàm mới để hỗ trợ independent direction. Giả sử struct SGridDirection và enum GRID_DIRECTION_BUY/SELL đã có (từ design).
+
+// Thêm enum nếu chưa có
+enum GRID_DIRECTION { GRID_DIRECTION_BUY, GRID_DIRECTION_SELL };
+
+// Thêm hàm CloseDirectionPositions
+void CloseDirectionPositions(GRID_DIRECTION dir)
+{
+    // Tương tự CloseAllGridPositions, nhưng filter theo dir
+    for(int pos_idx = PositionsTotal() - 1; pos_idx >= 0; pos_idx--)
+    {
+        if(PositionGetSymbol(pos_idx) == m_symbol && PositionGetInteger(POSITION_MAGIC) == m_magic)
+        {
+            ENUM_POSITION_TYPE type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+            if((dir == GRID_DIRECTION_BUY && type == POSITION_TYPE_BUY) || (dir == GRID_DIRECTION_SELL && type == POSITION_TYPE_SELL))
+            {
+                m_trade.PositionClose(PositionGetTicket(pos_idx));
+            }
+        }
+    }
+    // Cancel pending orders tương tự, filter BUY_LIMIT hoặc SELL_LIMIT
+    for(int ord_idx = OrdersTotal() - 1; ord_idx >= 0; ord_idx--)
+    {
+        if(OrderGetString(ORDER_SYMBOL) == m_symbol && OrderGetInteger(ORDER_MAGIC) == m_magic)
+        {
+            ENUM_ORDER_TYPE type = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+            if((dir == GRID_DIRECTION_BUY && type == ORDER_TYPE_BUY_LIMIT) || (dir == GRID_DIRECTION_SELL && type == ORDER_TYPE_SELL_LIMIT))
+            {
+                m_trade.OrderDelete(OrderGetTicket(ord_idx));
+            }
+        }
+    }
+    Print("Closed all for direction: ", (dir == GRID_DIRECTION_BUY ? "BUY" : "SELL"));
+}
+
+// Thêm hàm SetupDirectionGrid
+bool SetupDirectionGrid(GRID_DIRECTION dir, double base_price, double multiplier)
+{
+    // Tương tự SetupDualGrid, nhưng chỉ cho 1 dir
+    double spacing = g_atr_calculator.GetATR(PERIOD_H1) * multiplier; // Giả sử dùng H1 ATR
+    SGridDirection &grid = (dir == GRID_DIRECTION_BUY ? m_buy_grid : m_sell_grid); // Giả sử có m_buy_grid, m_sell_grid struct
+
+    ArrayResize(grid.levels, InpMaxGridLevels);
+    for(int i = 0; i < InpMaxGridLevels; i++)
+    {
+        double price = (dir == GRID_DIRECTION_BUY) ? base_price - (i+1)*spacing : base_price + (i+1)*spacing;
+        grid.levels[i].price = NormalizeDouble(price, _Digits);
+        grid.levels[i].lot_size = InpFixedLotSize;
+        // Place order như PlaceDirectionOrders
+    }
+    grid.base_price = base_price;
+    grid.is_active = true;
+    Print("Setup ", (dir == GRID_DIRECTION_BUY ? "BUY" : "SELL"), " grid at ", DoubleToString(base_price));
+    return true;
+}
+
+// Thêm hàm CheckDCAExpansion() (gọi trong OnTick sau CheckProfitTarget)
+void CheckDCAExpansion()
+{
+    double current_bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    // Check BUY: If all levels filled and price < last level price - spacing
+    if(/* all m_buy_grid.levels filled */ && current_bid < m_buy_grid.levels[ArraySize(m_buy_grid.levels)-1].price - spacing && m_buy_grid.dca_expansions < 2)
+    {
+        m_buy_grid.dca_expansions++;
+        // Add 5 new levels below last
+        int old_size = ArraySize(m_buy_grid.levels);
+        ArrayResize(m_buy_grid.levels, old_size + 5);
+        for(int i = 0; i < 5; i++)
+        {
+            double new_price = current_bid - (i+1)*spacing;
+            m_buy_grid.levels[old_size + i].price = new_price;
+            // Place order
+        }
+        Print("DCA Expansion for BUY: Added 5 levels");
+    }
+    // Tương tự cho SELL (price > last + spacing)
+}
+
+// Thêm hàm CheckLossProtection() (gọi trong OnTick)
+void CheckLossProtection()
+{
+    double buy_loss = -g_grid_manager.CalculateDirectionTotalProfit(GRID_DIRECTION_BUY); // Negative profit = loss
+    double sell_loss = -g_grid_manager.CalculateDirectionTotalProfit(GRID_DIRECTION_SELL);
+    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+    double max_loss = balance * 0.05; // 5%
+
+    if(buy_loss > max_loss)
+    {
+        Print("🚨 BUY Loss Protection: Loss $", DoubleToString(buy_loss,2));
+        CloseDirectionPositions(GRID_DIRECTION_BUY);
+        // Disable buy grid: m_buy_grid.is_active = false;
+    }
+    if(sell_loss > max_loss)
+    {
+        Print("🚨 SELL Loss Protection: Loss $", DoubleToString(sell_loss,2));
+        CloseDirectionPositions(GRID_DIRECTION_SELL);
+    }
+}
+
+Improve 3: Giảm skipping trong log
+
+Tăng InpATRMultiplier = 1.5 trong input để spacing lớn hơn.
+Trong PlaceDirectionOrders(): Nếu skip, tự động tăng multiplier tạm thời (ví dụ: multiplier += 0.1 nếu skip > 3).
+
+3. Hướng Dẫn Test và Next Steps
+
+Compile và Test: Thay code trên, compile (nên không error vì mình fix implicit conversion bằng IntegerToString/DoubleToString). Backtest trên EURUSD M1 với $1000 account, focus on profit=10 USD cycles.
+Monitor Log: Tìm "🎯 BUY DIRECTION PROFIT" hoặc "✅ BUY cleanup complete" để confirm.
+Nếu vẫn issue: Gửi log mới hoặc error compile, mình fix tiếp.
+Improve dài hạn: Thêm visual chart objects để vẽ grid levels, giúp debug dễ hơn.

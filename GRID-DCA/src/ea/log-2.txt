@@ -1,0 +1,586 @@
+2025.09.26 13:06:37.484	EURUSD,M5: testing of Experts\FlexGridDCA_EA.ex5 from 2025.02.01 00:00 to 2025.08.10 00:00 started with inputs:
+2025.09.26 13:06:37.484	  =
+2025.09.26 13:06:37.484	  InpFixedLotSize=0.01
+2025.09.26 13:06:37.484	  InpMaxGridLevels=5
+2025.09.26 13:06:37.484	  InpATRMultiplier=1.0
+2025.09.26 13:06:37.484	  InpEnableGridTrading=true
+2025.09.26 13:06:37.484	  InpEnableDCATrading=true
+2025.09.26 13:06:37.484	  =
+2025.09.26 13:06:37.484	  InpMaxAccountRisk=10.0
+2025.09.26 13:06:37.484	  InpProfitTargetPercent=1.0
+2025.09.26 13:06:37.484	  InpProfitTargetUSD=4
+2025.09.26 13:06:37.484	  InpUseTotalProfitTarget=true
+2025.09.26 13:06:37.484	  InpMaxSpreadPips=50.0
+2025.09.26 13:06:37.484	  InpUseVolatilityFilter=false
+2025.09.26 13:06:37.484	  =
+2025.09.26 13:06:37.484	  InpUseTimeFilter=false
+2025.09.26 13:06:37.484	  InpStartHour=8
+2025.09.26 13:06:37.484	  InpEndHour=18
+2025.09.26 13:06:37.484	  =
+2025.09.26 13:06:37.484	  InpEnableTrailingStop=false
+2025.09.26 13:06:37.484	  InpEnableMarketEntry=false
+2025.09.26 13:06:37.484	  InpUseFibonacciSpacing=true
+2025.09.26 13:06:37.484	  InpTrailingStopATR=2.0
+2025.09.26 13:06:37.484	  InpMagicNumber=12345
+2025.09.26 13:06:37.484	  InpEAComment=FlexGridDCA
+2025.09.26 13:06:37.537	2025.02.01 00:00:00   === FlexGridDCA EA Starting ===
+2025.09.26 13:06:37.610	EURUSD,M1: history cache allocated for 600083 bars and contains 404654 bars from 2024.01.02 00:00 to 2025.01.31 23:59
+2025.09.26 13:06:37.610	EURUSD,M1: history begins from 2024.01.02 00:00
+2025.09.26 13:06:37.659	EURUSD,M15: history cache allocated for 40024 bars and contains 26995 bars from 2024.01.02 00:00 to 2025.01.31 23:45
+2025.09.26 13:06:37.659	EURUSD,M15: history begins from 2024.01.02 00:00
+2025.09.26 13:06:37.700	EURUSD,H1: history cache allocated for 10009 bars and contains 6752 bars from 2024.01.02 00:00 to 2025.01.31 23:00
+2025.09.26 13:06:37.700	EURUSD,H1: history begins from 2024.01.02 00:00
+2025.09.26 13:06:37.739	EURUSD,H4: history cache allocated for 2506 bars and contains 1691 bars from 2024.01.02 00:00 to 2025.01.31 20:00
+2025.09.26 13:06:37.739	EURUSD,H4: history begins from 2024.01.02 00:00
+2025.09.26 13:06:37.778	EURUSD,Daily: history cache allocated for 419 bars and contains 283 bars from 2024.01.02 00:00 to 2025.01.31 00:00
+2025.09.26 13:06:37.778	EURUSD,Daily: history begins from 2024.01.02 00:00
+2025.09.26 13:06:37.778	2025.02.01 00:00:00   ATR Calculator initialized for EURUSD
+2025.09.26 13:06:37.779	2025.02.01 00:00:00   GridManager V2 initialized - Symbol: EURUSD, Lot Size: 0.01, Max Levels: 5
+2025.09.26 13:06:37.779	2025.02.01 00:00:00   Profit Targets Set - USD: $4.0, Percent: 1.0%, Use Total: Yes
+2025.09.26 13:06:37.779	2025.02.01 00:00:00   🚀 Market Entry Mode: DISABLED - Limit orders only
+2025.09.26 13:06:37.779	2025.02.01 00:00:00   📐 Grid Spacing Mode: FIBONACCI - Using Golden Ratio (1.618, 2.618, 4.236, 6.854)
+2025.09.26 13:06:37.779	2025.02.01 00:00:00   === Market Information ===
+2025.09.26 13:06:37.779	2025.02.01 00:00:00   Symbol: EURUSD
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Digits: 5
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Point: 0.00001
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Tick Size: 0.00001
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Tick Value: 1.0
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Lot Size: 100000.0
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Min Lot: 0.01
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Max Lot: 500.0
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Lot Step: 0.01
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Current Spread: 20
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   === FlexGridDCA EA Initialized Successfully ===
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Fixed Lot Size: 0.01
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Max Grid Levels: 5
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   ATR Multiplier: 1.0
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Account Balance: 10000.0
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Profit Target USD: $4.0
+2025.09.26 13:06:37.780	2025.02.01 00:00:00   Profit Target %: 1.0%
+2025.09.26 13:06:38.540	EURUSD : 2025.05.27 23:59 - real ticks absent for 599 minutes out of 1394 total minute bars within a day
+2025.09.26 13:06:38.979	EURUSD : real ticks begin from 2025.01.02 00:00:00
+2025.09.26 13:06:38.979	EURUSD : 2025.02.01 00:00 - 2025.08.10 00:00  real ticks absent for 599 minutes of 193019 total minute bars, every tick generation used
+2025.09.26 13:06:38.991	2025.02.03 00:01:04   === Setting up New Grid System ===
+2025.09.26 13:06:38.991	2025.02.03 00:01:04   🔍 CONFIRMATION CHECK BEFORE NEW GRID:
+2025.09.26 13:06:38.991	2025.02.03 00:01:04   BUY orders/positions: 0
+2025.09.26 13:06:38.991	2025.02.03 00:01:04   SELL orders/positions: 0
+2025.09.26 13:06:38.991	2025.02.03 00:01:04   ✅ CONFIRMATION: All clear. Safe to create new grid.
+2025.09.26 13:06:38.993	2025.02.03 00:01:04   === Setting Up Dual Independent Grids ===
+2025.09.26 13:06:38.993	2025.02.03 00:01:04   Base Price: 1.02509
+2025.09.26 13:06:38.993	2025.02.03 00:01:04   ATR Spacing: 0.00245
+2025.09.26 13:06:38.993	2025.02.03 00:01:04   ✅ BUY Grid Setup: 5 levels from 1.02264 to 1.00833
+2025.09.26 13:06:38.993	2025.02.03 00:01:04   ✅ SELL Grid Setup: 5 levels from 1.02754 to 1.04185
+2025.09.26 13:06:38.993	2025.02.03 00:01:04   ✅ Dual Grid Setup Completed Successfully
+2025.09.26 13:06:38.993	2025.02.03 00:01:04   Dual Grid system setup completed.
+2025.09.26 13:06:38.993	2025.02.03 00:01:04   === GRID MANAGER V2 STATUS ===
+2025.09.26 13:06:38.994	2025.02.03 00:01:04   --- BUY GRID ---
+2025.09.26 13:06:38.994	2025.02.03 00:01:04   Active: YES | Base: 1.02509 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:06:38.994	2025.02.03 00:01:04   --- SELL GRID ---
+2025.09.26 13:06:38.994	2025.02.03 00:01:04   Active: YES | Base: 1.02509 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:06:38.994	2025.02.03 00:01:04   💰 PROFITS: BUY: $0.00 | SELL: $0.00 | TOTAL: $0.00
+2025.09.26 13:06:38.994	2025.02.03 00:01:04   🎯 TARGETS: USD: $4.00 | Percent: 1.00%
+2025.09.26 13:06:38.999	2025.02.03 00:01:09   Spread too high: 200.0 > 50.0
+2025.09.26 13:06:39.036	2025.02.03 00:02:50   buy limit 0.01 EURUSD at 1.02264 (1.02419 / 1.02466)
+2025.09.26 13:06:39.038	2025.02.03 00:02:50   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02264 [done]
+2025.09.26 13:06:39.038	2025.02.03 00:02:50   ✅ Placed BUY order at 1.02264 | Ticket: 2
+2025.09.26 13:06:39.038	2025.02.03 00:02:50   buy limit 0.01 EURUSD at 1.02113 (1.02419 / 1.02466)
+2025.09.26 13:06:39.040	2025.02.03 00:02:50   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02113 [done]
+2025.09.26 13:06:39.040	2025.02.03 00:02:50   ✅ Placed BUY order at 1.02113 | Ticket: 3
+2025.09.26 13:06:39.040	2025.02.03 00:02:50   buy limit 0.01 EURUSD at 1.01869 (1.02419 / 1.02466)
+2025.09.26 13:06:39.041	2025.02.03 00:02:50   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.01869 [done]
+2025.09.26 13:06:39.041	2025.02.03 00:02:50   ✅ Placed BUY order at 1.01869 | Ticket: 4
+2025.09.26 13:06:39.041	2025.02.03 00:02:50   buy limit 0.01 EURUSD at 1.01473 (1.02419 / 1.02466)
+2025.09.26 13:06:39.042	2025.02.03 00:02:50   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.01473 [done]
+2025.09.26 13:06:39.042	2025.02.03 00:02:50   ✅ Placed BUY order at 1.01473 | Ticket: 5
+2025.09.26 13:06:39.042	2025.02.03 00:02:50   buy limit 0.01 EURUSD at 1.00833 (1.02419 / 1.02466)
+2025.09.26 13:06:39.044	2025.02.03 00:02:50   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.00833 [done]
+2025.09.26 13:06:39.044	2025.02.03 00:02:50   ✅ Placed BUY order at 1.00833 | Ticket: 6
+2025.09.26 13:06:39.044	2025.02.03 00:02:50   📋 Placed 5 new BUY orders
+2025.09.26 13:06:39.044	2025.02.03 00:02:50   sell limit 0.01 EURUSD at 1.02754 (1.02419 / 1.02466)
+2025.09.26 13:06:39.045	2025.02.03 00:02:50   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.02754 [done]
+2025.09.26 13:06:39.045	2025.02.03 00:02:50   ✅ Placed SELL order at 1.02754 | Ticket: 7
+2025.09.26 13:06:39.045	2025.02.03 00:02:50   sell limit 0.01 EURUSD at 1.02905 (1.02419 / 1.02466)
+2025.09.26 13:06:39.047	2025.02.03 00:02:50   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.02905 [done]
+2025.09.26 13:06:39.047	2025.02.03 00:02:50   ✅ Placed SELL order at 1.02905 | Ticket: 8
+2025.09.26 13:06:39.047	2025.02.03 00:02:50   sell limit 0.01 EURUSD at 1.03149 (1.02419 / 1.02466)
+2025.09.26 13:06:39.048	2025.02.03 00:02:50   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03149 [done]
+2025.09.26 13:06:39.048	2025.02.03 00:02:50   ✅ Placed SELL order at 1.03149 | Ticket: 9
+2025.09.26 13:06:39.048	2025.02.03 00:02:50   sell limit 0.01 EURUSD at 1.03545 (1.02419 / 1.02466)
+2025.09.26 13:06:39.049	2025.02.03 00:02:50   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03545 [done]
+2025.09.26 13:06:39.049	2025.02.03 00:02:50   ✅ Placed SELL order at 1.03545 | Ticket: 10
+2025.09.26 13:06:39.049	2025.02.03 00:02:50   sell limit 0.01 EURUSD at 1.04185 (1.02419 / 1.02466)
+2025.09.26 13:06:39.051	2025.02.03 00:02:50   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.04185 [done]
+2025.09.26 13:06:39.051	2025.02.03 00:02:50   ✅ Placed SELL order at 1.04185 | Ticket: 11
+2025.09.26 13:06:39.051	2025.02.03 00:02:50   📋 Placed 5 new SELL orders
+2025.09.26 13:06:39.158	2025.02.03 00:06:14   Spread too high: 59.0 > 50.0
+2025.09.26 13:06:39.287	2025.02.03 00:11:19   Spread too high: 68.0 > 50.0
+2025.09.26 13:06:44.297	2025.02.03 02:22:47   order [#2 buy limit 0.01 EURUSD at 1.02264] triggered
+2025.09.26 13:06:44.298	2025.02.03 02:22:47   deal #2 buy 0.01 EURUSD at 1.02260 done (based on order #2)
+2025.09.26 13:06:44.298	2025.02.03 02:22:47   deal performed [#2 buy 0.01 EURUSD at 1.02260]
+2025.09.26 13:06:44.298	2025.02.03 02:22:47   order performed buy 0.01 at 1.02260 [#2 buy limit 0.01 EURUSD at 1.02264]
+2025.09.26 13:06:44.308	2025.02.03 02:22:52   🎯 BUY Grid level filled: Level 0 at 1.02260
+2025.09.26 13:07:13.761	2025.02.03 14:26:19   🎯 TOTAL PROFIT TARGET REACHED! Total: $4.02
+2025.09.26 13:07:13.761	2025.02.03 14:26:19   🔄 Closing ALL grid positions and orders...
+2025.09.26 13:07:13.762	2025.02.03 14:26:19   🔄 Closing all BUY positions and orders...
+2025.09.26 13:07:13.764	2025.02.03 14:26:19   market sell 0.01 EURUSD, close #2 (1.02662 / 1.02666)
+2025.09.26 13:07:13.764	2025.02.03 14:26:19   deal #3 sell 0.01 EURUSD at 1.02662 done (based on order #12)
+2025.09.26 13:07:13.764	2025.02.03 14:26:19   deal performed [#3 sell 0.01 EURUSD at 1.02662]
+2025.09.26 13:07:13.764	2025.02.03 14:26:19   order performed sell 0.01 at 1.02662 [#12 sell 0.01 EURUSD at 1.02662]
+2025.09.26 13:07:13.768	2025.02.03 14:26:19   CTrade::OrderSend: market sell 0.01 EURUSD [done at 1.02662]
+2025.09.26 13:07:13.768	2025.02.03 14:26:19   ✅ Closed BUY position ticket: 2
+2025.09.26 13:07:13.768	2025.02.03 14:26:19   order canceled [#9 sell limit 0.01 EURUSD at 1.03149]
+2025.09.26 13:07:13.770	2025.02.03 14:26:19   CTrade::OrderSend: cancel #9 [done]
+2025.09.26 13:07:13.770	2025.02.03 14:26:19   ✅ Cancelled BUY order ticket: 9
+2025.09.26 13:07:13.770	2025.02.03 14:26:19   order canceled [#8 sell limit 0.01 EURUSD at 1.02905]
+2025.09.26 13:07:13.771	2025.02.03 14:26:19   CTrade::OrderSend: cancel #8 [done]
+2025.09.26 13:07:13.771	2025.02.03 14:26:19   ✅ Cancelled BUY order ticket: 8
+2025.09.26 13:07:13.771	2025.02.03 14:26:19   order canceled [#7 sell limit 0.01 EURUSD at 1.02754]
+2025.09.26 13:07:13.773	2025.02.03 14:26:19   CTrade::OrderSend: cancel #7 [done]
+2025.09.26 13:07:13.773	2025.02.03 14:26:19   ✅ Cancelled BUY order ticket: 7
+2025.09.26 13:07:13.773	2025.02.03 14:26:19   order canceled [#6 buy limit 0.01 EURUSD at 1.00833]
+2025.09.26 13:07:13.774	2025.02.03 14:26:19   CTrade::OrderSend: cancel #6 [done]
+2025.09.26 13:07:13.774	2025.02.03 14:26:19   ✅ Cancelled BUY order ticket: 6
+2025.09.26 13:07:13.774	2025.02.03 14:26:19   📊 BUY Cleanup Summary: 1 positions closed, 4 orders cancelled
+2025.09.26 13:07:13.774	2025.02.03 14:26:19   🔄 Closing all SELL positions and orders...
+2025.09.26 13:07:13.774	2025.02.03 14:26:19   📊 SELL Cleanup Summary: 0 positions closed, 0 orders cancelled
+2025.09.26 13:07:13.781	2025.02.03 14:26:24   ✅ CONFIRMED: All positions and orders are closed. Ready for a new grid setup.
+2025.09.26 13:07:13.787	2025.02.03 14:26:29   === Setting up New Grid System ===
+2025.09.26 13:07:13.787	2025.02.03 14:26:29   🔍 CONFIRMATION CHECK BEFORE NEW GRID:
+2025.09.26 13:07:13.787	2025.02.03 14:26:29   BUY orders/positions: 0
+2025.09.26 13:07:13.787	2025.02.03 14:26:29   SELL orders/positions: 0
+2025.09.26 13:07:13.787	2025.02.03 14:26:29   ✅ CONFIRMATION: All clear. Safe to create new grid.
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   === Setting Up Dual Independent Grids ===
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   Base Price: 1.02657
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   ATR Spacing: 0.00253
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   ✅ BUY Grid Setup: 5 levels from 1.02404 to 1.00923
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   ✅ SELL Grid Setup: 5 levels from 1.02910 to 1.04391
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   ✅ Dual Grid Setup Completed Successfully
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   Dual Grid system setup completed.
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   === GRID MANAGER V2 STATUS ===
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   --- BUY GRID ---
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   Active: YES | Base: 1.02657 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   --- SELL GRID ---
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   Active: YES | Base: 1.02657 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   💰 PROFITS: BUY: $0.00 | SELL: $0.00 | TOTAL: $0.00
+2025.09.26 13:07:13.788	2025.02.03 14:26:29   🎯 TARGETS: USD: $4.00 | Percent: 1.00%
+2025.09.26 13:07:13.793	2025.02.03 14:26:34   buy limit 0.01 EURUSD at 1.02404 (1.02666 / 1.02671)
+2025.09.26 13:07:13.795	2025.02.03 14:26:34   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02404 [done]
+2025.09.26 13:07:13.795	2025.02.03 14:26:34   ✅ Placed BUY order at 1.02404 | Ticket: 13
+2025.09.26 13:07:13.795	2025.02.03 14:26:34   buy limit 0.01 EURUSD at 1.02248 (1.02666 / 1.02671)
+2025.09.26 13:07:13.796	2025.02.03 14:26:34   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02248 [done]
+2025.09.26 13:07:13.796	2025.02.03 14:26:34   ✅ Placed BUY order at 1.02248 | Ticket: 14
+2025.09.26 13:07:13.796	2025.02.03 14:26:34   buy limit 0.01 EURUSD at 1.01995 (1.02666 / 1.02671)
+2025.09.26 13:07:13.797	2025.02.03 14:26:34   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.01995 [done]
+2025.09.26 13:07:13.797	2025.02.03 14:26:34   ✅ Placed BUY order at 1.01995 | Ticket: 15
+2025.09.26 13:07:13.797	2025.02.03 14:26:34   buy limit 0.01 EURUSD at 1.01586 (1.02666 / 1.02671)
+2025.09.26 13:07:13.799	2025.02.03 14:26:34   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.01586 [done]
+2025.09.26 13:07:13.799	2025.02.03 14:26:34   ✅ Placed BUY order at 1.01586 | Ticket: 16
+2025.09.26 13:07:13.799	2025.02.03 14:26:34   buy limit 0.01 EURUSD at 1.00923 (1.02666 / 1.02671)
+2025.09.26 13:07:13.800	2025.02.03 14:26:34   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.00923 [done]
+2025.09.26 13:07:13.800	2025.02.03 14:26:34   ✅ Placed BUY order at 1.00923 | Ticket: 17
+2025.09.26 13:07:13.800	2025.02.03 14:26:34   📋 Placed 5 new BUY orders
+2025.09.26 13:07:13.800	2025.02.03 14:26:34   sell limit 0.01 EURUSD at 1.02910 (1.02666 / 1.02671)
+2025.09.26 13:07:13.802	2025.02.03 14:26:34   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.02910 [done]
+2025.09.26 13:07:13.802	2025.02.03 14:26:34   ✅ Placed SELL order at 1.02910 | Ticket: 18
+2025.09.26 13:07:13.802	2025.02.03 14:26:34   sell limit 0.01 EURUSD at 1.03066 (1.02666 / 1.02671)
+2025.09.26 13:07:13.803	2025.02.03 14:26:34   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03066 [done]
+2025.09.26 13:07:13.803	2025.02.03 14:26:34   ✅ Placed SELL order at 1.03066 | Ticket: 19
+2025.09.26 13:07:13.803	2025.02.03 14:26:34   sell limit 0.01 EURUSD at 1.03319 (1.02666 / 1.02671)
+2025.09.26 13:07:13.804	2025.02.03 14:26:34   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03319 [done]
+2025.09.26 13:07:13.804	2025.02.03 14:26:34   ✅ Placed SELL order at 1.03319 | Ticket: 20
+2025.09.26 13:07:13.804	2025.02.03 14:26:34   sell limit 0.01 EURUSD at 1.03728 (1.02666 / 1.02671)
+2025.09.26 13:07:13.806	2025.02.03 14:26:34   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03728 [done]
+2025.09.26 13:07:13.806	2025.02.03 14:26:34   ✅ Placed SELL order at 1.03728 | Ticket: 21
+2025.09.26 13:07:13.806	2025.02.03 14:26:34   sell limit 0.01 EURUSD at 1.04391 (1.02666 / 1.02671)
+2025.09.26 13:07:13.807	2025.02.03 14:26:34   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.04391 [done]
+2025.09.26 13:07:13.807	2025.02.03 14:26:34   ✅ Placed SELL order at 1.04391 | Ticket: 22
+2025.09.26 13:07:13.807	2025.02.03 14:26:34   📋 Placed 5 new SELL orders
+2025.09.26 13:08:13.232	2025.02.03 17:23:42   order [#18 sell limit 0.01 EURUSD at 1.02910] triggered
+2025.09.26 13:08:13.232	2025.02.03 17:23:42   deal #4 sell 0.01 EURUSD at 1.02920 done (based on order #18)
+2025.09.26 13:08:13.232	2025.02.03 17:23:42   deal performed [#4 sell 0.01 EURUSD at 1.02920]
+2025.09.26 13:08:13.232	2025.02.03 17:23:42   order performed sell 0.01 at 1.02920 [#18 sell limit 0.01 EURUSD at 1.02910]
+2025.09.26 13:08:13.236	2025.02.03 17:23:44   🎯 SELL Grid level filled: Level 0 at 1.02920
+2025.09.26 13:08:13.306	2025.02.03 17:24:27   order [#19 sell limit 0.01 EURUSD at 1.03066] triggered
+2025.09.26 13:08:13.306	2025.02.03 17:24:27   deal #5 sell 0.01 EURUSD at 1.03068 done (based on order #19)
+2025.09.26 13:08:13.306	2025.02.03 17:24:27   deal performed [#5 sell 0.01 EURUSD at 1.03068]
+2025.09.26 13:08:13.306	2025.02.03 17:24:27   order performed sell 0.01 at 1.03068 [#19 sell limit 0.01 EURUSD at 1.03066]
+2025.09.26 13:08:15.189	2025.02.03 17:43:39   order [#20 sell limit 0.01 EURUSD at 1.03319] triggered
+2025.09.26 13:08:15.189	2025.02.03 17:43:39   deal #6 sell 0.01 EURUSD at 1.03319 done (based on order #20)
+2025.09.26 13:08:15.189	2025.02.03 17:43:39   deal performed [#6 sell 0.01 EURUSD at 1.03319]
+2025.09.26 13:08:15.190	2025.02.03 17:43:39   order performed sell 0.01 at 1.03319 [#20 sell limit 0.01 EURUSD at 1.03319]
+2025.09.26 13:08:19.768	2025.02.03 18:49:52   🎯 TOTAL PROFIT TARGET REACHED! Total: $4.33
+2025.09.26 13:08:19.768	2025.02.03 18:49:52   🔄 Closing ALL grid positions and orders...
+2025.09.26 13:08:19.768	2025.02.03 18:49:52   🔄 Closing all BUY positions and orders...
+2025.09.26 13:08:19.768	2025.02.03 18:49:52   order canceled [#13 buy limit 0.01 EURUSD at 1.02404]
+2025.09.26 13:08:19.770	2025.02.03 18:49:52   CTrade::OrderSend: cancel #13 [done]
+2025.09.26 13:08:19.770	2025.02.03 18:49:52   ✅ Cancelled BUY order ticket: 13
+2025.09.26 13:08:19.770	2025.02.03 18:49:52   order canceled [#11 sell limit 0.01 EURUSD at 1.04185]
+2025.09.26 13:08:19.771	2025.02.03 18:49:52   CTrade::OrderSend: cancel #11 [done]
+2025.09.26 13:08:19.771	2025.02.03 18:49:52   ✅ Cancelled BUY order ticket: 11
+2025.09.26 13:08:19.771	2025.02.03 18:49:52   order canceled [#10 sell limit 0.01 EURUSD at 1.03545]
+2025.09.26 13:08:19.772	2025.02.03 18:49:52   CTrade::OrderSend: cancel #10 [done]
+2025.09.26 13:08:19.772	2025.02.03 18:49:52   ✅ Cancelled BUY order ticket: 10
+2025.09.26 13:08:19.772	2025.02.03 18:49:52   📊 BUY Cleanup Summary: 0 positions closed, 3 orders cancelled
+2025.09.26 13:08:19.772	2025.02.03 18:49:52   🔄 Closing all SELL positions and orders...
+2025.09.26 13:08:19.773	2025.02.03 18:49:52   market buy 0.03 EURUSD, close #18 (1.02954 / 1.02958)
+2025.09.26 13:08:19.773	2025.02.03 18:49:52   deal #7 buy 0.03 EURUSD at 1.02958 done (based on order #23)
+2025.09.26 13:08:19.773	2025.02.03 18:49:52   deal performed [#7 buy 0.03 EURUSD at 1.02958]
+2025.09.26 13:08:19.773	2025.02.03 18:49:52   order performed buy 0.03 at 1.02958 [#23 buy 0.03 EURUSD at 1.02958]
+2025.09.26 13:08:19.774	2025.02.03 18:49:52   CTrade::OrderSend: market buy 0.03 EURUSD [done at 1.02958]
+2025.09.26 13:08:19.774	2025.02.03 18:49:52   ✅ Closed SELL position ticket: 18
+2025.09.26 13:08:19.774	2025.02.03 18:49:52   📊 SELL Cleanup Summary: 1 positions closed, 0 orders cancelled
+2025.09.26 13:08:19.781	2025.02.03 18:49:57   ✅ CONFIRMED: All positions and orders are closed. Ready for a new grid setup.
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   === Setting up New Grid System ===
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   🔍 CONFIRMATION CHECK BEFORE NEW GRID:
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   BUY orders/positions: 0
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   SELL orders/positions: 0
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   ✅ CONFIRMATION: All clear. Safe to create new grid.
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   === Setting Up Dual Independent Grids ===
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   Base Price: 1.02973
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   ATR Spacing: 0.00275
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   ✅ BUY Grid Setup: 5 levels from 1.02698 to 1.01091
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   ✅ SELL Grid Setup: 5 levels from 1.03248 to 1.04855
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   ✅ Dual Grid Setup Completed Successfully
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   Dual Grid system setup completed.
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   === GRID MANAGER V2 STATUS ===
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   --- BUY GRID ---
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   Active: YES | Base: 1.02973 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   --- SELL GRID ---
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   Active: YES | Base: 1.02973 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   💰 PROFITS: BUY: $0.00 | SELL: $0.00 | TOTAL: $0.00
+2025.09.26 13:08:19.789	2025.02.03 18:50:02   🎯 TARGETS: USD: $4.00 | Percent: 1.00%
+2025.09.26 13:08:19.794	2025.02.03 18:50:07   buy limit 0.01 EURUSD at 1.02698 (1.02968 / 1.02973)
+2025.09.26 13:08:19.796	2025.02.03 18:50:07   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02698 [done]
+2025.09.26 13:08:19.796	2025.02.03 18:50:07   ✅ Placed BUY order at 1.02698 | Ticket: 24
+2025.09.26 13:08:19.796	2025.02.03 18:50:07   buy limit 0.01 EURUSD at 1.02529 (1.02968 / 1.02973)
+2025.09.26 13:08:19.797	2025.02.03 18:50:07   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02529 [done]
+2025.09.26 13:08:19.797	2025.02.03 18:50:07   ✅ Placed BUY order at 1.02529 | Ticket: 25
+2025.09.26 13:08:19.797	2025.02.03 18:50:07   buy limit 0.01 EURUSD at 1.02254 (1.02968 / 1.02973)
+2025.09.26 13:08:19.799	2025.02.03 18:50:07   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02254 [done]
+2025.09.26 13:08:19.799	2025.02.03 18:50:07   ✅ Placed BUY order at 1.02254 | Ticket: 26
+2025.09.26 13:08:19.799	2025.02.03 18:50:07   buy limit 0.01 EURUSD at 1.01810 (1.02968 / 1.02973)
+2025.09.26 13:08:19.800	2025.02.03 18:50:07   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.01810 [done]
+2025.09.26 13:08:19.800	2025.02.03 18:50:07   ✅ Placed BUY order at 1.01810 | Ticket: 27
+2025.09.26 13:08:19.800	2025.02.03 18:50:07   buy limit 0.01 EURUSD at 1.01091 (1.02968 / 1.02973)
+2025.09.26 13:08:19.801	2025.02.03 18:50:07   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.01091 [done]
+2025.09.26 13:08:19.801	2025.02.03 18:50:07   ✅ Placed BUY order at 1.01091 | Ticket: 28
+2025.09.26 13:08:19.801	2025.02.03 18:50:07   📋 Placed 5 new BUY orders
+2025.09.26 13:08:19.801	2025.02.03 18:50:07   sell limit 0.01 EURUSD at 1.03248 (1.02968 / 1.02973)
+2025.09.26 13:08:19.803	2025.02.03 18:50:07   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03248 [done]
+2025.09.26 13:08:19.803	2025.02.03 18:50:07   ✅ Placed SELL order at 1.03248 | Ticket: 29
+2025.09.26 13:08:19.803	2025.02.03 18:50:07   sell limit 0.01 EURUSD at 1.03417 (1.02968 / 1.02973)
+2025.09.26 13:08:19.804	2025.02.03 18:50:07   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03417 [done]
+2025.09.26 13:08:19.804	2025.02.03 18:50:07   ✅ Placed SELL order at 1.03417 | Ticket: 30
+2025.09.26 13:08:19.804	2025.02.03 18:50:07   sell limit 0.01 EURUSD at 1.03692 (1.02968 / 1.02973)
+2025.09.26 13:08:19.805	2025.02.03 18:50:07   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03692 [done]
+2025.09.26 13:08:19.805	2025.02.03 18:50:07   ✅ Placed SELL order at 1.03692 | Ticket: 31
+2025.09.26 13:08:19.805	2025.02.03 18:50:07   sell limit 0.01 EURUSD at 1.04136 (1.02968 / 1.02973)
+2025.09.26 13:08:19.807	2025.02.03 18:50:07   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.04136 [done]
+2025.09.26 13:08:19.807	2025.02.03 18:50:07   ✅ Placed SELL order at 1.04136 | Ticket: 32
+2025.09.26 13:08:19.807	2025.02.03 18:50:07   sell limit 0.01 EURUSD at 1.04855 (1.02968 / 1.02973)
+2025.09.26 13:08:19.808	2025.02.03 18:50:07   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.04855 [done]
+2025.09.26 13:08:19.808	2025.02.03 18:50:07   ✅ Placed SELL order at 1.04855 | Ticket: 33
+2025.09.26 13:08:19.808	2025.02.03 18:50:07   📋 Placed 5 new SELL orders
+2025.09.26 13:08:30.642	2025.02.03 23:36:11   order [#29 sell limit 0.01 EURUSD at 1.03248] triggered
+2025.09.26 13:08:30.642	2025.02.03 23:36:11   deal #8 sell 0.01 EURUSD at 1.03252 done (based on order #29)
+2025.09.26 13:08:30.642	2025.02.03 23:36:11   deal performed [#8 sell 0.01 EURUSD at 1.03252]
+2025.09.26 13:08:30.642	2025.02.03 23:36:11   order performed sell 0.01 at 1.03252 [#29 sell limit 0.01 EURUSD at 1.03248]
+2025.09.26 13:08:30.644	2025.02.03 23:36:12   🎯 SELL Grid level filled: Level 0 at 1.03252
+2025.09.26 13:08:30.886	2025.02.03 23:41:37   order [#30 sell limit 0.01 EURUSD at 1.03417] triggered
+2025.09.26 13:08:30.886	2025.02.03 23:41:37   deal #9 sell 0.01 EURUSD at 1.03425 done (based on order #30)
+2025.09.26 13:08:30.886	2025.02.03 23:41:37   deal performed [#9 sell 0.01 EURUSD at 1.03425]
+2025.09.26 13:08:30.886	2025.02.03 23:41:37   order performed sell 0.01 at 1.03425 [#30 sell limit 0.01 EURUSD at 1.03417]
+2025.09.26 13:08:31.289	2025.02.04 00:00:32   Spread too high: 123.99999999999999 > 50.0
+2025.09.26 13:08:31.306	2025.02.04 00:06:00   Spread too high: 88.0 > 50.0
+2025.09.26 13:08:31.331	2025.02.04 00:11:09   Spread too high: 87.0 > 50.0
+2025.09.26 13:08:31.420	2025.02.04 00:18:45   Spread too high: 65.0 > 50.0
+2025.09.26 13:08:31.488	2025.02.04 00:40:50   Spread too high: 52.0 > 50.0
+2025.09.26 13:08:33.201	2025.02.04 03:11:29   🎯 TOTAL PROFIT TARGET REACHED! Total: $4.25
+2025.09.26 13:08:33.202	2025.02.04 03:11:29   🔄 Closing ALL grid positions and orders...
+2025.09.26 13:08:33.202	2025.02.04 03:11:29   🔄 Closing all BUY positions and orders...
+2025.09.26 13:08:33.203	2025.02.04 03:11:29   order canceled [#33 sell limit 0.01 EURUSD at 1.04855]
+2025.09.26 13:08:33.204	2025.02.04 03:11:29   CTrade::OrderSend: cancel #33 [done]
+2025.09.26 13:08:33.204	2025.02.04 03:11:29   ✅ Cancelled BUY order ticket: 33
+2025.09.26 13:08:33.204	2025.02.04 03:11:29   order canceled [#32 sell limit 0.01 EURUSD at 1.04136]
+2025.09.26 13:08:33.205	2025.02.04 03:11:29   CTrade::OrderSend: cancel #32 [done]
+2025.09.26 13:08:33.205	2025.02.04 03:11:29   ✅ Cancelled BUY order ticket: 32
+2025.09.26 13:08:33.205	2025.02.04 03:11:29   order canceled [#31 sell limit 0.01 EURUSD at 1.03692]
+2025.09.26 13:08:33.207	2025.02.04 03:11:29   CTrade::OrderSend: cancel #31 [done]
+2025.09.26 13:08:33.207	2025.02.04 03:11:29   ✅ Cancelled BUY order ticket: 31
+2025.09.26 13:08:33.207	2025.02.04 03:11:29   order canceled [#16 buy limit 0.01 EURUSD at 1.01586]
+2025.09.26 13:08:33.208	2025.02.04 03:11:29   CTrade::OrderSend: cancel #16 [done]
+2025.09.26 13:08:33.208	2025.02.04 03:11:29   ✅ Cancelled BUY order ticket: 16
+2025.09.26 13:08:33.208	2025.02.04 03:11:29   order canceled [#15 buy limit 0.01 EURUSD at 1.01995]
+2025.09.26 13:08:33.209	2025.02.04 03:11:29   CTrade::OrderSend: cancel #15 [done]
+2025.09.26 13:08:33.209	2025.02.04 03:11:29   ✅ Cancelled BUY order ticket: 15
+2025.09.26 13:08:33.209	2025.02.04 03:11:29   order canceled [#14 buy limit 0.01 EURUSD at 1.02248]
+2025.09.26 13:08:33.211	2025.02.04 03:11:29   CTrade::OrderSend: cancel #14 [done]
+2025.09.26 13:08:33.211	2025.02.04 03:11:29   ✅ Cancelled BUY order ticket: 14
+2025.09.26 13:08:33.211	2025.02.04 03:11:29   📊 BUY Cleanup Summary: 0 positions closed, 6 orders cancelled
+2025.09.26 13:08:33.211	2025.02.04 03:11:29   🔄 Closing all SELL positions and orders...
+2025.09.26 13:08:33.211	2025.02.04 03:11:29   market buy 0.02 EURUSD, close #29 (1.03121 / 1.03125)
+2025.09.26 13:08:33.211	2025.02.04 03:11:29   deal #10 buy 0.02 EURUSD at 1.03125 done (based on order #34)
+2025.09.26 13:08:33.211	2025.02.04 03:11:29   deal performed [#10 buy 0.02 EURUSD at 1.03125]
+2025.09.26 13:08:33.211	2025.02.04 03:11:29   order performed buy 0.02 at 1.03125 [#34 buy 0.02 EURUSD at 1.03125]
+2025.09.26 13:08:33.212	2025.02.04 03:11:29   CTrade::OrderSend: market buy 0.02 EURUSD [done at 1.03125]
+2025.09.26 13:08:33.212	2025.02.04 03:11:29   ✅ Closed SELL position ticket: 29
+2025.09.26 13:08:33.212	2025.02.04 03:11:29   📊 SELL Cleanup Summary: 1 positions closed, 0 orders cancelled
+2025.09.26 13:08:33.215	2025.02.04 03:11:34   ✅ CONFIRMED: All positions and orders are closed. Ready for a new grid setup.
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   === Setting up New Grid System ===
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   🔍 CONFIRMATION CHECK BEFORE NEW GRID:
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   BUY orders/positions: 0
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   SELL orders/positions: 0
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   ✅ CONFIRMATION: All clear. Safe to create new grid.
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   === Setting Up Dual Independent Grids ===
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   Base Price: 1.03118
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   ATR Spacing: 0.00326
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   ✅ BUY Grid Setup: 5 levels from 1.02792 to 1.00887
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   ✅ SELL Grid Setup: 5 levels from 1.03444 to 1.05349
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   ✅ Dual Grid Setup Completed Successfully
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   Dual Grid system setup completed.
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   === GRID MANAGER V2 STATUS ===
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   --- BUY GRID ---
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   Active: YES | Base: 1.03118 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   --- SELL GRID ---
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   Active: YES | Base: 1.03118 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   💰 PROFITS: BUY: $0.00 | SELL: $0.00 | TOTAL: $0.00
+2025.09.26 13:08:33.217	2025.02.04 03:11:39   🎯 TARGETS: USD: $4.00 | Percent: 1.00%
+2025.09.26 13:08:33.221	2025.02.04 03:11:44   buy limit 0.01 EURUSD at 1.02792 (1.03115 / 1.03119)
+2025.09.26 13:08:33.222	2025.02.04 03:11:44   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02792 [done]
+2025.09.26 13:08:33.222	2025.02.04 03:11:44   ✅ Placed BUY order at 1.02792 | Ticket: 35
+2025.09.26 13:08:33.222	2025.02.04 03:11:44   buy limit 0.01 EURUSD at 1.02591 (1.03115 / 1.03119)
+2025.09.26 13:08:33.224	2025.02.04 03:11:44   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02591 [done]
+2025.09.26 13:08:33.224	2025.02.04 03:11:44   ✅ Placed BUY order at 1.02591 | Ticket: 36
+2025.09.26 13:08:33.224	2025.02.04 03:11:44   buy limit 0.01 EURUSD at 1.02266 (1.03115 / 1.03119)
+2025.09.26 13:08:33.225	2025.02.04 03:11:44   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02266 [done]
+2025.09.26 13:08:33.225	2025.02.04 03:11:44   ✅ Placed BUY order at 1.02266 | Ticket: 37
+2025.09.26 13:08:33.225	2025.02.04 03:11:44   buy limit 0.01 EURUSD at 1.01739 (1.03115 / 1.03119)
+2025.09.26 13:08:33.226	2025.02.04 03:11:44   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.01739 [done]
+2025.09.26 13:08:33.226	2025.02.04 03:11:44   ✅ Placed BUY order at 1.01739 | Ticket: 38
+2025.09.26 13:08:33.226	2025.02.04 03:11:44   buy limit 0.01 EURUSD at 1.00887 (1.03115 / 1.03119)
+2025.09.26 13:08:33.228	2025.02.04 03:11:44   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.00887 [done]
+2025.09.26 13:08:33.228	2025.02.04 03:11:44   ✅ Placed BUY order at 1.00887 | Ticket: 39
+2025.09.26 13:08:33.228	2025.02.04 03:11:44   📋 Placed 5 new BUY orders
+2025.09.26 13:08:33.228	2025.02.04 03:11:44   sell limit 0.01 EURUSD at 1.03444 (1.03115 / 1.03119)
+2025.09.26 13:08:33.229	2025.02.04 03:11:44   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03444 [done]
+2025.09.26 13:08:33.229	2025.02.04 03:11:44   ✅ Placed SELL order at 1.03444 | Ticket: 40
+2025.09.26 13:08:33.229	2025.02.04 03:11:44   sell limit 0.01 EURUSD at 1.03645 (1.03115 / 1.03119)
+2025.09.26 13:08:33.231	2025.02.04 03:11:44   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03645 [done]
+2025.09.26 13:08:33.231	2025.02.04 03:11:44   ✅ Placed SELL order at 1.03645 | Ticket: 41
+2025.09.26 13:08:33.231	2025.02.04 03:11:44   sell limit 0.01 EURUSD at 1.03970 (1.03115 / 1.03119)
+2025.09.26 13:08:33.232	2025.02.04 03:11:44   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03970 [done]
+2025.09.26 13:08:33.232	2025.02.04 03:11:44   ✅ Placed SELL order at 1.03970 | Ticket: 42
+2025.09.26 13:08:33.232	2025.02.04 03:11:44   sell limit 0.01 EURUSD at 1.04497 (1.03115 / 1.03119)
+2025.09.26 13:08:33.233	2025.02.04 03:11:44   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.04497 [done]
+2025.09.26 13:08:33.233	2025.02.04 03:11:44   ✅ Placed SELL order at 1.04497 | Ticket: 43
+2025.09.26 13:08:33.233	2025.02.04 03:11:44   sell limit 0.01 EURUSD at 1.05349 (1.03115 / 1.03119)
+2025.09.26 13:08:33.235	2025.02.04 03:11:44   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.05349 [done]
+2025.09.26 13:08:33.235	2025.02.04 03:11:44   ✅ Placed SELL order at 1.05349 | Ticket: 44
+2025.09.26 13:08:33.235	2025.02.04 03:11:44   📋 Placed 5 new SELL orders
+2025.09.26 13:08:36.328	2025.02.04 07:07:47   order [#35 buy limit 0.01 EURUSD at 1.02792] triggered
+2025.09.26 13:08:36.328	2025.02.04 07:07:47   deal #11 buy 0.01 EURUSD at 1.02787 done (based on order #35)
+2025.09.26 13:08:36.328	2025.02.04 07:07:47   deal performed [#11 buy 0.01 EURUSD at 1.02787]
+2025.09.26 13:08:36.328	2025.02.04 07:07:47   order performed buy 0.01 at 1.02787 [#35 buy limit 0.01 EURUSD at 1.02792]
+2025.09.26 13:08:36.328	2025.02.04 07:07:48   🎯 BUY Grid level filled: Level 0 at 1.02787
+2025.09.26 13:08:39.744	2025.02.04 10:14:53   🎯 TOTAL PROFIT TARGET REACHED! Total: $4.06
+2025.09.26 13:08:39.744	2025.02.04 10:14:53   🔄 Closing ALL grid positions and orders...
+2025.09.26 13:08:39.744	2025.02.04 10:14:53   🔄 Closing all BUY positions and orders...
+2025.09.26 13:08:39.744	2025.02.04 10:14:53   market sell 0.01 EURUSD, close #35 (1.03193 / 1.03198)
+2025.09.26 13:08:39.744	2025.02.04 10:14:53   deal #12 sell 0.01 EURUSD at 1.03193 done (based on order #45)
+2025.09.26 13:08:39.744	2025.02.04 10:14:53   deal performed [#12 sell 0.01 EURUSD at 1.03193]
+2025.09.26 13:08:39.744	2025.02.04 10:14:53   order performed sell 0.01 at 1.03193 [#45 sell 0.01 EURUSD at 1.03193]
+2025.09.26 13:08:39.745	2025.02.04 10:14:53   CTrade::OrderSend: market sell 0.01 EURUSD [done at 1.03193]
+2025.09.26 13:08:39.745	2025.02.04 10:14:53   ✅ Closed BUY position ticket: 35
+2025.09.26 13:08:39.745	2025.02.04 10:14:53   order canceled [#42 sell limit 0.01 EURUSD at 1.03970]
+2025.09.26 13:08:39.747	2025.02.04 10:14:53   CTrade::OrderSend: cancel #42 [done]
+2025.09.26 13:08:39.747	2025.02.04 10:14:53   ✅ Cancelled BUY order ticket: 42
+2025.09.26 13:08:39.747	2025.02.04 10:14:53   order canceled [#22 sell limit 0.01 EURUSD at 1.04391]
+2025.09.26 13:08:39.748	2025.02.04 10:14:53   CTrade::OrderSend: cancel #22 [done]
+2025.09.26 13:08:39.748	2025.02.04 10:14:53   ✅ Cancelled BUY order ticket: 22
+2025.09.26 13:08:39.748	2025.02.04 10:14:53   order canceled [#21 sell limit 0.01 EURUSD at 1.03728]
+2025.09.26 13:08:39.750	2025.02.04 10:14:53   CTrade::OrderSend: cancel #21 [done]
+2025.09.26 13:08:39.750	2025.02.04 10:14:53   ✅ Cancelled BUY order ticket: 21
+2025.09.26 13:08:39.750	2025.02.04 10:14:53   order canceled [#17 buy limit 0.01 EURUSD at 1.00923]
+2025.09.26 13:08:39.751	2025.02.04 10:14:53   CTrade::OrderSend: cancel #17 [done]
+2025.09.26 13:08:39.751	2025.02.04 10:14:53   ✅ Cancelled BUY order ticket: 17
+2025.09.26 13:08:39.751	2025.02.04 10:14:53   📊 BUY Cleanup Summary: 1 positions closed, 4 orders cancelled
+2025.09.26 13:08:39.751	2025.02.04 10:14:53   🔄 Closing all SELL positions and orders...
+2025.09.26 13:08:39.751	2025.02.04 10:14:53   📊 SELL Cleanup Summary: 0 positions closed, 0 orders cancelled
+2025.09.26 13:08:39.755	2025.02.04 10:14:58   ✅ CONFIRMED: All positions and orders are closed. Ready for a new grid setup.
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   === Setting up New Grid System ===
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   🔍 CONFIRMATION CHECK BEFORE NEW GRID:
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   BUY orders/positions: 0
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   SELL orders/positions: 0
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   ✅ CONFIRMATION: All clear. Safe to create new grid.
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   === Setting Up Dual Independent Grids ===
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   Base Price: 1.03184
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   ATR Spacing: 0.00204
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   ✅ BUY Grid Setup: 5 levels from 1.02980 to 1.01784
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   ✅ SELL Grid Setup: 5 levels from 1.03388 to 1.04584
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   ✅ Dual Grid Setup Completed Successfully
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   Dual Grid system setup completed.
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   === GRID MANAGER V2 STATUS ===
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   --- BUY GRID ---
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   Active: YES | Base: 1.03184 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   --- SELL GRID ---
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   Active: YES | Base: 1.03184 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   💰 PROFITS: BUY: $0.00 | SELL: $0.00 | TOTAL: $0.00
+2025.09.26 13:08:39.758	2025.02.04 10:15:03   🎯 TARGETS: USD: $4.00 | Percent: 1.00%
+2025.09.26 13:08:39.761	2025.02.04 10:15:08   buy limit 0.01 EURUSD at 1.02980 (1.03190 / 1.03194)
+2025.09.26 13:08:39.762	2025.02.04 10:15:08   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02980 [done]
+2025.09.26 13:08:39.762	2025.02.04 10:15:08   ✅ Placed BUY order at 1.02980 | Ticket: 46
+2025.09.26 13:08:39.762	2025.02.04 10:15:08   buy limit 0.01 EURUSD at 1.02854 (1.03190 / 1.03194)
+2025.09.26 13:08:39.764	2025.02.04 10:15:08   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02854 [done]
+2025.09.26 13:08:39.764	2025.02.04 10:15:08   ✅ Placed BUY order at 1.02854 | Ticket: 47
+2025.09.26 13:08:39.764	2025.02.04 10:15:08   buy limit 0.01 EURUSD at 1.02649 (1.03190 / 1.03194)
+2025.09.26 13:08:39.765	2025.02.04 10:15:08   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02649 [done]
+2025.09.26 13:08:39.765	2025.02.04 10:15:08   ✅ Placed BUY order at 1.02649 | Ticket: 48
+2025.09.26 13:08:39.765	2025.02.04 10:15:08   buy limit 0.01 EURUSD at 1.02319 (1.03190 / 1.03194)
+2025.09.26 13:08:39.767	2025.02.04 10:15:08   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02319 [done]
+2025.09.26 13:08:39.767	2025.02.04 10:15:08   ✅ Placed BUY order at 1.02319 | Ticket: 49
+2025.09.26 13:08:39.767	2025.02.04 10:15:08   buy limit 0.01 EURUSD at 1.01784 (1.03190 / 1.03194)
+2025.09.26 13:08:39.768	2025.02.04 10:15:08   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.01784 [done]
+2025.09.26 13:08:39.768	2025.02.04 10:15:08   ✅ Placed BUY order at 1.01784 | Ticket: 50
+2025.09.26 13:08:39.768	2025.02.04 10:15:08   📋 Placed 5 new BUY orders
+2025.09.26 13:08:39.768	2025.02.04 10:15:08   sell limit 0.01 EURUSD at 1.03388 (1.03190 / 1.03194)
+2025.09.26 13:08:39.769	2025.02.04 10:15:08   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03388 [done]
+2025.09.26 13:08:39.769	2025.02.04 10:15:08   ✅ Placed SELL order at 1.03388 | Ticket: 51
+2025.09.26 13:08:39.769	2025.02.04 10:15:08   sell limit 0.01 EURUSD at 1.03514 (1.03190 / 1.03194)
+2025.09.26 13:08:39.771	2025.02.04 10:15:08   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03514 [done]
+2025.09.26 13:08:39.771	2025.02.04 10:15:08   ✅ Placed SELL order at 1.03514 | Ticket: 52
+2025.09.26 13:08:39.771	2025.02.04 10:15:08   sell limit 0.01 EURUSD at 1.03719 (1.03190 / 1.03194)
+2025.09.26 13:08:39.772	2025.02.04 10:15:08   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03719 [done]
+2025.09.26 13:08:39.772	2025.02.04 10:15:08   ✅ Placed SELL order at 1.03719 | Ticket: 53
+2025.09.26 13:08:39.772	2025.02.04 10:15:08   sell limit 0.01 EURUSD at 1.04049 (1.03190 / 1.03194)
+2025.09.26 13:08:39.774	2025.02.04 10:15:08   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.04049 [done]
+2025.09.26 13:08:39.774	2025.02.04 10:15:08   ✅ Placed SELL order at 1.04049 | Ticket: 54
+2025.09.26 13:08:39.774	2025.02.04 10:15:08   sell limit 0.01 EURUSD at 1.04584 (1.03190 / 1.03194)
+2025.09.26 13:08:39.775	2025.02.04 10:15:08   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.04584 [done]
+2025.09.26 13:08:39.775	2025.02.04 10:15:08   ✅ Placed SELL order at 1.04584 | Ticket: 55
+2025.09.26 13:08:39.775	2025.02.04 10:15:08   📋 Placed 5 new SELL orders
+2025.09.26 13:08:40.983	2025.02.04 11:08:02   order [#51 sell limit 0.01 EURUSD at 1.03388] triggered
+2025.09.26 13:08:40.983	2025.02.04 11:08:02   deal #13 sell 0.01 EURUSD at 1.03390 done (based on order #51)
+2025.09.26 13:08:40.983	2025.02.04 11:08:02   deal performed [#13 sell 0.01 EURUSD at 1.03390]
+2025.09.26 13:08:40.983	2025.02.04 11:08:02   order performed sell 0.01 at 1.03390 [#51 sell limit 0.01 EURUSD at 1.03388]
+2025.09.26 13:08:40.983	2025.02.04 11:08:06   🎯 SELL Grid level filled: Level 0 at 1.03390
+2025.09.26 13:08:41.055	2025.02.04 11:12:02   order [#40 sell limit 0.01 EURUSD at 1.03444] triggered
+2025.09.26 13:08:41.055	2025.02.04 11:12:02   deal #14 sell 0.01 EURUSD at 1.03447 done (based on order #40)
+2025.09.26 13:08:41.055	2025.02.04 11:12:02   deal performed [#14 sell 0.01 EURUSD at 1.03447]
+2025.09.26 13:08:41.055	2025.02.04 11:12:02   order performed sell 0.01 at 1.03447 [#40 sell limit 0.01 EURUSD at 1.03444]
+2025.09.26 13:08:43.651	2025.02.04 14:01:01   🎯 TOTAL PROFIT TARGET REACHED! Total: $4.01
+2025.09.26 13:08:43.651	2025.02.04 14:01:01   🔄 Closing ALL grid positions and orders...
+2025.09.26 13:08:43.651	2025.02.04 14:01:01   🔄 Closing all BUY positions and orders...
+2025.09.26 13:08:43.651	2025.02.04 14:01:01   order canceled [#26 buy limit 0.01 EURUSD at 1.02254]
+2025.09.26 13:08:43.653	2025.02.04 14:01:01   CTrade::OrderSend: cancel #26 [done]
+2025.09.26 13:08:43.653	2025.02.04 14:01:01   ✅ Cancelled BUY order ticket: 26
+2025.09.26 13:08:43.653	2025.02.04 14:01:01   order canceled [#25 buy limit 0.01 EURUSD at 1.02529]
+2025.09.26 13:08:43.654	2025.02.04 14:01:01   CTrade::OrderSend: cancel #25 [done]
+2025.09.26 13:08:43.654	2025.02.04 14:01:01   ✅ Cancelled BUY order ticket: 25
+2025.09.26 13:08:43.654	2025.02.04 14:01:01   order canceled [#24 buy limit 0.01 EURUSD at 1.02698]
+2025.09.26 13:08:43.656	2025.02.04 14:01:01   CTrade::OrderSend: cancel #24 [done]
+2025.09.26 13:08:43.656	2025.02.04 14:01:01   ✅ Cancelled BUY order ticket: 24
+2025.09.26 13:08:43.656	2025.02.04 14:01:01   📊 BUY Cleanup Summary: 0 positions closed, 3 orders cancelled
+2025.09.26 13:08:43.656	2025.02.04 14:01:01   🔄 Closing all SELL positions and orders...
+2025.09.26 13:08:43.656	2025.02.04 14:01:01   market buy 0.02 EURUSD, close #51 (1.03214 / 1.03218)
+2025.09.26 13:08:43.656	2025.02.04 14:01:01   deal #15 buy 0.02 EURUSD at 1.03218 done (based on order #56)
+2025.09.26 13:08:43.656	2025.02.04 14:01:01   deal performed [#15 buy 0.02 EURUSD at 1.03218]
+2025.09.26 13:08:43.656	2025.02.04 14:01:01   order performed buy 0.02 at 1.03218 [#56 buy 0.02 EURUSD at 1.03218]
+2025.09.26 13:08:43.658	2025.02.04 14:01:01   CTrade::OrderSend: market buy 0.02 EURUSD [done at 1.03218]
+2025.09.26 13:08:43.658	2025.02.04 14:01:01   ✅ Closed SELL position ticket: 51
+2025.09.26 13:08:43.658	2025.02.04 14:01:01   📊 SELL Cleanup Summary: 1 positions closed, 0 orders cancelled
+2025.09.26 13:08:43.659	2025.02.04 14:01:07   ✅ CONFIRMED: All positions and orders are closed. Ready for a new grid setup.
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   === Setting up New Grid System ===
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   🔍 CONFIRMATION CHECK BEFORE NEW GRID:
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   BUY orders/positions: 0
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   SELL orders/positions: 0
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   ✅ CONFIRMATION: All clear. Safe to create new grid.
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   === Setting Up Dual Independent Grids ===
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   Base Price: 1.03210
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   ATR Spacing: 0.00171
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   ✅ BUY Grid Setup: 5 levels from 1.03039 to 1.02041
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   ✅ SELL Grid Setup: 5 levels from 1.03381 to 1.04379
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   ✅ Dual Grid Setup Completed Successfully
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   Dual Grid system setup completed.
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   === GRID MANAGER V2 STATUS ===
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   --- BUY GRID ---
+2025.09.26 13:08:43.660	2025.02.04 14:01:12   Active: YES | Base: 1.03210 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:08:43.661	2025.02.04 14:01:12   --- SELL GRID ---
+2025.09.26 13:08:43.661	2025.02.04 14:01:12   Active: YES | Base: 1.03210 | Levels: 5 | Filled: 0 | DCA Exp: 0 | Closing: NO
+2025.09.26 13:08:43.661	2025.02.04 14:01:12   💰 PROFITS: BUY: $0.00 | SELL: $0.00 | TOTAL: $0.00
+2025.09.26 13:08:43.661	2025.02.04 14:01:12   🎯 TARGETS: USD: $4.00 | Percent: 1.00%
+2025.09.26 13:08:43.663	2025.02.04 14:01:20   buy limit 0.01 EURUSD at 1.03039 (1.03212 / 1.03216)
+2025.09.26 13:08:43.665	2025.02.04 14:01:20   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.03039 [done]
+2025.09.26 13:08:43.665	2025.02.04 14:01:20   ✅ Placed BUY order at 1.03039 | Ticket: 57
+2025.09.26 13:08:43.665	2025.02.04 14:01:20   buy limit 0.01 EURUSD at 1.02934 (1.03212 / 1.03216)
+2025.09.26 13:08:43.666	2025.02.04 14:01:20   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02934 [done]
+2025.09.26 13:08:43.666	2025.02.04 14:01:20   ✅ Placed BUY order at 1.02934 | Ticket: 58
+2025.09.26 13:08:43.666	2025.02.04 14:01:20   buy limit 0.01 EURUSD at 1.02764 (1.03212 / 1.03216)
+2025.09.26 13:08:43.668	2025.02.04 14:01:20   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02764 [done]
+2025.09.26 13:08:43.668	2025.02.04 14:01:20   ✅ Placed BUY order at 1.02764 | Ticket: 59
+2025.09.26 13:08:43.668	2025.02.04 14:01:20   buy limit 0.01 EURUSD at 1.02488 (1.03212 / 1.03216)
+2025.09.26 13:08:43.669	2025.02.04 14:01:20   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02488 [done]
+2025.09.26 13:08:43.669	2025.02.04 14:01:20   ✅ Placed BUY order at 1.02488 | Ticket: 60
+2025.09.26 13:08:43.669	2025.02.04 14:01:20   buy limit 0.01 EURUSD at 1.02041 (1.03212 / 1.03216)
+2025.09.26 13:08:43.671	2025.02.04 14:01:20   CTrade::OrderSend: buy limit 0.01 EURUSD at 1.02041 [done]
+2025.09.26 13:08:43.671	2025.02.04 14:01:20   ✅ Placed BUY order at 1.02041 | Ticket: 61
+2025.09.26 13:08:43.671	2025.02.04 14:01:20   📋 Placed 5 new BUY orders
+2025.09.26 13:08:43.671	2025.02.04 14:01:20   sell limit 0.01 EURUSD at 1.03381 (1.03212 / 1.03216)
+2025.09.26 13:08:43.672	2025.02.04 14:01:20   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03381 [done]
+2025.09.26 13:08:43.672	2025.02.04 14:01:20   ✅ Placed SELL order at 1.03381 | Ticket: 62
+2025.09.26 13:08:43.672	2025.02.04 14:01:20   sell limit 0.01 EURUSD at 1.03486 (1.03212 / 1.03216)
+2025.09.26 13:08:43.674	2025.02.04 14:01:20   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03486 [done]
+2025.09.26 13:08:43.674	2025.02.04 14:01:20   ✅ Placed SELL order at 1.03486 | Ticket: 63
+2025.09.26 13:08:43.674	2025.02.04 14:01:20   sell limit 0.01 EURUSD at 1.03656 (1.03212 / 1.03216)
+2025.09.26 13:08:43.675	2025.02.04 14:01:20   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03656 [done]
+2025.09.26 13:08:43.675	2025.02.04 14:01:20   ✅ Placed SELL order at 1.03656 | Ticket: 64
+2025.09.26 13:08:43.675	2025.02.04 14:01:20   sell limit 0.01 EURUSD at 1.03932 (1.03212 / 1.03216)
+2025.09.26 13:08:43.677	2025.02.04 14:01:20   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.03932 [done]
+2025.09.26 13:08:43.677	2025.02.04 14:01:20   ✅ Placed SELL order at 1.03932 | Ticket: 65
+2025.09.26 13:08:43.677	2025.02.04 14:01:20   sell limit 0.01 EURUSD at 1.04379 (1.03212 / 1.03216)
+2025.09.26 13:08:43.678	2025.02.04 14:01:20   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.04379 [done]
+2025.09.26 13:08:43.678	2025.02.04 14:01:20   ✅ Placed SELL order at 1.04379 | Ticket: 66
+2025.09.26 13:08:43.678	2025.02.04 14:01:20   📋 Placed 5 new SELL orders
+2025.09.26 13:08:44.816	2025.02.04 15:12:25   order [#62 sell limit 0.01 EURUSD at 1.03381] triggered
+2025.09.26 13:08:44.816	2025.02.04 15:12:25   deal #16 sell 0.01 EURUSD at 1.03383 done (based on order #62)
+2025.09.26 13:08:44.816	2025.02.04 15:12:25   deal performed [#16 sell 0.01 EURUSD at 1.03383]
+2025.09.26 13:08:44.816	2025.02.04 15:12:25   order performed sell 0.01 at 1.03383 [#62 sell limit 0.01 EURUSD at 1.03381]
+2025.09.26 13:08:44.818	2025.02.04 15:12:28   🎯 SELL Grid level filled: Level 0 at 1.03383
+2025.09.26 13:08:45.884	2025.02.04 16:08:00   order [#63 sell limit 0.01 EURUSD at 1.03486] triggered
+2025.09.26 13:08:45.884	2025.02.04 16:08:00   deal #17 sell 0.01 EURUSD at 1.03487 done (based on order #63)
+2025.09.26 13:08:45.884	2025.02.04 16:08:00   deal performed [#17 sell 0.01 EURUSD at 1.03487]
+2025.09.26 13:08:45.884	2025.02.04 16:08:00   order performed sell 0.01 at 1.03487 [#63 sell limit 0.01 EURUSD at 1.03486]
+2025.09.26 13:08:45.892	2025.02.04 16:08:16   order [#52 sell limit 0.01 EURUSD at 1.03514] triggered
+2025.09.26 13:08:45.892	2025.02.04 16:08:16   deal #18 sell 0.01 EURUSD at 1.03518 done (based on order #52)
+2025.09.26 13:08:45.892	2025.02.04 16:08:16   deal performed [#18 sell 0.01 EURUSD at 1.03518]
+2025.09.26 13:08:45.892	2025.02.04 16:08:16   order performed sell 0.01 at 1.03518 [#52 sell limit 0.01 EURUSD at 1.03514]
+2025.09.26 13:08:46.965	2025.02.04 16:53:33   order [#41 sell limit 0.01 EURUSD at 1.03645] triggered
+2025.09.26 13:08:46.965	2025.02.04 16:53:33   deal #19 sell 0.01 EURUSD at 1.03651 done (based on order #41)
+2025.09.26 13:08:46.965	2025.02.04 16:53:33   deal performed [#19 sell 0.01 EURUSD at 1.03651]
+2025.09.26 13:08:46.965	2025.02.04 16:53:33   order performed sell 0.01 at 1.03651 [#41 sell limit 0.01 EURUSD at 1.03645]
+2025.09.26 13:08:46.966	2025.02.04 16:53:33   order [#64 sell limit 0.01 EURUSD at 1.03656] triggered
+2025.09.26 13:08:46.966	2025.02.04 16:53:33   deal #20 sell 0.01 EURUSD at 1.03656 done (based on order #64)
+2025.09.26 13:08:46.966	2025.02.04 16:53:33   deal performed [#20 sell 0.01 EURUSD at 1.03656]
+2025.09.26 13:08:46.966	2025.02.04 16:53:33   order performed sell 0.01 at 1.03656 [#64 sell limit 0.01 EURUSD at 1.03656]
+2025.09.26 13:08:47.129	2025.02.04 17:00:08   order [#53 sell limit 0.01 EURUSD at 1.03719] triggered
+2025.09.26 13:08:47.129	2025.02.04 17:00:08   deal #21 sell 0.01 EURUSD at 1.03730 done (based on order #53)
+2025.09.26 13:08:47.129	2025.02.04 17:00:08   deal performed [#21 sell 0.01 EURUSD at 1.03730]
+2025.09.26 13:08:47.129	2025.02.04 17:00:08   order performed sell 0.01 at 1.03730 [#53 sell limit 0.01 EURUSD at 1.03719]
+2025.09.26 13:08:53.701	2025.02.05 00:00:52   Spread too high: 111.0 > 50.0
+2025.09.26 13:08:53.736	2025.02.05 00:08:28   Spread too high: 60.0 > 50.0
+2025.09.26 13:08:53.805	2025.02.05 00:19:15   Spread too high: 57.99999999999999 > 50.0
+2025.09.26 13:08:53.814	2025.02.05 00:25:00   Spread too high: 59.0 > 50.0
+2025.09.26 13:08:58.585	2025.02.05 08:28:27   order [#65 sell limit 0.01 EURUSD at 1.03932] triggered
+2025.09.26 13:08:58.585	2025.02.05 08:28:27   deal #22 sell 0.01 EURUSD at 1.03932 done (based on order #65)
+2025.09.26 13:08:58.585	2025.02.05 08:28:27   deal performed [#22 sell 0.01 EURUSD at 1.03932]
+2025.09.26 13:08:58.585	2025.02.05 08:28:27   order performed sell 0.01 at 1.03932 [#65 sell limit 0.01 EURUSD at 1.03932]
+2025.09.26 13:08:59.433	2025.02.05 09:26:32   order [#54 sell limit 0.01 EURUSD at 1.04049] triggered
+2025.09.26 13:08:59.433	2025.02.05 09:26:32   deal #23 sell 0.01 EURUSD at 1.04054 done (based on order #54)
+2025.09.26 13:08:59.433	2025.02.05 09:26:32   deal performed [#23 sell 0.01 EURUSD at 1.04054]
+2025.09.26 13:08:59.433	2025.02.05 09:26:32   order performed sell 0.01 at 1.04054 [#54 sell limit 0.01 EURUSD at 1.04049]
+2025.09.26 13:09:08.333	2025.02.05 17:00:10   order [#66 sell limit 0.01 EURUSD at 1.04379] triggered
+2025.09.26 13:09:08.333	2025.02.05 17:00:10   deal #24 sell 0.01 EURUSD at 1.04385 done (based on order #66)
+2025.09.26 13:09:08.333	2025.02.05 17:00:10   deal performed [#24 sell 0.01 EURUSD at 1.04385]
+2025.09.26 13:09:08.333	2025.02.05 17:00:10   order performed sell 0.01 at 1.04385 [#66 sell limit 0.01 EURUSD at 1.04379]
+2025.09.26 13:09:14.204	2025.02.06 00:00:45   Spread too high: 65.0 > 50.0
+2025.09.26 13:09:14.222	2025.02.06 00:09:54   Spread too high: 56.0 > 50.0
+2025.09.26 13:09:14.279	2025.02.06 00:33:51   Spread too high: 53.00000000000001 > 50.0
