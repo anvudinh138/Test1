@@ -1,0 +1,906 @@
+//+------------------------------------------------------------------+
+//|                                              GridManager_v2.mqh |
+//|                                    FlexGridDCA Independent Grid |
+//|         Grid Manager V2 - Independent Dual Direction System     |
+//+------------------------------------------------------------------+
+#property copyright "FlexGridDCA EA"
+#property version   "2.01"
+
+#include <Trade\Trade.mqh>
+#include <ATRCalculator.mqh>
+
+//+------------------------------------------------------------------+
+//| Enums and Structures                                             |
+//+------------------------------------------------------------------+
+enum GRID_DIRECTION
+{
+    GRID_DIRECTION_BUY = 0,
+    GRID_DIRECTION_SELL = 1
+};
+
+struct SGridLevel
+{
+    double               price;              // Level price
+    double               lot_size;           // Position size
+    bool                 is_filled;          // Fill status
+    ulong                ticket;             // Order/Position ticket
+    datetime             fill_time;          // Fill time
+    bool                 is_dca_level;       // DCA expansion level
+};
+
+struct SGridDirection
+{
+    SGridLevel          levels[];            // Grid levels array
+    double              base_price;          // Base price for grid
+    double              total_profit;        // Current floating P/L
+    bool                is_active;           // Direction active status
+    int                 dca_expansions;      // Number of DCA expansions
+    datetime            last_reset;          // Last reset time
+    bool                is_closing;          // Closing state
+};
+
+//+------------------------------------------------------------------+
+//| Grid Manager V2 Class - Independent Dual Direction              |
+//+------------------------------------------------------------------+
+class CGridManagerV2
+{
+private:
+    string               m_symbol;
+    double               m_fixed_lot_size;
+    int                  m_max_grid_levels;
+    double               m_atr_multiplier;
+    int                  m_job_id;           // NEW: Job ID for order comments
+    
+    // Grid data
+    SGridDirection       m_buy_grid;
+    SGridDirection       m_sell_grid;
+    
+    // Trading
+    CTrade               m_trade;
+    CATRCalculator*      m_atr_calculator;
+    
+    // State management
+    bool                 m_initialized;
+    bool                 m_use_fibonacci_spacing;
+    bool                 m_use_market_entry;
+    
+    // Risk management
+    double               m_max_loss_usd;
+    double               m_profit_target_usd;
+    bool                 m_dca_recovery_mode;
+    
+public:
+    //+------------------------------------------------------------------+
+    //| Constructor                                                      |
+    //+------------------------------------------------------------------+
+    CGridManagerV2()
+    {
+        m_symbol = _Symbol;
+        m_fixed_lot_size = 0.01;
+        m_max_grid_levels = 10;
+        m_atr_multiplier = 1.0;
+        m_job_id = 0;               // NEW: Initialize job ID
+        m_initialized = false;
+        m_use_fibonacci_spacing = false;
+        m_use_market_entry = false;
+        m_atr_calculator = NULL;
+        m_max_loss_usd = 100.0;
+        m_profit_target_usd = 50.0;
+        m_dca_recovery_mode = false;
+        
+        // Initialize grid structures
+        ResetGrid();
+    }
+    
+    // NEW: Job ID methods for order comments
+    void SetJobID(int job_id) { m_job_id = job_id; }
+    int GetJobID() { return m_job_id; }
+    
+    //+------------------------------------------------------------------+
+    //| Destructor                                                       |
+    //+------------------------------------------------------------------+
+    ~CGridManagerV2()
+    {
+        // Note: Don't delete m_atr_calculator as it's managed externally
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Initialize Grid Manager                                         |
+    //+------------------------------------------------------------------+
+    bool Initialize(string symbol, int max_levels, double lot_size)
+    {
+        m_symbol = symbol;
+        m_max_grid_levels = max_levels;
+        m_fixed_lot_size = lot_size;
+        
+        // Setup trade object
+        m_trade.SetExpertMagicNumber(12345);
+        m_trade.SetDeviationInPoints(10);
+        m_trade.SetTypeFilling(ORDER_FILLING_FOK);
+        
+        m_initialized = true;
+        
+        Print("✅ GridManager V2 initialized: ", m_symbol, " Levels=", m_max_grid_levels, " LotSize=", m_fixed_lot_size);
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Set ATR Calculator                                             |
+    //+------------------------------------------------------------------+
+    void SetATRCalculator(CATRCalculator* atr_calc)
+    {
+        m_atr_calculator = atr_calc;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Setup Dual Grid System                                          |
+    //+------------------------------------------------------------------+
+    bool SetupDualGrid(double base_price = 0.0, double atr_multiplier = 1.0)
+    {
+        if(base_price <= 0.0)
+            base_price = SymbolInfoDouble(m_symbol, SYMBOL_BID);
+            
+        m_atr_multiplier = atr_multiplier;
+        
+        // Calculate grid spacing using ATR
+        double grid_spacing = CalculateGridSpacing();
+        if(grid_spacing <= 0)
+        {
+            Print("❌ Failed to calculate grid spacing");
+            return false;
+        }
+        
+        // Setup BUY grid (below current price)
+        if(!SetupDirectionGrid(GRID_DIRECTION_BUY, base_price, grid_spacing))
+        {
+            Print("❌ Failed to setup BUY grid");
+            return false;
+        }
+        
+        // Setup SELL grid (above current price)  
+        if(!SetupDirectionGrid(GRID_DIRECTION_SELL, base_price, grid_spacing))
+        {
+            Print("❌ Failed to setup SELL grid");
+            return false;
+        }
+        
+        Print("✅ Dual Grid Setup Complete: Spacing=", DoubleToString(grid_spacing, _Digits));
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Calculate Grid Spacing                                         |
+    //+------------------------------------------------------------------+
+    double CalculateGridSpacing()
+    {
+        if(m_atr_calculator != NULL)
+        {
+            return m_atr_calculator.CalculateGridSpacing(PERIOD_H1, m_atr_multiplier);
+        }
+        
+        // Fallback: Use fixed spacing based on symbol
+        double point = SymbolInfoDouble(m_symbol, SYMBOL_POINT);
+        int digits = (int)SymbolInfoInteger(m_symbol, SYMBOL_DIGITS);
+        
+        if(digits == 5 || digits == 3)
+            return 200 * point; // 20 pips
+        else
+            return 20 * point;   // 20 points
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Setup Direction Grid                                           |
+    //+------------------------------------------------------------------+
+    bool SetupDirectionGrid(GRID_DIRECTION direction, double base_price, double spacing)
+    {
+        // Calculate lot size
+        double lot_size = CalculateDynamicLotSize();
+        
+        if(direction == GRID_DIRECTION_BUY)
+        {
+            // Clear existing levels
+            ArrayFree(m_buy_grid.levels);
+            ArrayResize(m_buy_grid.levels, m_max_grid_levels);
+            
+            // Setup grid levels
+            for(int i = 0; i < m_max_grid_levels; i++)
+            {
+                // BUY levels below current price
+                double level_price = base_price - (spacing * (i + 1));
+                
+                // Initialize level
+                m_buy_grid.levels[i].price = level_price;
+                m_buy_grid.levels[i].lot_size = lot_size;
+                m_buy_grid.levels[i].is_filled = false;
+                m_buy_grid.levels[i].ticket = 0;
+                m_buy_grid.levels[i].fill_time = 0;
+                m_buy_grid.levels[i].is_dca_level = false;
+            }
+            
+            // Set grid properties
+            m_buy_grid.base_price = base_price;
+            m_buy_grid.is_active = true;
+            m_buy_grid.dca_expansions = 0;
+            m_buy_grid.last_reset = TimeCurrent();
+            m_buy_grid.is_closing = false;
+        }
+        else
+        {
+            // Clear existing levels
+            ArrayFree(m_sell_grid.levels);
+            ArrayResize(m_sell_grid.levels, m_max_grid_levels);
+            
+            // Setup grid levels
+            for(int i = 0; i < m_max_grid_levels; i++)
+            {
+                // SELL levels above current price
+                double level_price = base_price + (spacing * (i + 1));
+                
+                // Initialize level
+                m_sell_grid.levels[i].price = level_price;
+                m_sell_grid.levels[i].lot_size = lot_size;
+                m_sell_grid.levels[i].is_filled = false;
+                m_sell_grid.levels[i].ticket = 0;
+                m_sell_grid.levels[i].fill_time = 0;
+                m_sell_grid.levels[i].is_dca_level = false;
+            }
+            
+            // Set grid properties
+            m_sell_grid.base_price = base_price;
+            m_sell_grid.is_active = true;
+            m_sell_grid.dca_expansions = 0;
+            m_sell_grid.last_reset = TimeCurrent();
+            m_sell_grid.is_closing = false;
+        }
+        
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Dynamic Lot Size Calculation                                   |
+    //+------------------------------------------------------------------+
+    virtual double CalculateDynamicLotSize()
+    {
+        return m_fixed_lot_size;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Check if can place order                                       |
+    //+------------------------------------------------------------------+
+    virtual bool CanPlaceOrder(GRID_DIRECTION direction, double lot_size)
+    {
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Place Grid Orders                                              |
+    //+------------------------------------------------------------------+
+    void PlaceGridOrders()
+    {
+        if(!m_initialized) return;
+        
+        // 🚨 COOLDOWN: Prevent order spam - only try every 10 seconds
+        static datetime last_order_attempt = 0;
+        if(TimeCurrent() - last_order_attempt < 10)
+        {
+            return; // Skip if too soon
+        }
+        last_order_attempt = TimeCurrent();
+        
+        PlaceDirectionOrders(GRID_DIRECTION_BUY);
+        PlaceDirectionOrders(GRID_DIRECTION_SELL);
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Place Direction Orders                                         |
+    //+------------------------------------------------------------------+
+    void PlaceDirectionOrders(GRID_DIRECTION direction)
+    {
+        if(direction == GRID_DIRECTION_BUY)
+        {
+            if(!m_buy_grid.is_active) return;
+            
+            for(int i = 0; i < ArraySize(m_buy_grid.levels); i++)
+            {
+                if(!m_buy_grid.levels[i].is_filled && m_buy_grid.levels[i].ticket == 0)
+                {
+                    // Check if can place order
+                    if(!CanPlaceOrder(direction, m_buy_grid.levels[i].lot_size))
+                        continue;
+                    
+                    // Check if pending order already exists
+                    if(PendingOrderExists(m_buy_grid.levels[i].price, direction))
+                        continue;
+                    
+                    // 🎯 SMART ORDER TYPE: DCA levels use STOP orders, normal levels use LIMIT orders
+                    ulong ticket = 0;
+                    if(m_buy_grid.levels[i].is_dca_level)
+                    {
+                        // DCA rescue: Place BUY STOP above current price
+                        ticket = PlaceStopOrder(direction, m_buy_grid.levels[i].price, m_buy_grid.levels[i].lot_size);
+                    }
+                    else
+                    {
+                        // Normal grid: Place BUY LIMIT below current price
+                        ticket = PlaceLimitOrder(direction, m_buy_grid.levels[i].price, m_buy_grid.levels[i].lot_size);
+                    }
+                    
+                    if(ticket > 0)
+                    {
+                        m_buy_grid.levels[i].ticket = ticket;
+                    }
+                }
+            }
+        }
+        else
+        {
+            if(!m_sell_grid.is_active) return;
+            
+            for(int i = 0; i < ArraySize(m_sell_grid.levels); i++)
+            {
+                if(!m_sell_grid.levels[i].is_filled && m_sell_grid.levels[i].ticket == 0)
+                {
+                    // Check if can place order
+                    if(!CanPlaceOrder(direction, m_sell_grid.levels[i].lot_size))
+                        continue;
+                    
+                    // Check if pending order already exists
+                    if(PendingOrderExists(m_sell_grid.levels[i].price, direction))
+                        continue;
+                    
+                    // 🎯 SMART ORDER TYPE: DCA levels use STOP orders, normal levels use LIMIT orders
+                    ulong ticket = 0;
+                    if(m_sell_grid.levels[i].is_dca_level)
+                    {
+                        // DCA rescue: Place SELL STOP below current price
+                        ticket = PlaceStopOrder(direction, m_sell_grid.levels[i].price, m_sell_grid.levels[i].lot_size);
+                    }
+                    else
+                    {
+                        // Normal grid: Place SELL LIMIT above current price
+                        ticket = PlaceLimitOrder(direction, m_sell_grid.levels[i].price, m_sell_grid.levels[i].lot_size);
+                    }
+                    
+                    if(ticket > 0)
+                    {
+                        m_sell_grid.levels[i].ticket = ticket;
+                    }
+                }
+            }
+        }
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Place Limit Order                                              |
+    //+------------------------------------------------------------------+
+    ulong PlaceLimitOrder(GRID_DIRECTION direction, double price, double lot_size)
+    {
+        // 🚨 CRITICAL: Validate price before placing order
+        double current_price = (direction == GRID_DIRECTION_BUY) ? 
+                              SymbolInfoDouble(m_symbol, SYMBOL_ASK) : 
+                              SymbolInfoDouble(m_symbol, SYMBOL_BID);
+        
+        double min_distance = SymbolInfoInteger(m_symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
+        if(min_distance == 0) min_distance = 10 * _Point; // Fallback: 10 pips
+        
+        // Check if price is valid for limit orders
+        bool price_valid = false;
+        if(direction == GRID_DIRECTION_BUY && price < current_price - min_distance)
+        {
+            price_valid = true; // BUY LIMIT must be below current price
+        }
+        else if(direction == GRID_DIRECTION_SELL && price > current_price + min_distance)
+        {
+            price_valid = true; // SELL LIMIT must be above current price
+        }
+        
+        if(!price_valid)
+        {
+            // REDUCE LOGGING: Only log every 60 seconds per direction
+            static datetime last_invalid_log_buy = 0;
+            static datetime last_invalid_log_sell = 0;
+            
+            if(direction == GRID_DIRECTION_BUY)
+            {
+                if(TimeCurrent() - last_invalid_log_buy > 60)
+                {
+                    Print("⚠️ INVALID PRICE: BUY limit at ", DoubleToString(price, _Digits), 
+                          " too close to current ", DoubleToString(current_price, _Digits),
+                          " (min distance: ", DoubleToString(min_distance/_Point, 0), " pips)");
+                    last_invalid_log_buy = TimeCurrent();
+                }
+            }
+            else
+            {
+                if(TimeCurrent() - last_invalid_log_sell > 60)
+                {
+                    Print("⚠️ INVALID PRICE: SELL limit at ", DoubleToString(price, _Digits), 
+                          " too close to current ", DoubleToString(current_price, _Digits),
+                          " (min distance: ", DoubleToString(min_distance/_Point, 0), " pips)");
+                    last_invalid_log_sell = TimeCurrent();
+                }
+            }
+            return 0; // Don't place invalid orders
+        }
+        
+        // Normalize price to symbol digits
+        price = NormalizeDouble(price, _Digits);
+        
+        string comment = StringFormat("J%d_Grid_%s_L%d", 
+                                     m_job_id, 
+                                    (direction == GRID_DIRECTION_BUY) ? "BUY" : "SELL",
+                                    (int)(MathRand() % 1000));
+        
+        // Job ID verification - debug logging removed
+        
+        if(direction == GRID_DIRECTION_BUY)
+        {
+            if(m_trade.BuyLimit(lot_size, price, m_symbol, 0, 0, ORDER_TIME_GTC, 0, comment))
+            {
+                return m_trade.ResultOrder();
+            }
+        }
+        else
+        {
+            if(m_trade.SellLimit(lot_size, price, m_symbol, 0, 0, ORDER_TIME_GTC, 0, comment))
+            {
+                return m_trade.ResultOrder();
+            }
+        }
+        
+        // REDUCE LOGGING: Only log failures every 30 seconds
+        static datetime last_failure_log = 0;
+        if(TimeCurrent() - last_failure_log > 30)
+        {
+            Print("❌ Failed to place ", (direction == GRID_DIRECTION_BUY) ? "BUY" : "SELL", 
+                  " limit order at ", DoubleToString(price, _Digits), 
+                  " Error: ", GetLastError());
+            last_failure_log = TimeCurrent();
+        }
+        
+        return 0;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Place Stop Order (for DCA rescue)                             |
+    //+------------------------------------------------------------------+
+    ulong PlaceStopOrder(GRID_DIRECTION direction, double price, double lot_size)
+    {
+        // 🚨 CRITICAL: Validate price for STOP orders
+        double current_price = (direction == GRID_DIRECTION_BUY) ? 
+                              SymbolInfoDouble(m_symbol, SYMBOL_ASK) : 
+                              SymbolInfoDouble(m_symbol, SYMBOL_BID);
+        
+        double min_distance = SymbolInfoInteger(m_symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
+        if(min_distance == 0) min_distance = 10 * _Point; // Fallback: 10 pips
+        
+        // Check if price is valid for STOP orders
+        bool price_valid = false;
+        if(direction == GRID_DIRECTION_BUY && price > current_price + min_distance)
+        {
+            price_valid = true; // BUY STOP must be above current price
+        }
+        else if(direction == GRID_DIRECTION_SELL && price < current_price - min_distance)
+        {
+            price_valid = true; // SELL STOP must be below current price
+        }
+        
+        if(!price_valid)
+        {
+            // REDUCE LOGGING: Only log every 60 seconds per direction
+            static datetime last_invalid_stop_log_buy = 0;
+            static datetime last_invalid_stop_log_sell = 0;
+            
+            if(direction == GRID_DIRECTION_BUY)
+            {
+                if(TimeCurrent() - last_invalid_stop_log_buy > 60)
+                {
+                    Print("⚠️ INVALID STOP PRICE: BUY STOP at ", DoubleToString(price, _Digits), 
+                          " too close to current ", DoubleToString(current_price, _Digits),
+                          " (min distance: ", DoubleToString(min_distance/_Point, 0), " pips)");
+                    last_invalid_stop_log_buy = TimeCurrent();
+                }
+            }
+            else
+            {
+                if(TimeCurrent() - last_invalid_stop_log_sell > 60)
+                {
+                    Print("⚠️ INVALID STOP PRICE: SELL STOP at ", DoubleToString(price, _Digits), 
+                          " too close to current ", DoubleToString(current_price, _Digits),
+                          " (min distance: ", DoubleToString(min_distance/_Point, 0), " pips)");
+                    last_invalid_stop_log_sell = TimeCurrent();
+                }
+            }
+            return 0; // Don't place invalid STOP orders
+        }
+        
+        // Normalize price to symbol digits
+        price = NormalizeDouble(price, _Digits);
+        
+        string comment = StringFormat("J%d_DCA_%s_L%d", 
+                                     m_job_id, 
+                                    (direction == GRID_DIRECTION_BUY) ? "BUY_STOP" : "SELL_STOP",
+                                    (int)(MathRand() % 1000));
+        
+        // Job ID verification - debug logging removed
+        
+        if(direction == GRID_DIRECTION_BUY)
+        {
+            if(m_trade.BuyStop(lot_size, price, m_symbol, 0, 0, ORDER_TIME_GTC, 0, comment))
+            {
+                return m_trade.ResultOrder();
+            }
+        }
+        else
+        {
+            if(m_trade.SellStop(lot_size, price, m_symbol, 0, 0, ORDER_TIME_GTC, 0, comment))
+            {
+                return m_trade.ResultOrder();
+            }
+        }
+        
+        // REDUCE LOGGING: Only log failures every 30 seconds
+        static datetime last_stop_failure_log = 0;
+        if(TimeCurrent() - last_stop_failure_log > 30)
+        {
+            Print("❌ Failed to place ", (direction == GRID_DIRECTION_BUY) ? "BUY STOP" : "SELL STOP", 
+                  " order at ", DoubleToString(price, _Digits), 
+                  " Error: ", GetLastError());
+            last_stop_failure_log = TimeCurrent();
+        }
+        
+        return 0;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Check if pending order exists                                  |
+    //+------------------------------------------------------------------+
+    bool PendingOrderExists(double price, GRID_DIRECTION direction)
+    {
+        for(int i = 0; i < OrdersTotal(); i++)
+        {
+            ulong ticket = OrderGetTicket(i);
+            if(OrderSelect(ticket))
+            {
+                if(OrderGetString(ORDER_SYMBOL) == m_symbol)
+                {
+                    double order_price = OrderGetDouble(ORDER_PRICE_OPEN);
+                    ENUM_ORDER_TYPE order_type = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+                    
+                    bool is_same_direction = ((direction == GRID_DIRECTION_BUY && order_type == ORDER_TYPE_BUY_LIMIT) ||
+                                            (direction == GRID_DIRECTION_SELL && order_type == ORDER_TYPE_SELL_LIMIT));
+                    
+                    if(is_same_direction && MathAbs(order_price - price) < SymbolInfoDouble(m_symbol, SYMBOL_POINT) * 5)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Update Grid Status                                             |
+    //+------------------------------------------------------------------+
+    void UpdateGridStatus()
+    {
+        UpdateDirectionStatus(GRID_DIRECTION_BUY);
+        UpdateDirectionStatus(GRID_DIRECTION_SELL);
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Update Direction Status                                        |
+    //+------------------------------------------------------------------+
+    void UpdateDirectionStatus(GRID_DIRECTION direction)
+    {
+        if(direction == GRID_DIRECTION_BUY)
+        {
+            for(int i = 0; i < ArraySize(m_buy_grid.levels); i++)
+            {
+                if(m_buy_grid.levels[i].ticket > 0 && !m_buy_grid.levels[i].is_filled)
+                {
+                    // Check if order was filled
+                    if(PositionSelectByTicket(m_buy_grid.levels[i].ticket))
+                    {
+                        m_buy_grid.levels[i].is_filled = true;
+                        m_buy_grid.levels[i].fill_time = TimeCurrent();
+                    }
+                    else if(!OrderSelect(m_buy_grid.levels[i].ticket))
+                    {
+                        // Order doesn't exist anymore, reset ticket
+                        m_buy_grid.levels[i].ticket = 0;
+                    }
+                }
+            }
+            
+            // Update total profit
+            m_buy_grid.total_profit = CalculateDirectionTotalProfit(direction);
+        }
+        else
+        {
+            for(int i = 0; i < ArraySize(m_sell_grid.levels); i++)
+            {
+                if(m_sell_grid.levels[i].ticket > 0 && !m_sell_grid.levels[i].is_filled)
+                {
+                    // Check if order was filled
+                    if(PositionSelectByTicket(m_sell_grid.levels[i].ticket))
+                    {
+                        m_sell_grid.levels[i].is_filled = true;
+                        m_sell_grid.levels[i].fill_time = TimeCurrent();
+                    }
+                    else if(!OrderSelect(m_sell_grid.levels[i].ticket))
+                    {
+                        // Order doesn't exist anymore, reset ticket
+                        m_sell_grid.levels[i].ticket = 0;
+                    }
+                }
+            }
+            
+            // Update total profit
+            m_sell_grid.total_profit = CalculateDirectionTotalProfit(direction);
+        }
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Calculate Direction Total Profit                               |
+    //+------------------------------------------------------------------+
+    double CalculateDirectionTotalProfit(GRID_DIRECTION direction)
+    {
+        double total_profit = 0.0;
+        
+        if(direction == GRID_DIRECTION_BUY)
+        {
+            for(int i = 0; i < ArraySize(m_buy_grid.levels); i++)
+            {
+                if(m_buy_grid.levels[i].is_filled && m_buy_grid.levels[i].ticket > 0)
+                {
+                    if(PositionSelectByTicket(m_buy_grid.levels[i].ticket))
+                    {
+                        total_profit += PositionGetDouble(POSITION_PROFIT);
+                    }
+                }
+            }
+        }
+        else
+        {
+            for(int i = 0; i < ArraySize(m_sell_grid.levels); i++)
+            {
+                if(m_sell_grid.levels[i].is_filled && m_sell_grid.levels[i].ticket > 0)
+                {
+                    if(PositionSelectByTicket(m_sell_grid.levels[i].ticket))
+                    {
+                        total_profit += PositionGetDouble(POSITION_PROFIT);
+                    }
+                }
+            }
+        }
+        
+        return total_profit;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Check Smart DCA Expansion                                      |
+    //+------------------------------------------------------------------+
+    bool CheckSmartDCAExpansion()
+    {
+        // Count filled levels
+        int buy_filled_count = CountFilledLevels(GRID_DIRECTION_BUY);
+        int sell_filled_count = CountFilledLevels(GRID_DIRECTION_SELL);
+        
+        // 🎯 ENHANCED DCA LOGIC: Two triggers - Risk Loss OR Grid Fill
+        int dca_trigger_count = MathMax(2, (int)(m_max_grid_levels * 0.5)); // 50% grid fill trigger
+        
+        // Calculate current losses for risk-based trigger
+        double buy_loss = CalculateDirectionTotalProfit(GRID_DIRECTION_BUY);
+        double sell_loss = CalculateDirectionTotalProfit(GRID_DIRECTION_SELL);
+        double max_risk_loss = 15.0; // Risk-based trigger at $15 loss
+        
+        bool sell_risk_trigger = (sell_loss <= -max_risk_loss);
+        bool buy_risk_trigger = (buy_loss <= -max_risk_loss);
+        bool sell_grid_trigger = (sell_filled_count >= dca_trigger_count);
+        bool buy_grid_trigger = (buy_filled_count >= dca_trigger_count);
+        
+        // DCA DEBUG - REMOVED VERBOSE LOGGING
+        
+        // Check SELL grid DCA expansion (Risk OR Grid trigger)
+        if((sell_risk_trigger || sell_grid_trigger) && m_sell_grid.dca_expansions == 0)
+        {
+            if(sell_risk_trigger)
+            {
+                Print("🚨 RISK-BASED DCA EXPANSION: SELL loss $", DoubleToString(sell_loss, 2), " >= threshold $", DoubleToString(max_risk_loss, 2));
+            }
+            else
+            {
+                Print("🚀 GRID-BASED DCA EXPANSION: ", IntegerToString(sell_filled_count), "/", IntegerToString(m_max_grid_levels), " SELL levels filled");
+            }
+            return true;
+        }
+        
+        // Check BUY grid DCA expansion (Risk OR Grid trigger)
+        if((buy_risk_trigger || buy_grid_trigger) && m_buy_grid.dca_expansions == 0)
+        {
+            if(buy_risk_trigger)
+            {
+                Print("🚨 RISK-BASED DCA EXPANSION: BUY loss $", DoubleToString(buy_loss, 2), " >= threshold $", DoubleToString(max_risk_loss, 2));
+            }
+            else
+            {
+                Print("🚀 GRID-BASED DCA EXPANSION: ", IntegerToString(buy_filled_count), "/", IntegerToString(m_max_grid_levels), " BUY levels filled");
+            }
+            return true;
+        }
+        
+        return false;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Count Filled Levels                                           |
+    //+------------------------------------------------------------------+
+    int CountFilledLevels(GRID_DIRECTION direction)
+    {
+        int count = 0;
+        
+        if(direction == GRID_DIRECTION_BUY)
+        {
+            for(int i = 0; i < ArraySize(m_buy_grid.levels); i++)
+            {
+                if(m_buy_grid.levels[i].is_filled)
+                    count++;
+            }
+        }
+        else
+        {
+            for(int i = 0; i < ArraySize(m_sell_grid.levels); i++)
+            {
+                if(m_sell_grid.levels[i].is_filled)
+                    count++;
+            }
+        }
+        
+        return count;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Force DCA Rescue                                              |
+    //+------------------------------------------------------------------+
+    bool ForceDCARescue(GRID_DIRECTION losing_direction)
+    {
+        if(losing_direction == GRID_DIRECTION_SELL)
+        {
+            // Add BUY STOP orders above current price to rescue SELL grid
+            int old_size = ArraySize(m_buy_grid.levels);
+            ArrayResize(m_buy_grid.levels, old_size + m_max_grid_levels);
+            
+            double current_price = SymbolInfoDouble(m_symbol, SYMBOL_ASK);
+            double spacing = CalculateGridSpacing();
+            double lot_size = CalculateDynamicLotSize();
+            
+            for(int i = 0; i < m_max_grid_levels; i++)
+            {
+                int new_index = old_size + i;
+                m_buy_grid.levels[new_index].price = current_price + (spacing * (i + 1));
+                m_buy_grid.levels[new_index].lot_size = lot_size;
+                m_buy_grid.levels[new_index].is_filled = false;
+                m_buy_grid.levels[new_index].ticket = 0;
+                m_buy_grid.levels[new_index].is_dca_level = true;
+            }
+            
+            m_buy_grid.dca_expansions++;
+            Print("🚨 DCA RESCUE: Added ", m_max_grid_levels, " BUY STOP levels to rescue SELL grid");
+        }
+        else
+        {
+            // Add SELL STOP orders below current price to rescue BUY grid
+            int old_size = ArraySize(m_sell_grid.levels);
+            ArrayResize(m_sell_grid.levels, old_size + m_max_grid_levels);
+            
+            double current_price = SymbolInfoDouble(m_symbol, SYMBOL_BID);
+            double spacing = CalculateGridSpacing();
+            double lot_size = CalculateDynamicLotSize();
+            
+            for(int i = 0; i < m_max_grid_levels; i++)
+            {
+                int new_index = old_size + i;
+                m_sell_grid.levels[new_index].price = current_price - (spacing * (i + 1));
+                m_sell_grid.levels[new_index].lot_size = lot_size;
+                m_sell_grid.levels[new_index].is_filled = false;
+                m_sell_grid.levels[new_index].ticket = 0;
+                m_sell_grid.levels[new_index].is_dca_level = true;
+            }
+            
+            m_sell_grid.dca_expansions++;
+            Print("🚨 DCA RESCUE: Added ", m_max_grid_levels, " SELL STOP levels to rescue BUY grid");
+        }
+        
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Get Direction DCA Expansions                                  |
+    //+------------------------------------------------------------------+
+    int GetDirectionDCAExpansions(GRID_DIRECTION direction)
+    {
+        if(direction == GRID_DIRECTION_BUY)
+            return m_buy_grid.dca_expansions;
+        else
+            return m_sell_grid.dca_expansions;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Close All Grid Positions                                      |
+    //+------------------------------------------------------------------+
+    void CloseAllGridPositions()
+    {
+        CloseDirectionPositions(GRID_DIRECTION_BUY);
+        CloseDirectionPositions(GRID_DIRECTION_SELL);
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Close Direction Positions                                     |
+    //+------------------------------------------------------------------+
+    void CloseDirectionPositions(GRID_DIRECTION direction)
+    {
+        if(direction == GRID_DIRECTION_BUY)
+        {
+            for(int i = 0; i < ArraySize(m_buy_grid.levels); i++)
+            {
+                if(m_buy_grid.levels[i].is_filled && m_buy_grid.levels[i].ticket > 0)
+                {
+                    if(PositionSelectByTicket(m_buy_grid.levels[i].ticket))
+                    {
+                        m_trade.PositionClose(m_buy_grid.levels[i].ticket);
+                    }
+                }
+            }
+        }
+        else
+        {
+            for(int i = 0; i < ArraySize(m_sell_grid.levels); i++)
+            {
+                if(m_sell_grid.levels[i].is_filled && m_sell_grid.levels[i].ticket > 0)
+                {
+                    if(PositionSelectByTicket(m_sell_grid.levels[i].ticket))
+                    {
+                        m_trade.PositionClose(m_sell_grid.levels[i].ticket);
+                    }
+                }
+            }
+        }
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Reset Grid                                                     |
+    //+------------------------------------------------------------------+
+    void ResetGrid()
+    {
+        // Reset BUY grid
+        ArrayFree(m_buy_grid.levels);
+        m_buy_grid.base_price = 0.0;
+        m_buy_grid.total_profit = 0.0;
+        m_buy_grid.is_active = false;
+        m_buy_grid.dca_expansions = 0;
+        m_buy_grid.last_reset = TimeCurrent();
+        m_buy_grid.is_closing = false;
+        
+        // Reset SELL grid
+        ArrayFree(m_sell_grid.levels);
+        m_sell_grid.base_price = 0.0;
+        m_sell_grid.total_profit = 0.0;
+        m_sell_grid.is_active = false;
+        m_sell_grid.dca_expansions = 0;
+        m_sell_grid.last_reset = TimeCurrent();
+        m_sell_grid.is_closing = false;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Getters                                                        |
+    //+------------------------------------------------------------------+
+    string GetTradingSymbol() { return m_symbol; }
+    bool IsInitialized() { return m_initialized; }
+    double GetBuyGridProfit() { return m_buy_grid.total_profit; }
+    double GetSellGridProfit() { return m_sell_grid.total_profit; }
+    double GetTotalProfit() { return m_buy_grid.total_profit + m_sell_grid.total_profit; }
+};
+
+//+------------------------------------------------------------------+

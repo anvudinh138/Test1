@@ -1,0 +1,439 @@
+//+------------------------------------------------------------------+
+//|                                      LifecycleFactory.mqh      |
+//|                                       FlexGridDCA EA v3.0.0      |
+//|                                Lifecycle Creation & Management  |
+//+------------------------------------------------------------------+
+#property copyright "FlexGridDCA EA v3.0"
+#property version   "1.00"
+
+#include <core/IndependentLifecycle.mqh>
+
+//+------------------------------------------------------------------+
+//| Lifecycle Factory - Creates and Configures Lifecycles         |
+//+------------------------------------------------------------------+
+class CLifecycleFactory
+{
+private:
+    // Default lifecycle settings
+    double              m_default_profit_target;
+    double              m_default_stop_loss;
+    int                 m_default_grid_levels;
+    double              m_default_lot_size;
+    double              m_default_atr_multiplier;
+    double              m_default_trailing_atr_multiplier;  // NEW: Trailing ATR multiplier
+    
+    // Symbol management
+    string              m_trading_symbol;
+    
+    // Creation tracking
+    int                 m_total_created;
+    datetime            m_last_creation_time;
+    
+    // Market condition assessment
+    bool                m_market_suitable;
+    string              m_market_condition_reason;
+    
+    // Testing mode
+    bool                m_bypass_market_filters;
+    
+public:
+    //+------------------------------------------------------------------+
+    //| Constructor                                                      |
+    //+------------------------------------------------------------------+
+    CLifecycleFactory()
+    {
+        m_default_profit_target = 50.0;
+        m_default_stop_loss = 100.0;
+        m_default_grid_levels = 8;
+        m_default_lot_size = 0.01;
+        m_default_atr_multiplier = 1.2;
+        m_default_trailing_atr_multiplier = 2.0;  // NEW: Default trailing ATR
+        m_trading_symbol = Symbol();
+        m_total_created = 0;
+        m_last_creation_time = 0;
+        m_market_suitable = true;
+        m_market_condition_reason = "";
+        m_bypass_market_filters = false;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Initialize Factory                                             |
+    //+------------------------------------------------------------------+
+    bool Initialize(double profit_target, double stop_loss, int grid_levels, double lot_size, double atr_multiplier, double trailing_atr_multiplier = 2.0)
+    {
+        m_default_profit_target = profit_target;
+        m_default_stop_loss = stop_loss;
+        m_default_grid_levels = grid_levels;
+        m_default_lot_size = lot_size;
+        m_default_atr_multiplier = atr_multiplier;
+        m_default_trailing_atr_multiplier = trailing_atr_multiplier;  // NEW: Set trailing ATR
+        m_trading_symbol = Symbol();
+        
+        Print("🏭 LIFECYCLE FACTORY INITIALIZED");
+        Print("🏭 Default Settings: Target=$", DoubleToString(m_default_profit_target, 2),
+              " StopLoss=$", DoubleToString(m_default_stop_loss, 2),
+              " Levels=", m_default_grid_levels,
+              " LotSize=", DoubleToString(m_default_lot_size, 2),
+              " ATRMultiplier=", DoubleToString(m_default_atr_multiplier, 1));
+        
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Set Bypass Market Filters (for testing)                       |
+    //+------------------------------------------------------------------+
+    void SetBypassMarketFilters(bool bypass)
+    {
+        m_bypass_market_filters = bypass;
+        if(bypass)
+        {
+            Print("🧪 TESTING MODE: Market filters bypassed");
+        }
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Create New Lifecycle - MAIN FACTORY METHOD                    |
+    //+------------------------------------------------------------------+
+    CIndependentLifecycle* CreateLifecycle(int lifecycle_id)
+    {
+        // Pre-creation checks
+    if(!PreCreationChecks())
+    {
+        // REDUCED LOGGING: Only log pre-creation failures every 10 minutes
+        static datetime last_precheck_log = 0;
+        if(TimeCurrent() - last_precheck_log > 600)
+        {
+            Print("❌ LIFECYCLE CREATION FAILED: Pre-creation checks failed");
+            last_precheck_log = TimeCurrent();
+        }
+        return NULL;
+    }
+        
+        // Assess market conditions
+    if(!AssessMarketConditions())
+    {
+        // REDUCED LOGGING: Only log market condition failures every 10 minutes
+        static datetime last_market_log = 0;
+        if(TimeCurrent() - last_market_log > 600)
+        {
+            Print("❌ LIFECYCLE CREATION FAILED: Market conditions unsuitable - ", m_market_condition_reason);
+            last_market_log = TimeCurrent();
+        }
+        return NULL;
+    }
+        
+        // Calculate dynamic settings based on current conditions
+        SLifecycleSettings settings = CalculateDynamicSettings();
+        
+        // Create lifecycle instance
+        CIndependentLifecycle* new_lifecycle = new CIndependentLifecycle(
+            lifecycle_id,
+            m_trading_symbol,
+            settings.profit_target,
+            settings.stop_loss,
+            settings.grid_levels,
+            settings.lot_size,
+            settings.allocated_balance,
+            m_default_trailing_atr_multiplier  // NEW: Pass trailing ATR multiplier
+        );
+        
+        if(new_lifecycle == NULL)
+        {
+            Print("❌ LIFECYCLE CREATION FAILED: Memory allocation failed");
+            return NULL;
+        }
+        
+        // Update tracking
+        m_total_created++;
+        m_last_creation_time = TimeCurrent();
+        
+        Print("✅ LIFECYCLE #", lifecycle_id, " CREATED SUCCESSFULLY");
+        Print("📊 Total Lifecycles Created: ", m_total_created);
+        
+        return new_lifecycle;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Lifecycle Settings Structure                                   |
+    //+------------------------------------------------------------------+
+    struct SLifecycleSettings
+    {
+        double profit_target;
+        double stop_loss;
+        int grid_levels;
+        double lot_size;
+        double allocated_balance;
+    };
+    
+    //+------------------------------------------------------------------+
+    //| Calculate Dynamic Settings Based on Market Conditions         |
+    //+------------------------------------------------------------------+
+    SLifecycleSettings CalculateDynamicSettings()
+    {
+        SLifecycleSettings settings;
+        
+        // Start with defaults
+        settings.profit_target = m_default_profit_target;
+        settings.stop_loss = m_default_stop_loss;
+        settings.grid_levels = m_default_grid_levels;
+        settings.lot_size = m_default_lot_size;
+        
+        // Calculate allocated balance (conservative approach)
+        double current_balance = AccountInfoDouble(ACCOUNT_BALANCE);
+        settings.allocated_balance = current_balance * 0.2; // 20% per lifecycle max
+        
+        // Adjust based on volatility
+        double atr_value = GetCurrentATR();
+        if(atr_value > 0)
+        {
+            // High volatility: Reduce grid levels, increase spacing
+            if(atr_value > GetAverageATR() * 1.5)
+            {
+                settings.grid_levels = MathMax(5, settings.grid_levels - 2);
+                settings.lot_size = settings.lot_size * 0.8; // Reduce lot size
+                Print("📊 High volatility detected: Reduced grid levels to ", settings.grid_levels);
+            }
+            // Low volatility: Can use more levels
+            else if(atr_value < GetAverageATR() * 0.7)
+            {
+                settings.grid_levels = MathMin(12, settings.grid_levels + 2);
+                Print("📊 Low volatility detected: Increased grid levels to ", settings.grid_levels);
+            }
+        }
+        
+        // Adjust based on account equity
+        double current_equity = AccountInfoDouble(ACCOUNT_EQUITY);
+        if(current_equity < 1000.0) // Small account
+        {
+            settings.profit_target = settings.profit_target * 0.5; // Smaller targets
+            settings.stop_loss = settings.stop_loss * 0.5;
+            settings.lot_size = MathMax(0.01, settings.lot_size * 0.5);
+            Print("📊 Small account detected: Reduced targets and lot size");
+        }
+        
+        // Adjust based on spread
+        double current_spread = GetCurrentSpread();
+        if(current_spread > GetAverageSpread() * 2.0)
+        {
+            settings.lot_size = settings.lot_size * 0.7; // Reduce lot size for high spread
+            Print("📊 High spread detected: Reduced lot size to ", DoubleToString(settings.lot_size, 3));
+        }
+        
+        // CRITICAL: Ensure minimum lot size compliance
+        double min_lot = SymbolInfoDouble(m_trading_symbol, SYMBOL_VOLUME_MIN);
+        double lot_step = SymbolInfoDouble(m_trading_symbol, SYMBOL_VOLUME_STEP);
+        
+        if(settings.lot_size < min_lot)
+        {
+            settings.lot_size = min_lot;
+        }
+        else
+        {
+            // Round to valid lot step
+            settings.lot_size = MathRound(settings.lot_size / lot_step) * lot_step;
+        }
+        
+        Print("📊 Final lot size: ", DoubleToString(settings.lot_size, 3), " (Min: ", DoubleToString(min_lot, 3), " Step: ", DoubleToString(lot_step, 3), ")");
+        
+        return settings;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Pre-Creation Checks                                           |
+    //+------------------------------------------------------------------+
+    bool PreCreationChecks()
+    {
+        // Check account balance
+        double current_balance = AccountInfoDouble(ACCOUNT_BALANCE);
+        if(current_balance < 100.0)
+        {
+            Print("❌ Insufficient account balance: $", DoubleToString(current_balance, 2));
+            return false;
+        }
+        
+        // Check margin level
+        double margin_level = AccountInfoDouble(ACCOUNT_MARGIN_LEVEL);
+        if(margin_level < 300.0 && margin_level > 0)
+        {
+            Print("❌ Low margin level: ", DoubleToString(margin_level, 1), "%");
+            return false;
+        }
+        
+        // Check trading allowed
+        if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED))
+        {
+            Print("❌ Trading not allowed in terminal");
+            return false;
+        }
+        
+        // Check symbol trading allowed
+        if(!SymbolInfoInteger(m_trading_symbol, SYMBOL_TRADE_MODE))
+        {
+            Print("❌ Trading not allowed for symbol: ", m_trading_symbol);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Market Condition Assessment                                    |
+    //+------------------------------------------------------------------+
+    bool AssessMarketConditions()
+    {
+        // TESTING MODE: Bypass all market filters
+        if(m_bypass_market_filters)
+        {
+            return true;
+        }
+        
+        // Check spread
+        double current_spread = GetCurrentSpread();
+        double average_spread = GetAverageSpread();
+        
+        if(current_spread > average_spread * 3.0)
+        {
+            m_market_condition_reason = StringFormat("Spread too high: %.1f vs avg %.1f", 
+                                                    current_spread, average_spread);
+            return false;
+        }
+        
+        // Check volatility
+        double current_atr = GetCurrentATR();
+        if(current_atr <= 0)
+        {
+            m_market_condition_reason = "Cannot calculate ATR";
+            return false;
+        }
+        
+        // Check for major news events (simplified)
+        if(IsHighImpactNewsTime())
+        {
+            m_market_condition_reason = "High impact news event detected";
+            return false;
+        }
+        
+        // Check market hours
+        if(!IsOptimalTradingTime())
+        {
+            m_market_condition_reason = "Outside optimal trading hours";
+            return false;
+        }
+        
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Market Analysis Helper Functions                              |
+    //+------------------------------------------------------------------+
+    double GetCurrentATR()
+    {
+        double atr_array[];
+        ArraySetAsSeries(atr_array, true);
+        
+        int atr_handle = iATR(m_trading_symbol, PERIOD_H1, 14);
+        if(atr_handle == INVALID_HANDLE) return 0.0;
+        
+        if(CopyBuffer(atr_handle, 0, 0, 1, atr_array) <= 0) return 0.0;
+        
+        IndicatorRelease(atr_handle);
+        return atr_array[0];
+    }
+    
+    double GetAverageATR()
+    {
+        double atr_array[];
+        ArraySetAsSeries(atr_array, true);
+        
+        int atr_handle = iATR(m_trading_symbol, PERIOD_H1, 14);
+        if(atr_handle == INVALID_HANDLE) return 0.0;
+        
+        if(CopyBuffer(atr_handle, 0, 0, 20, atr_array) <= 0) return 0.0;
+        
+        double sum = 0.0;
+        for(int i = 0; i < 20; i++)
+        {
+            sum += atr_array[i];
+        }
+        
+        IndicatorRelease(atr_handle);
+        return sum / 20.0;
+    }
+    
+    double GetCurrentSpread()
+    {
+        return (SymbolInfoDouble(m_trading_symbol, SYMBOL_ASK) - 
+                SymbolInfoDouble(m_trading_symbol, SYMBOL_BID)) / 
+                SymbolInfoDouble(m_trading_symbol, SYMBOL_POINT);
+    }
+    
+    double GetAverageSpread()
+    {
+        // Simplified: return typical spread for major pairs
+        if(StringFind(m_trading_symbol, "EUR") >= 0 || StringFind(m_trading_symbol, "GBP") >= 0)
+            return 2.0; // 2 pips average
+        else if(StringFind(m_trading_symbol, "USD") >= 0)
+            return 3.0; // 3 pips average
+        else
+            return 5.0; // 5 pips for others
+    }
+    
+    bool IsHighImpactNewsTime()
+    {
+        // RELAXED: Disable news filter for testing
+        // In production, you can enable this with more sophisticated news detection
+        return false;
+        
+        /* ORIGINAL CODE - Enable for production:
+        MqlDateTime dt;
+        TimeToStruct(TimeCurrent(), dt);
+        
+        // Avoid Friday close (2 hours before market close)
+        if(dt.day_of_week == 5 && dt.hour >= 20) // Friday after 8 PM
+        {
+            return true;
+        }
+        
+        // Avoid major news times (simplified)
+        if(dt.hour == 8 || dt.hour == 10 || dt.hour == 14 || dt.hour == 16) // Common news times
+        {
+            return true;
+        }
+        
+        return false;
+        */
+    }
+    
+    bool IsOptimalTradingTime()
+    {
+        MqlDateTime dt;
+        TimeToStruct(TimeCurrent(), dt);
+        
+        // Avoid weekends
+        if(dt.day_of_week == 0 || dt.day_of_week == 6)
+        {
+            return false;
+        }
+        
+        // RELAXED: Allow trading 24/5 (Monday to Friday)
+        // Remove strict hour restrictions for testing
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Factory Statistics                                            |
+    //+------------------------------------------------------------------+
+    int GetTotalCreated() { return m_total_created; }
+    datetime GetLastCreationTime() { return m_last_creation_time; }
+    string GetMarketConditionReason() { return m_market_condition_reason; }
+    
+    string GetFactoryStatus()
+    {
+        return StringFormat("Factory: Created=%d | LastCreation=%s | MarketSuitable=%s",
+                           m_total_created,
+                           TimeToString(m_last_creation_time),
+                           m_market_suitable ? "YES" : "NO");
+    }
+};
+
+//+------------------------------------------------------------------+

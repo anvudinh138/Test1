@@ -56,34 +56,34 @@ public:
             m_atr_handles[i] = iATR(m_symbol, m_timeframes[i], 14);
             if(m_atr_handles[i] == INVALID_HANDLE)
             {
-                Print("Failed to create ATR handle for ", EnumToString(m_timeframes[i]));
+                Print("❌ Failed to create ATR handle for ", EnumToString(m_timeframes[i]));
                 return false;
             }
         }
         
         m_initialized = true;
-        Print("ATR Calculator initialized for ", m_symbol);
+        Print("✅ ATR Calculator initialized for ", m_symbol);
         return true;
     }
     
     //+------------------------------------------------------------------+
-    //| Update all ATR values                                           |
+    //| Update ATR values for all timeframes                            |
     //+------------------------------------------------------------------+
-    bool UpdateATRValues(void)
+    bool UpdateATRValues()
     {
-        if(!m_initialized)
-            return false;
-            
-        double atr_buffer[];
-        ArrayResize(atr_buffer, 1);
+        if(!m_initialized) return false;
         
         for(int i = 0; i < 5; i++)
         {
-            if(CopyBuffer(m_atr_handles[i], 0, 1, 1, atr_buffer) <= 0)
+            double atr_buffer[];
+            ArraySetAsSeries(atr_buffer, true);
+            
+            if(CopyBuffer(m_atr_handles[i], 0, 0, 1, atr_buffer) <= 0)
             {
-                Print("Failed to copy ATR buffer for ", EnumToString(m_timeframes[i]));
-                continue;
+                Print("❌ Failed to copy ATR buffer for ", EnumToString(m_timeframes[i]));
+                return false;
             }
+            
             m_atr_values[i] = atr_buffer[0];
         }
         
@@ -95,24 +95,15 @@ public:
     //+------------------------------------------------------------------+
     double GetATR(ENUM_TIMEFRAMES timeframe)
     {
-        int index = GetTimeframeIndex(timeframe);
-        if(index < 0) return 0.0;
+        if(!UpdateATRValues()) return 0.0;
         
-        return m_atr_values[index];
-    }
-    
-    //+------------------------------------------------------------------+
-    //| Get normalized ATR (as percentage of current price)             |
-    //+------------------------------------------------------------------+
-    double GetNormalizedATR(ENUM_TIMEFRAMES timeframe)
-    {
-        double atr = GetATR(timeframe);
-        if(atr <= 0) return 0.0;
+        for(int i = 0; i < 5; i++)
+        {
+            if(m_timeframes[i] == timeframe)
+                return m_atr_values[i];
+        }
         
-        double current_price = SymbolInfoDouble(m_symbol, SYMBOL_BID);
-        if(current_price <= 0) return 0.0;
-        
-        return (atr / current_price) * 100.0;  // Return as percentage
+        return 0.0;
     }
     
     //+------------------------------------------------------------------+
@@ -120,78 +111,68 @@ public:
     //+------------------------------------------------------------------+
     double CalculateGridSpacing(ENUM_TIMEFRAMES timeframe, double multiplier = 1.0)
     {
-        double atr = GetATR(timeframe);
-        return atr * multiplier;
-    }
-    
-    //+------------------------------------------------------------------+
-    //| Check if volatility is within acceptable range                  |
-    //+------------------------------------------------------------------+
-    bool IsVolatilityNormal(double min_threshold = 0.05, double max_threshold = 5.0)
-    {
-        double normalized_atr = GetNormalizedATR(PERIOD_H1);
-        return (normalized_atr >= min_threshold && normalized_atr <= max_threshold);
-    }
-    
-    //+------------------------------------------------------------------+
-    //| Get volatility condition                                         |
-    //+------------------------------------------------------------------+
-    string GetVolatilityCondition(void)
-    {
-        double normalized_atr = GetNormalizedATR(PERIOD_H1);
+        double atr_value = GetATR(timeframe);
+        if(atr_value <= 0) return 0.0;
         
-        if(normalized_atr < 0.05)
-            return "LOW_VOLATILITY";
-        else if(normalized_atr > 5.0)
-            return "HIGH_VOLATILITY"; 
+        return atr_value * multiplier;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Get multi-timeframe ATR analysis                                |
+    //+------------------------------------------------------------------+
+    string GetATRAnalysis()
+    {
+        if(!UpdateATRValues()) return "ATR Update Failed";
+        
+        string analysis = StringFormat("ATR Analysis for %s:\n", m_symbol);
+        analysis += StringFormat("M1: %.5f | M15: %.5f | H1: %.5f | H4: %.5f | D1: %.5f",
+                                m_atr_values[0], m_atr_values[1], m_atr_values[2], 
+                                m_atr_values[3], m_atr_values[4]);
+        
+        return analysis;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Calculate volatility state                                      |
+    //+------------------------------------------------------------------+
+    string GetVolatilityState()
+    {
+        double h1_atr = GetATR(PERIOD_H1);
+        double h4_atr = GetATR(PERIOD_H4);
+        
+        if(h1_atr <= 0 || h4_atr <= 0) return "Unknown";
+        
+        double volatility_ratio = h1_atr / h4_atr;
+        
+        if(volatility_ratio > 1.5)
+            return "High Volatility";
+        else if(volatility_ratio < 0.7)
+            return "Low Volatility";
         else
-            return "NORMAL_VOLATILITY";
+            return "Normal Volatility";
     }
     
     //+------------------------------------------------------------------+
-    //| Print ATR information                                            |
+    //| Cleanup resources                                               |
     //+------------------------------------------------------------------+
-    void PrintATRInfo(void)
-    {
-        if(!m_initialized) return;
-        
-        UpdateATRValues();
-        
-        Print("=== ATR Information for ", m_symbol, " ===");
-        Print("M1 ATR: ", DoubleToString(m_atr_values[0], 5));
-        Print("M15 ATR: ", DoubleToString(m_atr_values[1], 5));
-        Print("H1 ATR: ", DoubleToString(m_atr_values[2], 5));
-        Print("H4 ATR: ", DoubleToString(m_atr_values[3], 5));
-        Print("D1 ATR: ", DoubleToString(m_atr_values[4], 5));
-        Print("H1 Normalized ATR: ", DoubleToString(GetNormalizedATR(PERIOD_H1), 2), "%");
-        Print("Volatility: ", GetVolatilityCondition());
-    }
-    
-private:
-    //+------------------------------------------------------------------+
-    //| Get array index for timeframe                                   |
-    //+------------------------------------------------------------------+
-    int GetTimeframeIndex(ENUM_TIMEFRAMES timeframe)
-    {
-        for(int i = 0; i < 5; i++)
-        {
-            if(m_timeframes[i] == timeframe)
-                return i;
-        }
-        return -1;
-    }
-    
-    //+------------------------------------------------------------------+
-    //| Cleanup handles                                                  |
-    //+------------------------------------------------------------------+
-    void Cleanup(void)
+    void Cleanup()
     {
         for(int i = 0; i < 5; i++)
         {
             if(m_atr_handles[i] != INVALID_HANDLE)
+            {
                 IndicatorRelease(m_atr_handles[i]);
+                m_atr_handles[i] = INVALID_HANDLE;
+            }
         }
         m_initialized = false;
     }
+    
+    //+------------------------------------------------------------------+
+    //| Getters                                                         |
+    //+------------------------------------------------------------------+
+    bool IsInitialized() { return m_initialized; }
+    string GetSymbol() { return m_symbol; }
 };
+
 //+------------------------------------------------------------------+

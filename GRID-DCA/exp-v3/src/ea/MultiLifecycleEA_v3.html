@@ -1,0 +1,673 @@
+//+------------------------------------------------------------------+
+//|                                        MultiLifecycleEA_v3.mq5  |
+//|                                       FlexGridDCA EA v3.0.0      |
+//|                          EXPERIMENTAL: Multiple Lifecycle Grid  |
+//+------------------------------------------------------------------+
+#property copyright "FlexGridDCA EA v3.0"
+#property link      ""
+#property version   "3.00"
+#property description "EXPERIMENTAL: Multiple Self-Managing Lifecycle Grid System"
+
+#include <Trade\Trade.mqh>
+#include <services/PortfolioRiskManager.mqh>
+#include <services/LifecycleFactory.mqh>
+#include <core/IndependentLifecycle.mqh>
+
+//+------------------------------------------------------------------+
+//| Input Parameters - MAIN RISK MANAGEMENT                        |
+//+------------------------------------------------------------------+
+input group "=== PORTFOLIO RISK MANAGEMENT ==="
+input double      InpMaxPortfolioRisk = 100.0;        // Maximum Portfolio Risk ($)
+input double      InpMaxDrawdownPercent = 20.0;       // Maximum Portfolio Drawdown (%)
+input int         InpMaxConcurrentLifecycles = 2;     // Maximum Concurrent Lifecycles (REDUCED for stability)
+input double      InpMinBalancePerLifecycle = 50.0;   // Minimum Balance Required Per Job (Reduced for testing)
+
+input group "=== LIFECYCLE CREATION RULES ==="
+input double      InpDefaultProfitTarget = 20.0;      // Default Profit Target per Lifecycle ($)
+input double      InpDefaultStopLoss = 50.0;         // Default Stop Loss per Lifecycle ($)
+input int         InpDefaultGridLevels = 8;           // Default Grid Levels per Lifecycle (Reduced for testing)
+input double      InpDefaultLotSize = 0.01;           // Default Lot Size per Lifecycle
+input double      InpATRMultiplier = 1.2;            // ATR Multiplier for Grid Spacing
+input double      InpTrailingStopATR = 2.0;          // Trailing Stop ATR Multiplier (like STABLE-V1)
+input int         InpLifecycleIntervalMinutes = 5;    // Minimum Interval Between Lifecycles (minutes) - Reduced for testing
+
+input group "=== JOB TRIGGERS ==="
+input bool        InpEnableTimeTrigger = true;        // Plan A: Time-based job creation
+input bool        InpEnableTrailingTrigger = false;   // Plan B: Create when trailing starts
+input bool        InpEnableDCATrigger = false;        // Plan C: Create when DCA expansion limit reached
+input int         InpDCAExpansionLimit = 2;           // DCA expansion limit before creating rescue job
+input int         InpMaxRescueJobs = 2;               // Max rescue jobs per original
+
+input group "=== EMERGENCY CONTROLS ==="
+input bool        InpEmergencyKillSwitch = false;     // EMERGENCY: Kill All Lifecycles
+input bool        InpForceCreateFirstJob = true;      // TESTING: Force create first job immediately
+input bool        InpEnableDebugMode = true;          // Enable Debug Logging
+input bool        InpEnableDashboard = true;          // Enable Portfolio Dashboard
+input bool        InpBypassMarketFilters = true;      // TESTING: Bypass all market condition filters
+
+//+------------------------------------------------------------------+
+//| Global Variables                                                |
+//+------------------------------------------------------------------+
+CPortfolioRiskManager*  g_risk_manager;
+CLifecycleFactory*      g_lifecycle_factory;
+CIndependentLifecycle*  g_lifecycles[];              // Array of active lifecycles
+
+// Portfolio tracking
+double                  g_initial_balance;
+double                  g_portfolio_peak_equity;
+datetime                g_last_lifecycle_creation;
+int                     g_lifecycle_counter;
+
+// Dashboard and monitoring
+bool                    g_dashboard_initialized;
+datetime                g_last_dashboard_update;
+datetime                g_last_risk_check;
+
+// Emergency state
+bool                    g_emergency_shutdown;
+string                  g_shutdown_reason;
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    Print("🚀 MULTI-LIFECYCLE EA v3.0 STARTING...");
+    
+    // Initialize portfolio tracking
+    g_initial_balance = AccountInfoDouble(ACCOUNT_BALANCE);
+    g_portfolio_peak_equity = AccountInfoDouble(ACCOUNT_EQUITY);
+    g_lifecycle_counter = 1;
+    g_last_lifecycle_creation = 0;
+    g_emergency_shutdown = false;
+    
+    // Initialize core services
+    g_risk_manager = new CPortfolioRiskManager();
+    g_risk_manager.Initialize(InpMaxPortfolioRisk, InpMaxDrawdownPercent, g_initial_balance);
+    
+    g_lifecycle_factory = new CLifecycleFactory();
+    g_lifecycle_factory.Initialize(InpDefaultProfitTarget, InpDefaultStopLoss, 
+                                   InpDefaultGridLevels, InpDefaultLotSize, InpATRMultiplier, InpTrailingStopATR);
+    g_lifecycle_factory.SetBypassMarketFilters(InpBypassMarketFilters);
+    
+    // Initialize lifecycle array
+    ArrayResize(g_lifecycles, 0);
+    
+    // Initialize dashboard
+    if(InpEnableDashboard)
+    {
+        InitializePortfolioDashboard();
+    }
+    
+    Print("✅ MULTI-LIFECYCLE EA v3.0 INITIALIZED");
+    Print("📊 Initial Balance: $", DoubleToString(g_initial_balance, 2));
+    Print("🎯 Max Concurrent Lifecycles: ", InpMaxConcurrentLifecycles);
+    Print("⚠️ Max Portfolio Risk: $", DoubleToString(InpMaxPortfolioRisk, 2));
+    
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                               |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+    Print("🛑 MULTI-LIFECYCLE EA v3.0 SHUTTING DOWN...");
+    
+    // Emergency close all lifecycles
+    EmergencyShutdownAllLifecycles("EA Deinit");
+    
+    // Cleanup services
+    if(g_risk_manager != NULL)
+    {
+        delete g_risk_manager;
+        g_risk_manager = NULL;
+    }
+    
+    if(g_lifecycle_factory != NULL)
+    {
+        delete g_lifecycle_factory;
+        g_lifecycle_factory = NULL;
+    }
+    
+    // Cleanup dashboard
+    CleanupPortfolioDashboard();
+    
+    Print("✅ MULTI-LIFECYCLE EA v3.0 SHUTDOWN COMPLETE");
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function - MAIN PORTFOLIO MANAGER                  |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+    // 🚨 EMERGENCY KILL SWITCH - Highest Priority
+    if(InpEmergencyKillSwitch && !g_emergency_shutdown)
+    {
+        EmergencyShutdownAllLifecycles("Manual Kill Switch Activated");
+        return;
+    }
+    
+    if(g_emergency_shutdown)
+    {
+        return; // Stay in shutdown mode
+    }
+    
+    // 🛡️ PORTFOLIO RISK CHECK - Every 30 seconds
+    if(TimeCurrent() - g_last_risk_check > 30)
+    {
+        if(!PerformPortfolioRiskCheck())
+        {
+            return; // Emergency shutdown triggered
+        }
+        g_last_risk_check = TimeCurrent();
+    }
+    
+    // 🔄 UPDATE ALL ACTIVE LIFECYCLES
+    UpdateAllLifecycles();
+    
+    // 🏭 LIFECYCLE CREATION LOGIC - DEBUG
+    static datetime last_creation_debug = 0;
+    if(InpEnableDebugMode && TimeCurrent() - last_creation_debug > 120) // Every 2 minutes
+    {
+        Print("🎯 DEBUG - About to call ConsiderNewLifecycleCreation()");
+        last_creation_debug = TimeCurrent();
+    }
+    ConsiderNewLifecycleCreation();
+    
+    // 📊 UPDATE PORTFOLIO DASHBOARD - Every 15 seconds
+    if(InpEnableDashboard && TimeCurrent() - g_last_dashboard_update > 15)
+    {
+        UpdatePortfolioDashboard();
+        g_last_dashboard_update = TimeCurrent();
+    }
+    
+    // 🧹 CLEANUP COMPLETED LIFECYCLES
+    CleanupCompletedLifecycles();
+}
+
+//+------------------------------------------------------------------+
+//| Portfolio Risk Management - CRITICAL FUNCTION                  |
+//+------------------------------------------------------------------+
+bool PerformPortfolioRiskCheck()
+{
+    if(g_risk_manager == NULL) return false;
+    
+    double current_equity = AccountInfoDouble(ACCOUNT_EQUITY);
+    double current_balance = AccountInfoDouble(ACCOUNT_BALANCE);
+    double total_portfolio_risk = CalculateTotalPortfolioRisk();
+    
+    // Update peak equity
+    if(current_equity > g_portfolio_peak_equity)
+    {
+        g_portfolio_peak_equity = current_equity;
+    }
+    
+    // Check maximum portfolio risk
+    if(total_portfolio_risk > InpMaxPortfolioRisk)
+    {
+        EmergencyShutdownAllLifecycles(StringFormat("Portfolio Risk Exceeded: $%.2f > $%.2f", 
+                                                   total_portfolio_risk, InpMaxPortfolioRisk));
+        return false;
+    }
+    
+    // Check maximum drawdown
+    double drawdown_percent = ((g_portfolio_peak_equity - current_equity) / g_portfolio_peak_equity) * 100.0;
+    if(drawdown_percent > InpMaxDrawdownPercent)
+    {
+        EmergencyShutdownAllLifecycles(StringFormat("Max Drawdown Exceeded: %.1f%% > %.1f%%", 
+                                                   drawdown_percent, InpMaxDrawdownPercent));
+        return false;
+    }
+    
+    // Check margin level
+    double margin_level = AccountInfoDouble(ACCOUNT_MARGIN_LEVEL);
+    if(margin_level < 200.0 && margin_level > 0)
+    {
+        EmergencyShutdownAllLifecycles(StringFormat("Low Margin Level: %.1f%%", margin_level));
+        return false;
+    }
+    
+    // All checks passed
+    return true;
+}
+
+//+------------------------------------------------------------------+
+//| Update All Active Lifecycles                                   |
+//+------------------------------------------------------------------+
+void UpdateAllLifecycles()
+{
+    for(int i = 0; i < ArraySize(g_lifecycles); i++)
+    {
+        if(g_lifecycles[i] != NULL && g_lifecycles[i].IsActive())
+        {
+            // Let each lifecycle manage itself
+            g_lifecycles[i].Update();
+            
+            // Check if lifecycle requests emergency shutdown
+            if(g_lifecycles[i].IsEmergencyShutdownRequested())
+            {
+                string reason = g_lifecycles[i].GetEmergencyReason();
+                Print("🚨 LIFECYCLE #", g_lifecycles[i].GetID(), " REQUESTS EMERGENCY SHUTDOWN: ", reason);
+                
+                // Close this specific lifecycle
+                g_lifecycles[i].EmergencyClose();
+            }
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Consider Creating New Lifecycle                                |
+//+------------------------------------------------------------------+
+void ConsiderNewLifecycleCreation()
+{
+    // 🔍 DEBUG: Check if we can create new lifecycle
+    if(!CanCreateNewLifecycle())
+    {
+        static datetime last_debug_log = 0;
+        if(InpEnableDebugMode && TimeCurrent() - last_debug_log > 300) // Every 5 minutes
+        {
+            Print("🔍 DEBUG - CanCreateNewLifecycle() returned FALSE");
+            Print("🔍 DEBUG - Active: ", GetActiveLifecycleCount(), "/", InpMaxConcurrentLifecycles);
+            Print("🔍 DEBUG - Emergency: ", (g_emergency_shutdown ? "YES" : "NO"));
+            last_debug_log = TimeCurrent();
+        }
+        return;
+    }
+    
+    if(InpEnableDebugMode)
+    {
+        static datetime last_consider_log = 0;
+        if(TimeCurrent() - last_consider_log > 300) // Every 5 minutes
+        {
+            Print("🎯 DEBUG - ConsiderNewLifecycleCreation() - Checking triggers...");
+            last_consider_log = TimeCurrent();
+        }
+    }
+    
+    bool should_create = false;
+    string creation_reason = "";
+    
+    // 🚀 FORCE CREATE FIRST JOB (Testing)
+    if(InpForceCreateFirstJob && GetActiveLifecycleCount() == 0)
+    {
+        should_create = true;
+        creation_reason = "FORCE_FIRST_JOB";
+        if(InpEnableDebugMode)
+        {
+            Print("🚀 FORCE CREATE: Creating first job immediately for testing");
+        }
+    }
+    
+    // 🎯 PLAN A: Time-based trigger
+    if(InpEnableTimeTrigger && !should_create)
+    {
+        if(TimeCurrent() - g_last_lifecycle_creation >= InpLifecycleIntervalMinutes * 60)
+        {
+            should_create = true;
+            creation_reason = "TIME_BASED";
+        }
+        else
+        {
+            // REDUCED LOGGING: Only log every 5 minutes instead of every tick
+            static datetime last_timing_log = 0;
+            if(TimeCurrent() - last_timing_log > 300 && InpEnableDebugMode)
+            {
+                Print("⏰ Lifecycle creation on cooldown: ", (InpLifecycleIntervalMinutes * 60 - (TimeCurrent() - g_last_lifecycle_creation)), " seconds remaining");
+                last_timing_log = TimeCurrent();
+            }
+        }
+    }
+    
+    // 🏃 PLAN B: Trailing-triggered (check for trailing lifecycles) - RATE LIMITED
+    if(InpEnableTrailingTrigger && !should_create)
+    {
+        static datetime last_trailing_trigger = 0;
+        static int last_trailing_count = 0;
+        
+        int current_trailing_count = CountTrailingLifecycles();
+        
+        // Only trigger if NEW trailing lifecycle detected
+        if(current_trailing_count > last_trailing_count && TimeCurrent() - last_trailing_trigger > 600) // 10 minutes cooldown
+        {
+            should_create = true;
+            creation_reason = "TRAILING_TRIGGERED";
+            last_trailing_trigger = TimeCurrent();
+            last_trailing_count = current_trailing_count;
+            
+                // Plan B triggered - minimal logging
+        }
+        else
+        {
+            last_trailing_count = current_trailing_count;
+        }
+    }
+    
+    // 🚨 PLAN C: DCA expansion limit reached (more intelligent trigger) - RATE LIMITED
+    if(InpEnableDCATrigger && !should_create)
+    {
+        static datetime last_dca_trigger = 0;
+        if(HasDCAExpansionLimitReached() && GetRescueJobCount() < InpMaxRescueJobs && 
+           TimeCurrent() - last_dca_trigger > 180) // 3 minutes cooldown
+        {
+            should_create = true;
+            creation_reason = "DCA_EXPANSION_LIMIT";
+            last_dca_trigger = TimeCurrent();
+            
+            // Plan C triggered - minimal logging
+        }
+    }
+    
+    if(!should_create)
+    {
+        return;
+    }
+    
+    // Check available balance (more lenient for rescue jobs)
+    double available_balance = CalculateAvailableBalance();
+    double required_balance = InpMinBalancePerLifecycle;
+    
+    // RESCUE JOBS: Use lower balance requirement
+    if(creation_reason == "DCA_EXPANSION_LIMIT" || creation_reason == "TRAILING_TRIGGERED")
+    {
+        required_balance = InpMinBalancePerLifecycle * 0.5; // 50% less for rescue jobs
+    }
+    
+    if(available_balance < required_balance)
+    {
+        // REDUCED LOGGING: Only log every 10 minutes
+        static datetime last_balance_log = 0;
+        if(TimeCurrent() - last_balance_log > 600 && InpEnableDebugMode)
+        {
+            Print("💰 Insufficient balance for new job (", creation_reason, "): $", DoubleToString(available_balance, 2), 
+                  " < $", DoubleToString(required_balance, 2));
+            last_balance_log = TimeCurrent();
+        }
+        return;
+    }
+    
+    // Create new job with reason
+    CreateNewJob(creation_reason);
+}
+
+//+------------------------------------------------------------------+
+//| Create New Independent Lifecycle                               |
+//+------------------------------------------------------------------+
+void CreateNewJob(string reason = "MANUAL")
+{
+    if(g_lifecycle_factory == NULL) return;
+    
+    // Create new lifecycle instance
+    CIndependentLifecycle* new_lifecycle = g_lifecycle_factory.CreateLifecycle(g_lifecycle_counter);
+    
+    if(new_lifecycle == NULL)
+    {
+        Print("❌ Failed to create new lifecycle #", g_lifecycle_counter);
+        return;
+    }
+    
+    // Add to active lifecycles array
+    int new_size = ArraySize(g_lifecycles) + 1;
+    ArrayResize(g_lifecycles, new_size);
+    g_lifecycles[new_size - 1] = new_lifecycle;
+    
+    // Update tracking
+    g_lifecycle_counter++;
+    g_last_lifecycle_creation = TimeCurrent();
+    
+    Print("🚀 NEW JOB #", new_lifecycle.GetID(), " CREATED (", reason, ")");
+    Print("📊 Active Jobs: ", GetActiveLifecycleCount(), "/", InpMaxConcurrentLifecycles);
+}
+
+//+------------------------------------------------------------------+
+//| Emergency Shutdown All Lifecycles                              |
+//+------------------------------------------------------------------+
+void EmergencyShutdownAllLifecycles(string reason)
+{
+    if(g_emergency_shutdown) return; // Already in shutdown
+    
+    Print("🚨🚨🚨 EMERGENCY PORTFOLIO SHUTDOWN 🚨🚨🚨");
+    Print("🚨 REASON: ", reason);
+    Print("🚨 Closing ALL lifecycles immediately...");
+    
+    g_emergency_shutdown = true;
+    g_shutdown_reason = reason;
+    
+    // Close all active lifecycles
+    for(int i = 0; i < ArraySize(g_lifecycles); i++)
+    {
+        if(g_lifecycles[i] != NULL)
+        {
+            g_lifecycles[i].EmergencyClose();
+            Print("🚨 Lifecycle #", g_lifecycles[i].GetID(), " emergency closed");
+        }
+    }
+    
+    // Close any remaining positions not managed by lifecycles
+    CloseAllRemainingPositions();
+    
+    Print("🚨 EMERGENCY SHUTDOWN COMPLETE");
+}
+
+//+------------------------------------------------------------------+
+//| Utility Functions                                              |
+//+------------------------------------------------------------------+
+bool CanCreateNewLifecycle()
+{
+    return (GetActiveLifecycleCount() < InpMaxConcurrentLifecycles) && !g_emergency_shutdown;
+}
+
+int GetActiveLifecycleCount()
+{
+    int count = 0;
+    for(int i = 0; i < ArraySize(g_lifecycles); i++)
+    {
+        if(g_lifecycles[i] != NULL && g_lifecycles[i].IsActive())
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+double CalculateTotalPortfolioRisk()
+{
+    double total_risk = 0.0;
+    for(int i = 0; i < ArraySize(g_lifecycles); i++)
+    {
+        if(g_lifecycles[i] != NULL && g_lifecycles[i].IsActive())
+        {
+            total_risk += g_lifecycles[i].GetCurrentRisk();
+        }
+    }
+    return total_risk;
+}
+
+double CalculateAvailableBalance()
+{
+    double current_balance = AccountInfoDouble(ACCOUNT_BALANCE);
+    double allocated_balance = 0.0;
+    
+    for(int i = 0; i < ArraySize(g_lifecycles); i++)
+    {
+        if(g_lifecycles[i] != NULL && g_lifecycles[i].IsActive())
+        {
+            allocated_balance += g_lifecycles[i].GetAllocatedBalance();
+        }
+    }
+    
+    return current_balance - allocated_balance;
+}
+
+void CleanupCompletedLifecycles()
+{
+    for(int i = ArraySize(g_lifecycles) - 1; i >= 0; i--)
+    {
+        if(g_lifecycles[i] != NULL && g_lifecycles[i].IsCompleted())
+        {
+            Print("🧹 Cleaning up completed lifecycle #", g_lifecycles[i].GetID());
+            
+            delete g_lifecycles[i];
+            g_lifecycles[i] = NULL;
+            
+            // Remove from array
+            for(int j = i; j < ArraySize(g_lifecycles) - 1; j++)
+            {
+                g_lifecycles[j] = g_lifecycles[j + 1];
+            }
+            ArrayResize(g_lifecycles, ArraySize(g_lifecycles) - 1);
+        }
+    }
+}
+
+void CloseAllRemainingPositions()
+{
+    CTrade trade;
+    for(int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        ulong ticket = PositionGetTicket(i);
+        if(PositionSelectByTicket(ticket))
+        {
+            trade.PositionClose(ticket);
+        }
+    }
+    
+    for(int i = OrdersTotal() - 1; i >= 0; i--)
+    {
+        ulong ticket = OrderGetTicket(i);
+        if(OrderSelect(ticket))
+        {
+            trade.OrderDelete(ticket);
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Dashboard Functions                                             |
+//+------------------------------------------------------------------+
+void InitializePortfolioDashboard()
+{
+    // Portfolio dashboard initialization
+    g_dashboard_initialized = true;
+    g_last_dashboard_update = 0;
+    Print("📊 Portfolio Dashboard initialized");
+}
+
+void UpdatePortfolioDashboard()
+{
+    if(!g_dashboard_initialized) return;
+    
+    // Update portfolio dashboard with current status
+    string status = GetPortfolioStatus();
+    
+    if(InpEnableDebugMode)
+    {
+        Print("📊 PORTFOLIO STATUS: ", status);
+    }
+}
+
+string GetPortfolioStatus()
+{
+    double current_equity = AccountInfoDouble(ACCOUNT_EQUITY);
+    double total_risk = CalculateTotalPortfolioRisk();
+    int active_count = GetActiveLifecycleCount();
+    
+    return StringFormat("Equity: $%.2f | Risk: $%.2f | Active: %d/%d | Status: %s",
+                       current_equity, total_risk, active_count, InpMaxConcurrentLifecycles,
+                       g_emergency_shutdown ? "SHUTDOWN" : "ACTIVE");
+}
+
+void CleanupPortfolioDashboard()
+{
+    g_dashboard_initialized = false;
+    Print("📊 Portfolio Dashboard cleaned up");
+}
+
+//+------------------------------------------------------------------+
+//| Lifecycle Trigger Detection Functions                          |
+//+------------------------------------------------------------------+
+bool HasTrailingLifecycle()
+{
+    for(int i = 0; i < ArraySize(g_lifecycles); i++)
+    {
+        if(g_lifecycles[i] != NULL && g_lifecycles[i].IsActive())
+        {
+            if(g_lifecycles[i].GetState() == LIFECYCLE_TRAILING)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool HasDCALifecycle()
+{
+    for(int i = 0; i < ArraySize(g_lifecycles); i++)
+    {
+        if(g_lifecycles[i] != NULL && g_lifecycles[i].IsActive())
+        {
+            if(g_lifecycles[i].GetState() == LIFECYCLE_DCA_RESCUE)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool HasDCAExpansionLimitReached()
+{
+    for(int i = 0; i < ArraySize(g_lifecycles); i++)
+    {
+        if(g_lifecycles[i] != NULL && g_lifecycles[i].IsActive())
+        {
+            // Check if any job has reached DCA expansion limit
+            if(g_lifecycles[i].GetDCAExpansions() >= InpDCAExpansionLimit)
+            {
+                if(InpEnableDebugMode)
+                {
+                    Print("🚨 JOB #", g_lifecycles[i].GetID(), " reached DCA expansion limit: ", 
+                          g_lifecycles[i].GetDCAExpansions(), "/", InpDCAExpansionLimit);
+                }
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+int GetRescueJobCount()
+{
+    int count = 0;
+    for(int i = 0; i < ArraySize(g_lifecycles); i++)
+    {
+        if(g_lifecycles[i] != NULL && g_lifecycles[i].IsActive())
+        {
+            if(g_lifecycles[i].GetState() == LIFECYCLE_DCA_RESCUE)
+            {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+int CountTrailingLifecycles()
+{
+    int count = 0;
+    for(int i = 0; i < ArraySize(g_lifecycles); i++)
+    {
+        if(g_lifecycles[i] != NULL && g_lifecycles[i].IsActive())
+        {
+            if(g_lifecycles[i].GetState() == LIFECYCLE_TRAILING)
+            {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+//+------------------------------------------------------------------+
