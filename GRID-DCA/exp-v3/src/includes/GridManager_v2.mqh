@@ -7,6 +7,7 @@
 #property version   "2.01"
 
 #include <Trade\Trade.mqh>
+#include <ATRCalculator.mqh>
 
 //+------------------------------------------------------------------+
 //| Enums and Structures                                             |
@@ -68,6 +69,9 @@ private:
     
     // Grid Spacing Settings
     bool                 m_use_fibonacci_spacing;
+    
+    // ENHANCED: ATR Calculator Integration
+    CATRCalculator      *m_atr_calculator;
 
 public:
     //+------------------------------------------------------------------+
@@ -86,6 +90,9 @@ public:
         m_account_start_balance = AccountInfoDouble(ACCOUNT_BALANCE);
         m_enable_market_entry = false;
         m_use_fibonacci_spacing = false;
+        
+        // ENHANCED: Initialize ATR Calculator pointer
+        m_atr_calculator = NULL;
         
         // Initialize grids
         InitializeBuyGrid();
@@ -154,6 +161,125 @@ public:
     }
     
     //+------------------------------------------------------------------+
+    //| Set ATR Calculator (ENHANCED Integration)                       |
+    //+------------------------------------------------------------------+
+    void SetATRCalculator(CATRCalculator* atr_calc)
+    {
+        m_atr_calculator = atr_calc;
+        Print("✅ ATR Calculator integrated into GridManager");
+    }
+    
+    //+------------------------------------------------------------------+
+    //| ENHANCED: Calculate Dynamic Lot Size                            |
+    //+------------------------------------------------------------------+
+    double CalculateDynamicLotSize()
+    {
+        // This will be overridden by EA implementation
+        // For now, return fixed lot size
+        return m_fixed_lot_size;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| ENHANCED: Risk Check for Order Placement                        |
+    //+------------------------------------------------------------------+
+    bool CanPlaceOrder(GRID_DIRECTION direction, double lot_size)
+    {
+        // Default implementation - always allow
+        // This will be overridden by EA implementation
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| EMERGENCY: Force DCA Rescue for Losing Direction               |
+    //+------------------------------------------------------------------+
+    bool ForceDCARescue(GRID_DIRECTION losing_direction)
+    {
+        Print("🚨 EMERGENCY DCA RESCUE ACTIVATED for ", (losing_direction == GRID_DIRECTION_SELL ? "SELL" : "BUY"), " direction!");
+        
+        GRID_DIRECTION rescue_direction = (losing_direction == GRID_DIRECTION_SELL) ? GRID_DIRECTION_BUY : GRID_DIRECTION_SELL;
+        
+        // Get current price
+        double current_price = (rescue_direction == GRID_DIRECTION_BUY) ? 
+                              SymbolInfoDouble(m_symbol, SYMBOL_ASK) : 
+                              SymbolInfoDouble(m_symbol, SYMBOL_BID);
+        
+        // Calculate ATR spacing
+        double atr_spacing = 0.001; // Fallback
+        if(m_atr_calculator != NULL)
+        {
+            atr_spacing = m_atr_calculator.CalculateGridSpacing(PERIOD_H1, 1.0);
+        }
+        else
+        {
+            atr_spacing = GetATRValue() * 1.0;
+        }
+        
+        // Add rescue orders
+        if(rescue_direction == GRID_DIRECTION_BUY)
+        {
+            // Add BUY STOP orders above current price to rescue SELL grid
+            int old_size = ArraySize(m_buy_grid.levels);
+            ArrayResize(m_buy_grid.levels, old_size + m_max_grid_levels);
+            
+            for(int i = 0; i < m_max_grid_levels; i++)
+            {
+                int new_index = old_size + i;
+                double level_price = current_price + atr_spacing * (i + 1); // Above current price
+                
+                m_buy_grid.levels[new_index].price = NormalizeDouble(level_price, _Digits);
+                m_buy_grid.levels[new_index].lot_size = CalculateDynamicLotSize();
+                m_buy_grid.levels[new_index].is_filled = false;
+                m_buy_grid.levels[new_index].ticket = 0;
+                m_buy_grid.levels[new_index].fill_time = 0;
+                m_buy_grid.levels[new_index].is_dca_level = true; // Mark as DCA rescue
+            }
+            
+            m_sell_grid.dca_expansions++;
+            Print("✅ Added ", m_max_grid_levels, " EMERGENCY BUY STOP rescue orders above ", DoubleToString(current_price, _Digits));
+        }
+        else
+        {
+            // Add SELL STOP orders below current price to rescue BUY grid
+            int old_size = ArraySize(m_sell_grid.levels);
+            ArrayResize(m_sell_grid.levels, old_size + m_max_grid_levels);
+            
+            for(int i = 0; i < m_max_grid_levels; i++)
+            {
+                int new_index = old_size + i;
+                double level_price = current_price - atr_spacing * (i + 1); // Below current price
+                
+                m_sell_grid.levels[new_index].price = NormalizeDouble(level_price, _Digits);
+                m_sell_grid.levels[new_index].lot_size = CalculateDynamicLotSize();
+                m_sell_grid.levels[new_index].is_filled = false;
+                m_sell_grid.levels[new_index].ticket = 0;
+                m_sell_grid.levels[new_index].fill_time = 0;
+                m_sell_grid.levels[new_index].is_dca_level = true; // Mark as DCA rescue
+            }
+            
+            m_buy_grid.dca_expansions++;
+            Print("✅ Added ", m_max_grid_levels, " EMERGENCY SELL STOP rescue orders below ", DoubleToString(current_price, _Digits));
+        }
+        
+        // Immediately place the rescue orders
+        PlaceDirectionOrders(rescue_direction);
+        
+        Print("🔥 EMERGENCY DCA RESCUE COMPLETED - Check for new ", (rescue_direction == GRID_DIRECTION_BUY ? "BUY STOP" : "SELL STOP"), " orders!");
+        
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Get Direction DCA Expansions Count                              |
+    //+------------------------------------------------------------------+
+    int GetDirectionDCAExpansions(GRID_DIRECTION direction)
+    {
+        if(direction == GRID_DIRECTION_BUY)
+            return m_buy_grid.dca_expansions;
+        else
+            return m_sell_grid.dca_expansions;
+    }
+    
+    //+------------------------------------------------------------------+
     //| Calculate Direction Total Profit                                |
     //+------------------------------------------------------------------+
     double CalculateDirectionTotalProfit(GRID_DIRECTION direction)
@@ -186,9 +312,18 @@ public:
         if(base_price <= 0.0)
             base_price = SymbolInfoDouble(m_symbol, SYMBOL_BID);
         
-        // Calculate ATR spacing (simplified - can be improved)
-        double atr_h1 = GetATRValue();
-        double spacing = atr_h1 * atr_multiplier;
+        // Calculate ATR spacing using integrated ATRCalculator
+        double spacing = 0.001; // Fallback
+        if(m_atr_calculator != NULL)
+        {
+            spacing = m_atr_calculator.CalculateGridSpacing(PERIOD_H1, atr_multiplier);
+        }
+        else
+        {
+            // Fallback: Use simplified ATR calculation
+            double atr_h1 = GetATRValue();
+            spacing = atr_h1 * atr_multiplier;
+        }
         
         Print("=== Setting Up Dual Independent Grids ===");
         Print("Base Price: ", DoubleToString(base_price, _Digits));
@@ -245,7 +380,7 @@ public:
                 double level_price = base_price - level_spacing; // Below base price
                 
                 m_buy_grid.levels[i].price = NormalizeDouble(level_price, _Digits);
-                m_buy_grid.levels[i].lot_size = m_fixed_lot_size;
+                m_buy_grid.levels[i].lot_size = CalculateDynamicLotSize(); // ENHANCED: Dynamic sizing
                 m_buy_grid.levels[i].is_filled = false;
                 m_buy_grid.levels[i].ticket = 0;
                 m_buy_grid.levels[i].fill_time = 0;
@@ -286,7 +421,7 @@ public:
                 double level_price = base_price + level_spacing; // Above base price
                 
                 m_sell_grid.levels[i].price = NormalizeDouble(level_price, _Digits);
-                m_sell_grid.levels[i].lot_size = m_fixed_lot_size;
+                m_sell_grid.levels[i].lot_size = CalculateDynamicLotSize(); // ENHANCED: Dynamic sizing
                 m_sell_grid.levels[i].is_filled = false;
                 m_sell_grid.levels[i].ticket = 0;
                 m_sell_grid.levels[i].fill_time = 0;
@@ -489,6 +624,13 @@ public:
                 if(PendingOrderExists(comment))
                     continue;
                 
+                // ENHANCED: Check risk limits before placing order  
+                if(!CanPlaceOrder(direction, m_buy_grid.levels[i].lot_size))
+                {
+                    LogMessage(1, "RISK", "BUY order blocked by exposure limits");
+                    continue;
+                }
+                
                 // 🎯 SMART ORDER TYPE: DCA levels use STOP orders for momentum catching
                 ENUM_ORDER_TYPE actual_order_type = order_type;
                 if(m_buy_grid.levels[i].is_dca_level)
@@ -542,9 +684,22 @@ public:
                 }
                 else
                 {
-                    // Place BUY order (LIMIT or STOP based on DCA level)
-                    string order_type_name = (actual_order_type == ORDER_TYPE_BUY_STOP) ? "BUY STOP" : "BUY LIMIT";
-                    if(m_trade.OrderOpen(m_symbol, actual_order_type, m_buy_grid.levels[i].lot_size, 0, price, 0, 0, ORDER_TIME_GTC, 0, comment))
+                    // Place BUY order using proper CTrade API methods
+                    bool order_result = false;
+                    string order_type_name = "";
+                    
+                    if(actual_order_type == ORDER_TYPE_BUY_STOP)
+                    {
+                        order_type_name = "BUY STOP";
+                        order_result = m_trade.BuyStop(m_buy_grid.levels[i].lot_size, price, m_symbol, 0, 0, ORDER_TIME_GTC, 0, comment);
+                    }
+                    else // ORDER_TYPE_BUY_LIMIT
+                    {
+                        order_type_name = "BUY LIMIT";
+                        order_result = m_trade.BuyLimit(m_buy_grid.levels[i].lot_size, price, m_symbol, 0, 0, ORDER_TIME_GTC, 0, comment);
+                    }
+                    
+                    if(order_result)
                     {
                         m_buy_grid.levels[i].ticket = m_trade.ResultOrder();
                         orders_placed++;
@@ -570,6 +725,13 @@ public:
                 // Check if order already exists
                 if(PendingOrderExists(comment))
                     continue;
+                
+                // ENHANCED: Check risk limits before placing order  
+                if(!CanPlaceOrder(direction, m_sell_grid.levels[i].lot_size))
+                {
+                    LogMessage(1, "RISK", "SELL order blocked by exposure limits");
+                    continue;
+                }
                 
                 // 🎯 SMART ORDER TYPE: DCA levels use STOP orders for momentum catching
                 ENUM_ORDER_TYPE actual_order_type = order_type;
@@ -624,9 +786,22 @@ public:
                 }
                 else
                 {
-                    // Place SELL order (LIMIT or STOP based on DCA level)
-                    string order_type_name = (actual_order_type == ORDER_TYPE_SELL_STOP) ? "SELL STOP" : "SELL LIMIT";
-                    if(m_trade.OrderOpen(m_symbol, actual_order_type, m_sell_grid.levels[i].lot_size, 0, price, 0, 0, ORDER_TIME_GTC, 0, comment))
+                    // Place SELL order using proper CTrade API methods
+                    bool order_result = false;
+                    string order_type_name = "";
+                    
+                    if(actual_order_type == ORDER_TYPE_SELL_STOP)
+                    {
+                        order_type_name = "SELL STOP";
+                        order_result = m_trade.SellStop(m_sell_grid.levels[i].lot_size, price, m_symbol, 0, 0, ORDER_TIME_GTC, 0, comment);
+                    }
+                    else // ORDER_TYPE_SELL_LIMIT
+                    {
+                        order_type_name = "SELL LIMIT";
+                        order_result = m_trade.SellLimit(m_sell_grid.levels[i].lot_size, price, m_symbol, 0, 0, ORDER_TIME_GTC, 0, comment);
+                    }
+                    
+                    if(order_result)
                     {
                         m_sell_grid.levels[i].ticket = m_trade.ResultOrder();
                         orders_placed++;
@@ -651,8 +826,50 @@ public:
     //+------------------------------------------------------------------+
     void UpdateGridStatus()
     {
+        // ENHANCED: Cancel far-away orders first
+        // CancelFarAwayOrders();
+        
         UpdateDirectionStatus(GRID_DIRECTION_BUY);
         UpdateDirectionStatus(GRID_DIRECTION_SELL);
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Cancel Orders That Are Too Far From Current Price              |
+    //+------------------------------------------------------------------+
+    void CancelFarAwayOrders()
+    {
+        double current_price = SymbolInfoDouble(m_symbol, SYMBOL_ASK);
+        double atr_value = 0.001; // Default fallback
+        
+        if(m_atr_calculator != NULL)
+        {
+            atr_value = m_atr_calculator.CalculateGridSpacing(PERIOD_H1, 1.0);
+        }
+        
+        double cancel_distance = atr_value * 10.0; // Cancel orders 10x ATR away
+        
+        // Check all pending orders
+        for(int i = OrdersTotal() - 1; i >= 0; i--)
+        {
+            ulong ticket = OrderGetTicket(i);
+            if(OrderSelect(ticket))
+            {
+                string comment = OrderGetString(ORDER_COMMENT);
+                if(StringFind(comment, "Grid_") >= 0) // Only our grid orders
+                {
+                    double order_price = OrderGetDouble(ORDER_PRICE_OPEN);
+                    double distance = MathAbs(current_price - order_price);
+                    
+                    if(distance > cancel_distance)
+                    {
+                        if(m_trade.OrderDelete(ticket))
+                        {
+                            Print("🗑️ CLEANUP: Cancelled far-away order #", ticket, " at ", DoubleToString(order_price, _Digits), " (Distance: ", DoubleToString(distance/_Point, 0), " points)");
+                        }
+                    }
+                }
+            }
+        }
     }
     
     //+------------------------------------------------------------------+
@@ -763,18 +980,46 @@ public:
         
         bool dca_triggered = false;
         
-        // 🎯 SMART DCA LOGIC: Add counter-trend orders when majority direction filled
-        // floor(max_levels / 2) = early trigger for DCA expansion
-        int dca_trigger_count = m_max_grid_levels / 2; // floor division
+        // 🎯 ENHANCED DCA LOGIC: Two triggers - Risk Loss OR Grid Fill
+        int dca_trigger_count = MathMax(3, (int)(m_max_grid_levels * 0.6)); // 60% grid fill trigger
         
-        if(sell_filled_count >= dca_trigger_count && m_sell_grid.dca_expansions == 0)
+        // Calculate current losses for risk-based trigger
+        double buy_loss = CalculateDirectionTotalProfit(GRID_DIRECTION_BUY);
+        double sell_loss = CalculateDirectionTotalProfit(GRID_DIRECTION_SELL);
+        double max_risk_loss = 50.0; // 50% of typical max loss for early intervention
+        
+        bool sell_risk_trigger = (sell_loss <= -max_risk_loss);
+        bool buy_risk_trigger = (buy_loss <= -max_risk_loss);
+        bool sell_grid_trigger = (sell_filled_count >= dca_trigger_count);
+        bool buy_grid_trigger = (buy_filled_count >= dca_trigger_count);
+        
+        // 🔥 DEBUG: Enhanced DCA status with grid size info
+        static datetime last_dca_debug = 0;
+        if(TimeCurrent() - last_dca_debug > 30) // Reduced frequency
+        {
+            Print("🔍 DCA DEBUG - SELL: filled=", sell_filled_count, "/", m_max_grid_levels, " array_size=", ArraySize(m_sell_grid.levels), " loss=$", DoubleToString(sell_loss, 2), " risk_trigger=", (sell_risk_trigger ? "YES" : "NO"), " grid_trigger=", (sell_grid_trigger ? "YES" : "NO"), " expansions=", m_sell_grid.dca_expansions);
+            Print("🔍 DCA DEBUG - BUY: filled=", buy_filled_count, "/", m_max_grid_levels, " array_size=", ArraySize(m_buy_grid.levels), " loss=$", DoubleToString(buy_loss, 2), " risk_trigger=", (buy_risk_trigger ? "YES" : "NO"), " grid_trigger=", (buy_grid_trigger ? "YES" : "NO"), " expansions=", m_buy_grid.dca_expansions);
+            last_dca_debug = TimeCurrent();
+        }
+        
+        if((sell_risk_trigger || sell_grid_trigger) && m_sell_grid.dca_expansions == 0)
         {
             Print("🚀 SMART DCA EXPANSION: ", IntegerToString(sell_filled_count), "/", IntegerToString(m_max_grid_levels), " SELL levels filled (trigger: ", IntegerToString(dca_trigger_count), ") - Adding ", IntegerToString(m_max_grid_levels), " BUY orders to counter uptrend");
             
             // 🚀 SMART DCA: BUY STOP orders ABOVE current price to catch momentum!
             // Logic: If SELL grid filled → uptrend → Need BUY STOP to catch further momentum
             double current_price = SymbolInfoDouble(m_symbol, SYMBOL_ASK); // Use ASK for BUY STOP
-            double atr_spacing = GetATRValue() * 1.0; // Use 1x ATR for DCA spacing
+            
+            // Use ATR Calculator for DCA spacing if available
+            double atr_spacing = 0.001; // Fallback
+            if(m_atr_calculator != NULL)
+            {
+                atr_spacing = m_atr_calculator.CalculateGridSpacing(PERIOD_H1, 1.0);
+            }
+            else
+            {
+                atr_spacing = GetATRValue() * 1.0; // Fallback to old method
+            }
             
             // Find highest SELL level price as reference
             double highest_sell_price = 0.0;
@@ -822,14 +1067,24 @@ public:
             // Place the new DCA BUY orders immediately
             PlaceDirectionOrders(GRID_DIRECTION_BUY);
         }
-        else if(buy_filled_count >= dca_trigger_count && m_buy_grid.dca_expansions == 0)
+        else if((buy_risk_trigger || buy_grid_trigger) && m_buy_grid.dca_expansions == 0)
         {
             Print("🚀 SMART DCA EXPANSION: ", IntegerToString(buy_filled_count), "/", IntegerToString(m_max_grid_levels), " BUY levels filled (trigger: ", IntegerToString(dca_trigger_count), ") - Adding ", IntegerToString(m_max_grid_levels), " SELL orders to counter downtrend");
             
             // 🚀 SMART DCA: SELL STOP orders BELOW current price to catch momentum!
             // Logic: If BUY grid filled → downtrend → Need SELL STOP to catch further momentum
             double current_price = SymbolInfoDouble(m_symbol, SYMBOL_BID); // Use BID for SELL STOP
-            double atr_spacing = GetATRValue() * 1.0; // Use 1x ATR for DCA spacing
+            
+            // Use ATR Calculator for DCA spacing if available
+            double atr_spacing = 0.001; // Fallback
+            if(m_atr_calculator != NULL)
+            {
+                atr_spacing = m_atr_calculator.CalculateGridSpacing(PERIOD_H1, 1.0);
+            }
+            else
+            {
+                atr_spacing = GetATRValue() * 1.0; // Fallback to old method
+            }
             
             // Find lowest BUY level price as reference
             double lowest_buy_price = 999999.0;
@@ -975,28 +1230,38 @@ private:
     }
     
     //+------------------------------------------------------------------+
-    //| Check if Pending Order Exists                                   |
+    //| Check if Pending Order Exists (FIXED: Proper OrderSelect)      |
     //+------------------------------------------------------------------+
     bool PendingOrderExists(string comment)
     {
         for(int i = 0; i < OrdersTotal(); i++)
         {
-            if(OrderGetString(ORDER_COMMENT) == comment &&
-               OrderGetString(ORDER_SYMBOL) == m_symbol &&
-               OrderGetInteger(ORDER_MAGIC) == m_magic_number)
+            ulong ticket = OrderGetTicket(i);
+            if(ticket == 0) continue; // Invalid ticket
+            
+            // Select order before accessing properties
+            if(OrderSelect(ticket))
             {
-                return true;
+                if(OrderGetString(ORDER_COMMENT) == comment &&
+                   OrderGetString(ORDER_SYMBOL) == m_symbol &&
+                   OrderGetInteger(ORDER_MAGIC) == m_magic_number)
+                {
+                    return true;
+                }
             }
         }
         return false;
     }
     
     //+------------------------------------------------------------------+
-    //| Get ATR Value (Simplified)                                      |
+    //| Get ATR Value (DEPRECATED - Use CATRCalculator instead)         |
     //+------------------------------------------------------------------+
     double GetATRValue()
     {
-        // Simplified ATR calculation - should integrate with CATRCalculator
+        // DEPRECATED: This function is kept for fallback compatibility only
+        // Prefer using m_atr_calculator.CalculateGridSpacing() for better accuracy
+        Print("⚠️ WARNING: Using deprecated GetATRValue() - Consider updating to use CATRCalculator");
+        
         double high[], low[], close[];
         ArraySetAsSeries(high, true);
         ArraySetAsSeries(low, true);

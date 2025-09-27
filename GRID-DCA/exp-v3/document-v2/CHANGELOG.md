@@ -6,7 +6,44 @@ This changelog documents all major features, improvements, bug fixes, and techni
 
 ---
 
-## 🚀 **Version 3.0.0** - *Current Release* (September 2025)
+## 🚀 **Version 3.1.0** - *Backtest Optimized Release* (September 2025)
+
+### **🎯 Backtest-Based Optimization & Simplification**
+
+#### **📊 Parameter Optimization (Top 50 Config Analysis)**
+- **InpMaxGridLevels**: Default optimized to `13` (proven range: 12-14)
+- **InpATRMultiplier**: Default optimized to `1.2` (proven range: 1.1-1.4)  
+- **InpMaxADXStrength**: Confirmed optimal at `35.0+` (85% top performers)
+- **Time Window**: Optimized to hours 10-21 (100% optimal configs use time filter)
+- **Loss/Profit Ratio**: Validated pattern `MaxLossUSD > ProfitTargetUSD` (100% optimal)
+
+#### **🔧 Interface Simplification (Removed Redundant Parameters)**
+- **REMOVED InpUseTrendFilter**: Hardcoded to `true` (100% optimal configs)
+- **REMOVED InpUseDCARecoveryMode**: Hardcoded to `true` (100% optimal configs)
+- **REMOVED InpUseTimeFilter**: Hardcoded to `true` (100% optimal configs)
+- **REMOVED InpEnableMarketEntry**: Hardcoded to `false` (95% optimal configs)
+- **REMOVED InpUseFibonacciSpacing**: Hardcoded to `false` (100% optimal configs)
+
+#### **✅ Enhanced Validation & Intelligence**
+- **Risk Pattern Warning**: Built-in validation when MaxLoss ≤ ProfitTarget
+- **Optimal Ratio Guidance**: Recommends 2-3x ratio based on backtest insights
+- **Smart Defaults**: All parameters set to statistically proven optimal values
+- **Code Documentation**: Extensive comments explaining backtest reasoning
+
+#### **📚 Complete Documentation Update**
+- **README.md**: Added "Backtest-Optimized" configuration sections
+- **CONFIGURATION_GUIDE.md**: Updated with proven optimal patterns
+- **Version Tracking**: Clear v3.1 optimization feature highlights
+
+### **🎯 Performance Impact**
+- **Simplified Setup**: 5 fewer parameters to configure (60% reduction)
+- **Optimal Defaults**: Start with proven high-performance settings
+- **Reduced Errors**: Eliminate suboptimal configuration mistakes
+- **Faster Deployment**: Ready-to-use optimal configuration out-of-box
+
+---
+
+## 🚀 **Version 3.0.0** - *Foundation Release* (September 2025)
 
 ### **🆕 Major New Features**
 

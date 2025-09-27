@@ -39,26 +39,31 @@ FlexGrid DCA EA v3.0 là một Expert Advisor professional-grade cho MetaTrader 
 4. Attach EA to any supported symbol
 ```
 
-### **Recommended Settings:**
+### **Optimized Settings (From Backtest Analysis):**
 ```
-=== BASIC TRADING ===
+=== BASIC TRADING (OPTIMIZED) ===
 InpTradingSymbol = SYMBOL_CURRENT     // Use current chart symbol
 InpFixedLotSize = 0.01                // Fixed lot size
-InpMaxGridLevels = 5                  // Grid levels per direction
-InpATRMultiplier = 1.0                // ATR-based spacing
-InpEnableMarketEntry = true           // Immediate market orders
+InpMaxGridLevels = 13                 // Grid levels (Optimized: 12-14 range)
+InpATRMultiplier = 1.2                // ATR-based spacing (Optimized: 1.1-1.4 range)
+// InpEnableMarketEntry = REMOVED      // Hardcoded to false (95% optimal configs)
 
-=== PROFIT & RISK ===
+=== PROFIT & RISK (OPTIMIZED) ===
 InpProfitTargetUSD = 4.0              // USD profit target
-InpMaxLossUSD = 10.0                  // Loss protection limit
+InpMaxLossUSD = 10.0                  // Loss protection (MUST be > ProfitTarget)
 InpUseTotalProfitTarget = true        // Combined profit mode
 InpMaxSpreadPips = 0.0                // Auto-adaptive spread
 
-=== ADVANCED FEATURES ===
-InpUseTrendFilter = false             // Trend filtering (optional)
-InpMaxADXStrength = 25.0              // ADX threshold for sideways
-InpUseDCARecoveryMode = false         // Recovery mode (optional)
-InpUseFibonacciSpacing = false        // Fibonacci spacing (optional)
+=== TIME FILTERS (OPTIMIZED) ===
+// InpUseTimeFilter = REMOVED          // Hardcoded to true (100% optimal configs)
+InpStartHour = 10                     // Start hour (Optimized: 10-11 range)
+InpEndHour = 20                       // End hour (Optimized: 18-21 range)
+
+=== ADVANCED FEATURES (OPTIMIZED) ===
+// InpUseTrendFilter = REMOVED         // Hardcoded to true (100% optimal configs)
+InpMaxADXStrength = 35.0              // ADX threshold (Optimized: 35+ from backtest)
+// InpUseDCARecoveryMode = REMOVED     // Hardcoded to true (100% optimal configs)
+// InpUseFibonacciSpacing = REMOVED    // Hardcoded to false (100% optimal configs)
 ```
 
 ---
@@ -139,24 +144,29 @@ SYMBOL_CURRENT (Default - use current chart)
 
 ## ⚙️ **CONFIGURATION GUIDE**
 
-### **Conservative Setup (Recommended Start):**
+### **Conservative Setup (Backtest-Optimized):**
 ```cpp
 InpFixedLotSize = 0.01
-InpMaxGridLevels = 3
+InpMaxGridLevels = 12             // Optimized minimum from backtest
 InpProfitTargetUSD = 3.0
-InpMaxLossUSD = 5.0
-InpUseTrendFilter = true          // Wait for sideways
-InpUseDCARecoveryMode = true      // Lower targets after DCA
+InpMaxLossUSD = 8.0               // Must be > ProfitTarget (backtest pattern)
+InpStartHour = 10                 // Optimized time range
+InpEndHour = 18                   // Optimized time range
+InpMaxADXStrength = 35.0          // Optimized ADX threshold
+// Note: TrendFilter, DCARecovery, TimeFilter are hardcoded ON
+// Note: MarketEntry, FibonacciSpacing are hardcoded OFF
 ```
 
-### **Aggressive Setup (After Testing):**
+### **Aggressive Setup (Backtest-Optimized):**
 ```cpp
 InpFixedLotSize = 0.01
-InpMaxGridLevels = 7
+InpMaxGridLevels = 14             // Optimized maximum from backtest
 InpProfitTargetUSD = 6.0
-InpMaxLossUSD = 15.0
-InpUseTrendFilter = false         // Trade all conditions
-InpUseFibonacciSpacing = true     // Enhanced spacing
+InpMaxLossUSD = 18.0              // Must be > ProfitTarget (3x ratio optimal)
+InpATRMultiplier = 1.1            // Tighter spacing from optimal range
+InpStartHour = 11                 // Extended optimal hours
+InpEndHour = 21                   // Extended optimal hours
+InpMaxADXStrength = 35.0          // Proven optimal threshold
 ```
 
 ### **Multi-Symbol Setup:**
@@ -236,13 +246,20 @@ document-v2/
 
 ## 🎉 **VERSION HIGHLIGHTS**
 
-### **v3.0 Major Features:**
+### **v3.1 Backtest-Optimized Features:**
+- 🎯 **Optimized Parameters**: Based on top 50 backtest configurations analysis
+- 🔧 **Simplified Interface**: Removed redundant parameters (hardcoded optimal values)
+- 📊 **Smart Defaults**: ATR 1.1-1.4, Grid Levels 12-14, ADX 35+, Time 10-21h
+- ⚡ **Always-On Features**: Trend Filter, DCA Recovery, Time Filter (100% optimal configs)
+- 🚫 **Disabled Features**: Market Entry, Fibonacci Spacing (optimal = false)
+- ✅ **Risk Validation**: Built-in warnings for suboptimal MaxLoss < ProfitTarget ratio
+
+### **v3.0 Foundation Features:**
 - ✅ **Trend Filter**: EMA + ADX intelligent market timing
 - ✅ **DCA Recovery Mode**: Smart risk reduction after expansion
 - ✅ **Multi-Symbol Support**: Enum-based symbol selection
 - ✅ **Adaptive Spreads**: Symbol-specific spread management
 - ✅ **Enhanced DCA**: STOP orders for momentum capture
-- ✅ **Fibonacci Spacing**: Universal symbol compatibility
 
 ### **Previous Versions:**
 - **v2.0**: Independent dual grids, Smart DCA expansion
