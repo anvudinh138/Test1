@@ -1,0 +1,178 @@
+//+------------------------------------------------------------------+
+//|                                                ATRCalculator.mqh |
+//|                                            Flex Grid DCA System |
+//|                                      Universal ATR Calculator    |
+//+------------------------------------------------------------------+
+#property copyright "Flex Grid DCA EA"
+#property version   "1.00"
+
+//+------------------------------------------------------------------+
+//| ATR Calculator Class - Universal for all symbols                 |
+//+------------------------------------------------------------------+
+class CATRCalculator
+{
+private:
+    string            m_symbol;
+    int               m_atr_handles[5];  // M1, M15, H1, H4, D1
+    ENUM_TIMEFRAMES   m_timeframes[5];
+    double            m_atr_values[5];
+    bool              m_initialized;
+    
+public:
+    //+------------------------------------------------------------------+
+    //| Constructor                                                      |
+    //+------------------------------------------------------------------+
+    CATRCalculator(void)
+    {
+        m_symbol = _Symbol;
+        m_timeframes[0] = PERIOD_M1;
+        m_timeframes[1] = PERIOD_M15; 
+        m_timeframes[2] = PERIOD_H1;
+        m_timeframes[3] = PERIOD_H4;
+        m_timeframes[4] = PERIOD_D1;
+        m_initialized = false;
+        ArrayInitialize(m_atr_values, 0.0);
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Destructor                                                       |
+    //+------------------------------------------------------------------+
+    ~CATRCalculator(void)
+    {
+        Cleanup();
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Initialize ATR handles for all timeframes                       |
+    //+------------------------------------------------------------------+
+    bool Initialize(string symbol = "")
+    {
+        if(symbol != "")
+            m_symbol = symbol;
+            
+        // Create ATR handles for all timeframes
+        for(int i = 0; i < 5; i++)
+        {
+            m_atr_handles[i] = iATR(m_symbol, m_timeframes[i], 14);
+            if(m_atr_handles[i] == INVALID_HANDLE)
+            {
+                Print("❌ Failed to create ATR handle for ", EnumToString(m_timeframes[i]));
+                return false;
+            }
+        }
+        
+        m_initialized = true;
+        Print("✅ ATR Calculator initialized for ", m_symbol);
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Update ATR values for all timeframes                            |
+    //+------------------------------------------------------------------+
+    bool UpdateATRValues()
+    {
+        if(!m_initialized) return false;
+        
+        for(int i = 0; i < 5; i++)
+        {
+            double atr_buffer[];
+            ArraySetAsSeries(atr_buffer, true);
+            
+            if(CopyBuffer(m_atr_handles[i], 0, 0, 1, atr_buffer) <= 0)
+            {
+                Print("❌ Failed to copy ATR buffer for ", EnumToString(m_timeframes[i]));
+                return false;
+            }
+            
+            m_atr_values[i] = atr_buffer[0];
+        }
+        
+        return true;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Get ATR value for specific timeframe                            |
+    //+------------------------------------------------------------------+
+    double GetATR(ENUM_TIMEFRAMES timeframe)
+    {
+        if(!UpdateATRValues()) return 0.0;
+        
+        for(int i = 0; i < 5; i++)
+        {
+            if(m_timeframes[i] == timeframe)
+                return m_atr_values[i];
+        }
+        
+        return 0.0;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Calculate grid spacing based on ATR                             |
+    //+------------------------------------------------------------------+
+    double CalculateGridSpacing(ENUM_TIMEFRAMES timeframe, double multiplier = 1.0)
+    {
+        double atr_value = GetATR(timeframe);
+        if(atr_value <= 0) return 0.0;
+        
+        return atr_value * multiplier;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Get multi-timeframe ATR analysis                                |
+    //+------------------------------------------------------------------+
+    string GetATRAnalysis()
+    {
+        if(!UpdateATRValues()) return "ATR Update Failed";
+        
+        string analysis = StringFormat("ATR Analysis for %s:\n", m_symbol);
+        analysis += StringFormat("M1: %.5f | M15: %.5f | H1: %.5f | H4: %.5f | D1: %.5f",
+                                m_atr_values[0], m_atr_values[1], m_atr_values[2], 
+                                m_atr_values[3], m_atr_values[4]);
+        
+        return analysis;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Calculate volatility state                                      |
+    //+------------------------------------------------------------------+
+    string GetVolatilityState()
+    {
+        double h1_atr = GetATR(PERIOD_H1);
+        double h4_atr = GetATR(PERIOD_H4);
+        
+        if(h1_atr <= 0 || h4_atr <= 0) return "Unknown";
+        
+        double volatility_ratio = h1_atr / h4_atr;
+        
+        if(volatility_ratio > 1.5)
+            return "High Volatility";
+        else if(volatility_ratio < 0.7)
+            return "Low Volatility";
+        else
+            return "Normal Volatility";
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Cleanup resources                                               |
+    //+------------------------------------------------------------------+
+    void Cleanup()
+    {
+        for(int i = 0; i < 5; i++)
+        {
+            if(m_atr_handles[i] != INVALID_HANDLE)
+            {
+                IndicatorRelease(m_atr_handles[i]);
+                m_atr_handles[i] = INVALID_HANDLE;
+            }
+        }
+        m_initialized = false;
+    }
+    
+    //+------------------------------------------------------------------+
+    //| Getters                                                         |
+    //+------------------------------------------------------------------+
+    bool IsInitialized() { return m_initialized; }
+    string GetSymbol() { return m_symbol; }
+};
+
+//+------------------------------------------------------------------+

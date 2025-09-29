@@ -37,6 +37,17 @@ private:
     
     // Testing mode
     bool                m_bypass_market_filters;
+
+    // Hedge options (v4)
+    bool                m_disable_dca;
+    bool                m_enable_oco;
+    int                 m_oco_cooldown_seconds;
+    bool                m_enable_adx_filter;
+    int                 m_adx_period;
+    double              m_adx_min;
+    double              m_min_atr_points;
+    int                 m_oco_arm_distance_points;
+    double              m_oco_profit_confirm_usd;
     
 public:
     //+------------------------------------------------------------------+
@@ -58,6 +69,17 @@ public:
         m_market_suitable = true;
         m_market_condition_reason = "";
         m_bypass_market_filters = false;
+
+        // Hedge defaults
+        m_disable_dca = true;
+        m_enable_oco = true;
+        m_oco_cooldown_seconds = 180;
+        m_enable_adx_filter = true;
+        m_adx_period = 14;
+        m_adx_min = 18.0;
+        m_min_atr_points = 100.0;
+        m_oco_arm_distance_points = 200;
+        m_oco_profit_confirm_usd = 0.0;
     }
     
     //+------------------------------------------------------------------+
@@ -83,6 +105,22 @@ public:
               " ATRMultiplier=", DoubleToString(m_default_atr_multiplier, 1));
         
         return true;
+    }
+
+    // v4: Set hedge options
+    void SetHedgeOptions(bool disable_dca, bool enable_oco, int oco_cooldown_seconds,
+                         bool enable_adx_filter, int adx_period, double adx_min, double min_atr_points,
+                         int oco_arm_distance_points, double oco_profit_confirm_usd)
+    {
+        m_disable_dca = disable_dca;
+        m_enable_oco = enable_oco;
+        m_oco_cooldown_seconds = oco_cooldown_seconds;
+        m_enable_adx_filter = enable_adx_filter;
+        m_adx_period = adx_period;
+        m_adx_min = adx_min;
+        m_min_atr_points = min_atr_points;
+        m_oco_arm_distance_points = oco_arm_distance_points;
+        m_oco_profit_confirm_usd = oco_profit_confirm_usd;
     }
     
     //+------------------------------------------------------------------+
@@ -142,7 +180,16 @@ public:
             settings.allocated_balance,
             m_default_trailing_atr_multiplier,  // Pass trailing ATR multiplier
             m_default_dca_lot_size,             // NEW: Pass DCA lot size
-            m_enable_trailing_stop              // NEW: Pass trailing stop enable
+            m_enable_trailing_stop,             // NEW: Pass trailing stop enable
+            m_disable_dca,                      // v4: disable DCA option
+            m_enable_oco,                       // v4: OCO enable
+            m_oco_cooldown_seconds,             // v4: OCO cooldown
+            m_enable_adx_filter,                // v4: ADX filter enable
+            m_adx_period,                       // v4: ADX period
+            m_adx_min,                          // v4: ADX threshold
+            m_min_atr_points,                   // v4: Min ATR points
+            m_oco_arm_distance_points,          // v4: OCO arm distance in points
+            m_oco_profit_confirm_usd            // v4: OCO profit confirm (USD)
         );
         
         if(new_lifecycle == NULL)

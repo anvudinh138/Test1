@@ -33,6 +33,17 @@ input double      InpTrailingStopATR = 2.0;          // Trailing Stop ATR Multip
 input double      InpDCALotSize = 0.02;              // DCA Lot Size (Default + 0.01)
 input int         InpLifecycleIntervalMinutes = 5;    // Minimum Interval Between Lifecycles (minutes) - Reduced for testing
 
+input group "=== HEDGE MODE OPTIONS (v4) ==="
+input bool        InpDisableDCA = true;              // Mode A: Pure momentum (disable DCA)
+input bool        InpEnableOCO = true;               // Enable OCO: cancel opposite side when first side triggers
+input int         InpOCOCooldownSeconds = 180;       // Cooldown to re-arm opposite side after flat
+input int         InpOCOArmDistancePoints = 200;     // Require price move from base before OCO triggers
+input double      InpOCOProfitConfirmUSD = 0.0;      // Require unrealized profit before OCO triggers (0=disable)
+input bool        InpEnableADXFilter = true;         // Enable ADX trend filter
+input int         InpADXPeriod = 14;                 // ADX period (H1)
+input double      InpADXMin = 18.0;                  // Minimum ADX to arm grid
+input double      InpMinATRPoints = 100.0;           // Minimum ATR(H1) in points to arm grid
+
 input group "=== JOB TRIGGERS ==="
 input bool        InpEnableTimeTrigger = true;        // Plan A: Time-based job creation
 input bool        InpEnableTrailingTrigger = false;   // Plan B: Create when trailing starts
@@ -92,6 +103,10 @@ int OnInit()
                                    InpDefaultGridLevels, InpDefaultLotSize, InpATRMultiplier, InpTrailingStopATR,
                                    InpDCALotSize, InpEnableTrailingStop);
     g_lifecycle_factory.SetBypassMarketFilters(InpBypassMarketFilters);
+    // Pass hedge options to lifecycles
+    g_lifecycle_factory.SetHedgeOptions(InpDisableDCA, InpEnableOCO, InpOCOCooldownSeconds,
+                                        InpEnableADXFilter, InpADXPeriod, InpADXMin, InpMinATRPoints,
+                                        InpOCOArmDistancePoints, InpOCOProfitConfirmUSD);
     
     // Initialize lifecycle array
     ArrayResize(g_lifecycles, 0);

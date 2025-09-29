@@ -1,0 +1,134 @@
+2025.09.28 18:42:05.315	login (build 5320)
+2025.09.28 18:42:05.590	12832 bytes of account info loaded
+2025.09.28 18:42:05.590	1478 bytes of tester parameters loaded
+2025.09.28 18:42:05.590	19652 bytes of input parameters loaded
+2025.09.28 18:42:05.591	2200 bytes of symbols list loaded (402 symbols)
+2025.09.28 18:42:05.592	expert file added: Experts\RECOVERY-GRID-DIRECTION\RecoveryGridEA.ex5. 58416 bytes loaded
+2025.09.28 18:42:05.661	4000 Mb available, 49 blocks set for ticks generating
+2025.09.28 18:42:05.661	initial deposit 500.00 USD, leverage 1:500
+2025.09.28 18:42:05.663	successfully initialized
+2025.09.28 18:42:05.663	60 Kb of total initialization data received
+2025.09.28 18:42:05.663	VirtualApple @ 2.50GHz, 16383 MB
+2025.09.28 18:42:05.703	EURUSD: symbol to be synchronized
+2025.09.28 18:42:05.705	EURUSD: symbol synchronized, 3800 bytes of symbol info received
+2025.09.28 18:42:05.710	EURUSD: history synchronization started
+2025.09.28 18:42:05.714	EURUSD: load 27 bytes of history data to synchronize in 0:00:00.001
+2025.09.28 18:42:05.714	EURUSD: history synchronized from 2021.01.03 to 2025.09.23
+2025.09.28 18:42:05.715	EURUSD: ticks synchronization started
+2025.09.28 18:42:05.715	EURUSD: load 34 bytes of tick data to synchronize in 0:00:00.000
+2025.09.28 18:42:05.715	EURUSD: history ticks synchronized from 2025.05.05 to 2025.09.22
+2025.09.28 18:42:05.785	EURUSD,M1: history cache allocated for 643478 bars and contains 520049 bars from 2024.01.01 22:05 to 2025.05.25 23:59
+2025.09.28 18:42:05.785	EURUSD,M1: history begins from 2024.01.01 22:05
+2025.09.28 18:42:05.797	EURUSD,M1 (Exness-MT5Trial17): generating based on real ticks
+2025.09.28 18:42:05.797	testing with execution delay 50 milliseconds
+2025.09.28 18:42:05.797	EURUSD,M1: testing of Experts\RECOVERY-GRID-DIRECTION\RecoveryGridEA.ex5 from 2025.05.26 00:00 to 2025.09.23 00:00 started with inputs:
+2025.09.28 18:42:05.797	  InpSpacingMode=1
+2025.09.28 18:42:05.797	  InpFixedSpacingPips=100
+2025.09.28 18:42:05.797	  InpAtrPeriod=14
+2025.09.28 18:42:05.797	  InpAtrTimeframe=1
+2025.09.28 18:42:05.797	  InpAtrMultiplier=1.2
+2025.09.28 18:42:05.797	  InpMinSpacingPips=5.0
+2025.09.28 18:42:05.797	  InpGridLevelsPerSide=5
+2025.09.28 18:42:05.797	  InpLotSize=0.01
+2025.09.28 18:42:05.797	  InpUseBasketTP=false
+2025.09.28 18:42:05.797	  InpBasketTP_UsdPerSide=2.0
+2025.09.28 18:42:05.797	  InpBasketTrailStart=1.0
+2025.09.28 18:42:05.797	  InpBasketTrailLock=0.5
+2025.09.28 18:42:05.797	  InpBasketBEAfter=0.7
+2025.09.28 18:42:05.797	  InpUsePartialTP=false
+2025.09.28 18:42:05.797	  InpPartialTP_Percent=50
+2025.09.28 18:42:05.797	  InpRescueUseLastGridBreak=true
+2025.09.28 18:42:05.797	  InpRescueOffsetRatio=0.2
+2025.09.28 18:42:05.797	  InpDDOpen_Usd=3.0
+2025.09.28 18:42:05.797	  InpDDReenter_Usd=2.0
+2025.09.28 18:42:05.797	  InpRescueCooldown_Sec=15
+2025.09.28 18:42:05.797	  InpMaxRescueCycles=3
+2025.09.28 18:42:05.797	  InpPortfolioTargetNet_Usd=0.0
+2025.09.28 18:42:05.797	  InpPortfolioStopLoss_Usd=50.0
+2025.09.28 18:42:05.797	  InpSymbolExposureCap_Lots=0.3
+2025.09.28 18:42:05.797	  InpPortfolioExposureCap_Lots=1.0
+2025.09.28 18:42:05.797	  InpOrderCooldown_Sec=3
+2025.09.28 18:42:05.797	  InpMaxSlippage_Points=10
+2025.09.28 18:42:05.797	  InpCancelStaleOrdersAfter_Sec=60
+2025.09.28 18:42:05.797	  InpRespectStopsLevel=true
+2025.09.28 18:42:05.797	  InpDebug=true
+2025.09.28 18:42:05.797	  InpStatusLogInterval_Sec=30
+2025.09.28 18:42:05.797	  InpEventLogs=true
+2025.09.28 18:42:05.797	  InpStartDirection=0
+2025.09.28 18:42:05.797	  InpMagic=880011
+2025.09.28 18:42:05.797	  InpAutoRestart=true
+2025.09.28 18:42:05.797	  InpUseEMAStart=false
+2025.09.28 18:42:05.797	  InpEMAPeriod=200
+2025.09.28 18:42:05.797	  InpEMATimeframe=1
+2025.09.28 18:42:05.838	EURUSD : 2025.05.26 23:59 - real ticks absent for 561 minutes out of 1440 total minute bars within a day
+2025.09.28 18:42:05.841	EURUSD : 2025.05.27 23:59 - no real ticks within a day
+2025.09.28 18:42:05.849	EURUSD : 2025.05.28 23:59 - real ticks absent for 764 minutes out of 1439 total minute bars within a day
+2025.09.28 18:42:06.255	EURUSD : real ticks begin from 2025.05.05 00:00:00
+2025.09.28 18:42:06.255	EURUSD : 2025.05.26 00:00 - 2025.09.23 00:00  real ticks absent for 2765 minutes of 123696 total minute bars, every tick generation used
+2025.09.28 18:42:06.255	EURUSD : 2025.05.26 00:00 - 2025.09.23 00:00  real ticks absent for 1 whole days
+2025.09.28 18:42:06.266	2025.05.26 00:00:00   market sell 0.01 EURUSD (1.13742 / 1.13756)
+2025.09.28 18:42:06.267	2025.05.26 00:00:00   deal #2 sell 0.01 EURUSD at 1.13742 done (based on order #2)
+2025.09.28 18:42:06.267	2025.05.26 00:00:00   deal performed [#2 sell 0.01 EURUSD at 1.13742]
+2025.09.28 18:42:06.267	2025.05.26 00:00:00   order performed sell 0.01 at 1.13742 [#2 sell 0.01 EURUSD at 1.13742]
+2025.09.28 18:42:06.270	2025.05.26 00:00:00   CTrade::OrderSend: market sell 0.01 EURUSD [done at 1.13742]
+2025.09.28 18:42:06.271	2025.05.26 00:00:00   sell limit 0.01 EURUSD at 1.13792 (1.13742 / 1.13756)
+2025.09.28 18:42:06.272	2025.05.26 00:00:00   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.13792 [done]
+2025.09.28 18:42:06.272	2025.05.26 00:00:00   sell limit 0.01 EURUSD at 1.13842 (1.13742 / 1.13756)
+2025.09.28 18:42:06.273	2025.05.26 00:00:00   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.13842 [done]
+2025.09.28 18:42:06.273	2025.05.26 00:00:00   sell limit 0.01 EURUSD at 1.13892 (1.13742 / 1.13756)
+2025.09.28 18:42:06.275	2025.05.26 00:00:00   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.13892 [done]
+2025.09.28 18:42:06.275	2025.05.26 00:00:00   sell limit 0.01 EURUSD at 1.13942 (1.13742 / 1.13756)
+2025.09.28 18:42:06.276	2025.05.26 00:00:00   CTrade::OrderSend: sell limit 0.01 EURUSD at 1.13942 [done]
+2025.09.28 18:42:06.276	2025.05.26 00:00:00   [GRID][EURUSD][SELL] Init grid N=5 spacing=5.0 pips (LIMIT)
+2025.09.28 18:42:06.276	2025.05.26 00:00:00   [LC][EURUSD] Init A SELL
+2025.09.28 18:42:06.596	2025.05.26 00:01:00   order [#3 sell limit 0.01 EURUSD at 1.13792] triggered
+2025.09.28 18:42:06.596	2025.05.26 00:01:00   deal #3 sell 0.01 EURUSD at 1.13792 done (based on order #3)
+2025.09.28 18:42:06.596	2025.05.26 00:01:00   deal performed [#3 sell 0.01 EURUSD at 1.13792]
+2025.09.28 18:42:06.596	2025.05.26 00:01:00   order performed sell 0.01 at 1.13792 [#3 sell limit 0.01 EURUSD at 1.13792]
+2025.09.28 18:42:09.757	2025.05.26 00:16:40   order [#4 sell limit 0.01 EURUSD at 1.13842] triggered
+2025.09.28 18:42:09.757	2025.05.26 00:16:40   deal #4 sell 0.01 EURUSD at 1.13842 done (based on order #4)
+2025.09.28 18:42:09.757	2025.05.26 00:16:40   deal performed [#4 sell 0.01 EURUSD at 1.13842]
+2025.09.28 18:42:09.757	2025.05.26 00:16:40   order performed sell 0.01 at 1.13842 [#4 sell limit 0.01 EURUSD at 1.13842]
+2025.09.28 18:42:12.389	2025.05.26 00:21:53   market buy 0.01 EURUSD (1.13883 / 1.13894)
+2025.09.28 18:42:12.389	2025.05.26 00:21:53   deal #5 buy 0.01 EURUSD at 1.13894 done (based on order #7)
+2025.09.28 18:42:12.390	2025.05.26 00:21:53   deal performed [#5 buy 0.01 EURUSD at 1.13894]
+2025.09.28 18:42:12.390	2025.05.26 00:21:53   order performed buy 0.01 at 1.13894 [#7 buy 0.01 EURUSD at 1.13894]
+2025.09.28 18:42:12.391	2025.05.26 00:21:53   CTrade::OrderSend: market buy 0.01 EURUSD [done at 1.13894]
+2025.09.28 18:42:12.391	2025.05.26 00:21:53   buy stop 0.01 EURUSD at 1.13944 (1.13883 / 1.13894)
+2025.09.28 18:42:12.392	2025.05.26 00:21:53   CTrade::OrderSend: buy stop 0.01 EURUSD at 1.13944 [done]
+2025.09.28 18:42:12.392	2025.05.26 00:21:53   buy stop 0.01 EURUSD at 1.13994 (1.13883 / 1.13894)
+2025.09.28 18:42:12.394	2025.05.26 00:21:53   CTrade::OrderSend: buy stop 0.01 EURUSD at 1.13994 [done]
+2025.09.28 18:42:12.394	2025.05.26 00:21:53   buy stop 0.01 EURUSD at 1.14044 (1.13883 / 1.13894)
+2025.09.28 18:42:12.395	2025.05.26 00:21:53   CTrade::OrderSend: buy stop 0.01 EURUSD at 1.14044 [done]
+2025.09.28 18:42:12.395	2025.05.26 00:21:53   buy stop 0.01 EURUSD at 1.14094 (1.13883 / 1.13894)
+2025.09.28 18:42:12.396	2025.05.26 00:21:53   CTrade::OrderSend: buy stop 0.01 EURUSD at 1.14094 [done]
+2025.09.28 18:42:12.396	2025.05.26 00:21:53   [GRID][EURUSD][BUY] Init grid N=5 spacing=5.0 pips (STOP)
+2025.09.28 18:42:12.396	2025.05.26 00:21:53   [LC][EURUSD] Opened rescue B
+2025.09.28 18:42:13.457	2025.05.26 00:27:47   order [#5 sell limit 0.01 EURUSD at 1.13892] triggered
+2025.09.28 18:42:13.457	2025.05.26 00:27:47   deal #6 sell 0.01 EURUSD at 1.13894 done (based on order #5)
+2025.09.28 18:42:13.457	2025.05.26 00:27:47   deal performed [#6 sell 0.01 EURUSD at 1.13894]
+2025.09.28 18:42:13.457	2025.05.26 00:27:47   order performed sell 0.01 at 1.13894 [#5 sell limit 0.01 EURUSD at 1.13892]
+2025.09.28 18:42:13.940	2025.05.26 00:30:02   order [#8 buy stop 0.01 EURUSD at 1.13944] triggered
+2025.09.28 18:42:13.940	2025.05.26 00:30:02   deal #7 buy 0.01 EURUSD at 1.13944 done (based on order #8)
+2025.09.28 18:42:13.940	2025.05.26 00:30:02   deal performed [#7 buy 0.01 EURUSD at 1.13944]
+2025.09.28 18:42:13.940	2025.05.26 00:30:02   order performed buy 0.01 at 1.13944 [#8 buy stop 0.01 EURUSD at 1.13944]
+2025.09.28 18:42:13.975	2025.05.26 00:30:12   order [#6 sell limit 0.01 EURUSD at 1.13942] triggered
+2025.09.28 18:42:13.975	2025.05.26 00:30:12   deal #8 sell 0.01 EURUSD at 1.13943 done (based on order #6)
+2025.09.28 18:42:13.975	2025.05.26 00:30:12   deal performed [#8 sell 0.01 EURUSD at 1.13943]
+2025.09.28 18:42:13.975	2025.05.26 00:30:12   order performed sell 0.01 at 1.13943 [#6 sell limit 0.01 EURUSD at 1.13942]
+2025.09.28 18:42:19.504	2025.05.26 01:01:59   market sell 0.01 EURUSD, close #7 (1.13946 / 1.13958)
+2025.09.28 18:42:19.504	2025.05.26 01:01:59   deal #9 sell 0.01 EURUSD at 1.13946 done (based on order #12)
+2025.09.28 18:42:19.504	2025.05.26 01:01:59   deal performed [#9 sell 0.01 EURUSD at 1.13946]
+2025.09.28 18:42:19.504	2025.05.26 01:01:59   order performed sell 0.01 at 1.13946 [#12 sell 0.01 EURUSD at 1.13946]
+2025.09.28 18:42:19.506	2025.05.26 01:01:59   CTrade::OrderSend: market sell 0.01 position #7 EURUSD [done at 1.13946]
+2025.09.28 18:42:19.506	2025.05.26 01:01:59   order canceled [#9 buy stop 0.01 EURUSD at 1.13994]
+2025.09.28 18:42:19.508	2025.05.26 01:01:59   CTrade::OrderSend: cancel #9 [done]
+2025.09.28 18:42:19.508	2025.05.26 01:01:59   order canceled [#11 buy stop 0.01 EURUSD at 1.14094]
+2025.09.28 18:42:19.509	2025.05.26 01:01:59   CTrade::OrderSend: cancel #11 [done]
+2025.09.28 18:42:19.511	2025.05.26 01:01:59   market sell 0.01 EURUSD, close #8 (1.13946 / 1.13959)
+2025.09.28 18:42:19.511	2025.05.26 01:01:59   deal #10 sell 0.01 EURUSD at 1.13946 done (based on order #13)
+2025.09.28 18:42:19.511	2025.05.26 01:01:59   deal performed [#10 sell 0.01 EURUSD at 1.13946]
+2025.09.28 18:42:19.511	2025.05.26 01:01:59   order performed sell 0.01 at 1.13946 [#13 sell 0.01 EURUSD at 1.13946]
+2025.09.28 18:42:19.512	2025.05.26 01:01:59   CTrade::OrderSend: market sell 0.01 position #8 EURUSD [done at 1.13946]
+2025.09.28 18:42:19.512	2025.05.26 01:01:59   order canceled [#10 buy stop 0.01 EURUSD at 1.14044]
+2025.09.28 18:42:19.514	2025.05.26 01:01:59   CTrade::OrderSend: cancel #10 [done]

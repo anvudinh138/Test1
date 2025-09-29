@@ -1,0 +1,196 @@
+ví dụ mình có grid sell thua tới 40 grid , nhưng mình sẽ tính toán , gôm 3-4 lệnh gần nhất mà lãi thì clear bớt vài entry grid dc ko
+ChatGPT said:
+Thought for 1m 5s
+
+Được chứ—đó chính là “peel off / shave winners”: khi rổ SELL đang thua nặng, gặp nhịp hồi làm một vài lệnh SELL gần giá đang có lãi, ta gom 3–4 lệnh có lãi rồi đóng để:
+
+giảm exposure/margin,
+
+khóa profit đã có,
+
+và (nếu chọn đúng lệnh) còn kéo average của phần còn lại theo hướng có lợi.
+
+Nhưng làm bừa sẽ phản tác dụng: đóng sai lệnh có thể làm TP gộp đi xa hơn và khiến phần còn lại khó thoát. Vì vậy cần rule chọn lệnh + điều kiện chấp nhận rõ ràng.
+
+1) Nguyên tắc chọn lệnh để “gôm”
+
+Ví dụ nói cho SELL (BUY làm ngược lại).
+
+Lệnh SELL có lãi khi entry > price.
+
+Muốn avg của phần còn lại tăng (tốt cho SELL vì avg càng cao càng gần giá hiện tại), ta ưu tiên đóng các lệnh có entry ≤ avg của rổ.
+
+Đóng lệnh SELL có entry < avg ⇒ avg của phần còn lại tăng.
+
+Đóng lệnh SELL có entry > avg ⇒ avg còn lại giảm (xấu).
+
+Chỉ xét các lệnh đang dương và gần giá (ví dụ “3–4 lệnh gần nhất”), để:
+
+giảm impact lên avg/TP,
+
+tăng khả năng lệnh đó thực sự dương khi hồi nhẹ.
+
+TL;DR: chọn các lệnh SELL đang dương và có entry ≤ avg là tốt nhất. Nếu không đủ lệnh thỏa điều kiện này, bỏ qua (đừng gôm).
+
+2) Điều kiện chấp nhận (trước khi thực sự đóng)
+
+Giả sử rổ hiện tại:
+
+tổng lot T, avg A, target chu kỳ (BE+δ) còn lại δ (đã trừ lãi hedge trước đó), tp_price hiện tại TP, và khoảng cách đến TP (tính theo point) là Dist = |price - TP|/_Point.
+
+Ta chọn tập ứng viên S gồm 1..4 lệnh đang dương; tổng lot s, avg a_s, lợi nhuận thực thu nếu đóng R.
+
+Sau khi “giả đóng” S:
+
+T' = T - s
+
+A' = (T*A - s*a_s) / T'
+
+δ' = max(0, δ - R) (lợi nhuận peel-off được trừ vào mục tiêu chu kỳ còn lại)
+
+TP' = A' - δ'/(pv*T') (pv = $/point/lot × lot)
+
+Dist' = |price - TP'|/_Point
+
+Chỉ chấp nhận nếu đồng thời thỏa:
+
+Dist' ≤ Dist * (1 + max_worsen_pct)
+(không làm TP xa hơn quá X%, khuyên max_worsen_pct = 0…10%).
+
+T' ≤ T - min_drop_lot hoặc R ≥ min_realized_usd
+(giảm exposure đáng kể hoặc khóa được số lãi tối thiểu).
+
+deposit_load_after ≤ cap% nếu bạn có theo dõi deposit load.
+
+Nếu ok ⇒ đóng thật các lệnh trong S, ghi R vào ledger và gọi ReduceTargetBy(R) cho rổ còn lại.
+
+3) Thuật toán chọn “3–4 lệnh gần nhất” (thực dụng, nhanh)
+
+Lọc danh sách lệnh dương của SELL: PnL_i > min_pnl_usd (vd. $0.10).
+
+Chia 2 nhóm theo entry ≤ A và entry > A. Ưu tiên nhóm 1.
+
+Sắp xếp theo |entry - price| tăng dần (gần giá trước).
+
+Xét lần lượt các cụm liên tiếp kích thước 1 → 4, chạy hàm mô phỏng (phần 2) để tính Dist', R, T'.
+
+Chọn cụm tốt nhất theo tiêu chí:
+
+minimize Dist' (ưu tiên không làm TP xấu đi),
+
+tie-break bằng maximize R / minimize T'.
+
+Nếu không cụm nào qua được điều kiện chấp nhận → bỏ qua (không peel).
+
+4) MQL5-style snippet (có thể đặt trong CGridBasket)
+struct PeelDecision {
+   bool accept;
+   double realized;
+   double dist_before, dist_after;
+   double T_before, T_after;
+   ulong ticket_ids[8];
+   int   count;
+};
+
+PeelDecision CGridBasket::TryPeelWinners(int k_max, double max_worsen_pct,
+                                         double min_realized_usd, double min_drop_lot)
+{
+   PeelDecision best={false,0};
+   // 1) Thu các lệnh dương
+   array<OrderInfo> pos = CollectPositiveOrders(); // chỉ SELL dương
+   if(pos.size()==0) return best;
+
+   // 2) Ưu tiên entry ≤ avg
+   auto good = Filter(pos, [](o){ return o.entry <= m_avg_price; });
+   if(good.size()<1) return best; // không phù hợp -> thôi
+
+   // 3) sort theo gần giá
+   SortBy(good, [](a,b){ return fabs(a.entry-PriceNow()) < fabs(b.entry-PriceNow()); });
+
+   // 4) thử các cụm 1..k_max liên tiếp
+   for(int k=1; k<=k_max && k<=good.size(); ++k){
+       for(int i=0; i+k<=good.size(); ++i){
+           auto S = Slice(good, i, k);
+
+           // --- mô phỏng ---
+           double s=0, r=0, a_s=0;
+           for(auto &o: S){ s += o.lot; r += o.unrealized_pnl; a_s += o.lot*o.entry; }
+           a_s /= s;
+
+           double Tp = m_total_lot;
+           double Ap = m_avg_price;
+           double Dist = DistToTPPoints(); // trước khi peel
+
+           double Tn = Tp - s;
+           if(Tn <= 0) continue;
+           double An = (Tp*Ap - s*a_s)/Tn;
+
+           double delta_usd = EffectiveTargetUsd() - r;
+           if(delta_usd < 0) delta_usd = 0;
+
+           double pv = PipValuePerLot(m_symbol) * Tn; // $/point cho phần còn lại
+           double d_points = (pv>0) ? (delta_usd/pv) : 0;
+           double TPn = (m_direction==DIR_SELL) ? (An - d_points*_Point)
+                                                : (An + d_points*_Point);
+
+           double DistAfter = fabs(PriceNow()-TPn)/_Point;
+
+           bool ok = (DistAfter <= Dist * (1.0 + max_worsen_pct))
+                     && ( (Tp - Tn) >= min_drop_lot || r >= min_realized_usd );
+
+           if(ok){
+               // chọn tốt nhất
+               if(!best.accept || DistAfter < best.dist_after){
+                   best.accept=true;
+                   best.realized=r;
+                   best.dist_before=Dist;
+                   best.dist_after=DistAfter;
+                   best.T_before=Tp;
+                   best.T_after=Tn;
+                   best.count=k;
+                   for(int j=0;j<k;++j) best.ticket_ids[j]=S[j].ticket;
+               }
+           }
+       }
+   }
+   return best;
+}
+
+void CGridBasket::ApplyPeel(const PeelDecision &d){
+   if(!d.accept) return;
+   // đóng các ticket trong d.ticket_ids[0..d.count-1]
+   for(int i=0;i<d.count;++i) m_executor->CloseTicket(d.ticket_ids[i]);
+   ReduceTargetBy(d.realized);     // công thêm lãi peel vào giảm δ
+   RecomputeAveragesAndTP();       // cập nhật lại avg, TP, Dist
+}
+
+
+Triển khai thực tế: CollectPositiveOrders() lấy positions theo symbol+magic, lọc dir==SELL && pnl>0. Hàm PipValuePerLot, DistToTPPoints() bạn đã có sẵn trong basket.
+
+5) Khi nào nên peel? (trigger)
+
+Khi đang retrace (giá chạy về phía có lợi) và có ≥1 lệnh dương thỏa điều kiện.
+
+Khi deposit load cao → ưu tiên giảm lot.
+
+Trước giờ cuối phiên (rollover/news) để “nhẹ hàng” qua đêm.
+
+Không peel nếu Dist’ sẽ xấu đi quá ngưỡng hoặc trend vẫn mạnh (đang bật kill-switch).
+
+6) Tương quan với chiến thuật gốc
+
+Chiến thuật gốc dùng hedge để kéo TP rổ thua.
+
+Peel winners là bổ sung: hạ exposure và thậm chí cải thiện avg nếu chọn đúng lệnh (entry ≤ avg).
+
+Nếu chọn nhầm (đóng các lệnh SELL có entry rất cao > avg), bạn sẽ kéo avg xuống → TP xa hơn — tránh nhé.
+
+7) Tham số gợi ý
+
+k_max = 3..4
+
+min_realized_usd = 0.5..2.0 (tuỳ symbol)
+
+min_drop_lot = 0.1..0.3
+
+max_worsen_pct = 0.0..0.1 (tốt nhất 0)

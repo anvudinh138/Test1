@@ -108,6 +108,42 @@ public:
     {
         // Note: Don't delete m_atr_calculator as it's managed externally
     }
+
+    // v4: Activate/Deactivate placing orders for a direction
+    void SetDirectionActive(GRID_DIRECTION direction, bool active)
+    {
+        if(direction == GRID_DIRECTION_BUY)
+            m_buy_grid.is_active = active;
+        else
+            m_sell_grid.is_active = active;
+    }
+
+    // v4: Cancel pending orders of a direction for this job
+    void CancelPendingOrders(GRID_DIRECTION direction)
+    {
+        string job_prefix = StringFormat("J%d_", m_job_id);
+        for(int i = OrdersTotal() - 1; i >= 0; i--)
+        {
+            ulong ticket = OrderGetTicket(i);
+            if(OrderSelect(ticket))
+            {
+                if(OrderGetString(ORDER_SYMBOL) != m_symbol)
+                    continue;
+                string comment = OrderGetString(ORDER_COMMENT);
+                if(StringFind(comment, job_prefix) < 0)
+                    continue;
+                ENUM_ORDER_TYPE ot = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+                bool match = (
+                    (direction == GRID_DIRECTION_BUY && (ot == ORDER_TYPE_BUY_LIMIT || ot == ORDER_TYPE_BUY_STOP)) ||
+                    (direction == GRID_DIRECTION_SELL && (ot == ORDER_TYPE_SELL_LIMIT || ot == ORDER_TYPE_SELL_STOP))
+                );
+                if(match)
+                {
+                    m_trade.OrderDelete(ticket);
+                }
+            }
+        }
+    }
     
     //+------------------------------------------------------------------+
     //| Initialize Grid Manager                                         |
@@ -210,8 +246,8 @@ public:
             // Setup grid levels
             for(int i = 0; i < m_max_grid_levels; i++)
             {
-                // BUY levels below current price
-                double level_price = base_price - (spacing * (i + 1));
+                // HEDGE GRID: BUY STOP levels above current price
+                double level_price = base_price + (spacing * (i + 1));
                 
                 // Initialize level
                 m_buy_grid.levels[i].price = level_price;
@@ -238,8 +274,8 @@ public:
             // Setup grid levels
             for(int i = 0; i < m_max_grid_levels; i++)
             {
-                // SELL levels above current price
-                double level_price = base_price + (spacing * (i + 1));
+                // HEDGE GRID: SELL STOP levels below current price
+                double level_price = base_price - (spacing * (i + 1));
                 
                 // Initialize level
                 m_sell_grid.levels[i].price = level_price;
@@ -317,18 +353,10 @@ public:
                     if(PendingOrderExists(m_buy_grid.levels[i].price, direction))
                         continue;
                     
-                    // 🎯 SMART ORDER TYPE: DCA levels use STOP orders, normal levels use LIMIT orders
+                    // 🎯 HEDGE GRID: Use STOP orders for both normal and DCA levels
                     ulong ticket = 0;
-                    if(m_buy_grid.levels[i].is_dca_level)
-                    {
-                        // DCA rescue: Place BUY STOP above current price
-                        ticket = PlaceStopOrder(direction, m_buy_grid.levels[i].price, m_buy_grid.levels[i].lot_size);
-                    }
-                    else
-                    {
-                        // Normal grid: Place BUY LIMIT below current price
-                        ticket = PlaceLimitOrder(direction, m_buy_grid.levels[i].price, m_buy_grid.levels[i].lot_size);
-                    }
+                    // Pass is_dca flag for proper labeling
+                    ticket = PlaceStopOrder(direction, m_buy_grid.levels[i].price, m_buy_grid.levels[i].lot_size, m_buy_grid.levels[i].is_dca_level);
                     
                     if(ticket > 0)
                     {
@@ -353,18 +381,10 @@ public:
                     if(PendingOrderExists(m_sell_grid.levels[i].price, direction))
                         continue;
                     
-                    // 🎯 SMART ORDER TYPE: DCA levels use STOP orders, normal levels use LIMIT orders
+                    // 🎯 HEDGE GRID: Use STOP orders for both normal and DCA levels
                     ulong ticket = 0;
-                    if(m_sell_grid.levels[i].is_dca_level)
-                    {
-                        // DCA rescue: Place SELL STOP below current price
-                        ticket = PlaceStopOrder(direction, m_sell_grid.levels[i].price, m_sell_grid.levels[i].lot_size);
-                    }
-                    else
-                    {
-                        // Normal grid: Place SELL LIMIT above current price
-                        ticket = PlaceLimitOrder(direction, m_sell_grid.levels[i].price, m_sell_grid.levels[i].lot_size);
-                    }
+                    // Pass is_dca flag for proper labeling
+                    ticket = PlaceStopOrder(direction, m_sell_grid.levels[i].price, m_sell_grid.levels[i].lot_size, m_sell_grid.levels[i].is_dca_level);
                     
                     if(ticket > 0)
                     {
@@ -469,7 +489,7 @@ public:
     //+------------------------------------------------------------------+
     //| Place Stop Order (for DCA rescue)                             |
     //+------------------------------------------------------------------+
-    ulong PlaceStopOrder(GRID_DIRECTION direction, double price, double lot_size)
+    ulong PlaceStopOrder(GRID_DIRECTION direction, double price, double lot_size, bool is_dca)
     {
         // 🚨 CRITICAL: Validate price for STOP orders
         double current_price = (direction == GRID_DIRECTION_BUY) ? 
@@ -522,10 +542,11 @@ public:
         // Normalize price to symbol digits
         price = NormalizeDouble(price, _Digits);
         
-        string comment = StringFormat("J%d_DCA_%s_L%d", 
-                                     m_job_id, 
-                                    (direction == GRID_DIRECTION_BUY) ? "BUY_STOP" : "SELL_STOP",
-                                    (int)(MathRand() % 1000));
+        string comment = StringFormat("J%d_%s_%s_L%d", 
+                                     m_job_id,
+                                     (is_dca ? "DCA" : "Grid"),
+                                     (direction == GRID_DIRECTION_BUY) ? "BUY_STOP" : "SELL_STOP",
+                                     (int)(MathRand() % 1000));
         
         // Job ID verification - debug logging removed
         
@@ -572,8 +593,11 @@ public:
                     double order_price = OrderGetDouble(ORDER_PRICE_OPEN);
                     ENUM_ORDER_TYPE order_type = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
                     
-                    bool is_same_direction = ((direction == GRID_DIRECTION_BUY && order_type == ORDER_TYPE_BUY_LIMIT) ||
-                                            (direction == GRID_DIRECTION_SELL && order_type == ORDER_TYPE_SELL_LIMIT));
+                    // Consider both LIMIT and STOP types for the same direction
+                    bool is_same_direction = (
+                        (direction == GRID_DIRECTION_BUY && (order_type == ORDER_TYPE_BUY_LIMIT || order_type == ORDER_TYPE_BUY_STOP)) ||
+                        (direction == GRID_DIRECTION_SELL && (order_type == ORDER_TYPE_SELL_LIMIT || order_type == ORDER_TYPE_SELL_STOP))
+                    );
                     
                     if(is_same_direction && MathAbs(order_price - price) < SymbolInfoDouble(m_symbol, SYMBOL_POINT) * 5)
                     {
@@ -907,6 +931,7 @@ public:
     double GetSellGridProfit() { return m_sell_grid.total_profit; }
     double GetTotalProfit() { return m_buy_grid.total_profit + m_sell_grid.total_profit; }
     int GetMaxGridLevels() { return m_max_grid_levels; } // NEW: Get max grid levels
+    double GetBasePrice() { return (m_buy_grid.base_price>0.0 ? m_buy_grid.base_price : m_sell_grid.base_price); }
 };
 
 //+------------------------------------------------------------------+
