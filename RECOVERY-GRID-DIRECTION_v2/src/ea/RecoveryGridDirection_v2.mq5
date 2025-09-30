@@ -14,6 +14,9 @@
 #include <RECOVERY-GRID-DIRECTION_v2/core/LifecycleController.mqh>
 
 //--- Inputs
+input int               InpStatusInterval   = 60;
+input bool              InpLogEvents        = true;
+
 input ENUM_TIMEFRAMES InpAtrTimeframe       = PERIOD_M15;
 input int             InpAtrPeriod          = 14;
 
@@ -49,22 +52,6 @@ input bool              InpRespectStops     = true;
 
 input double            InpCommissionPerLot = 7.0;
 input long              InpMagic            = 990045;
-
-input bool              InpRescueTrendFilter   = true;
-input double            InpTrendKAtr         = 3.0;
-input double            InpTrendSlopeThreshold = 0.0008;
-input int               InpTrendSlopeLookback = 5;
-input int               InpTrendEmaPeriod    = 200;
-input ENUM_TIMEFRAMES   InpTrendEmaTimeframe = PERIOD_M15;
-input double            InpTPDistance_Z_ATR  = 2.5;
-input double            InpTPWeakenUsd       = 1.0;
-input double            InpSessionTrailingDD_USD = 0.0;
-input bool              InpTradingCutoffEnabled = false;
-input int               InpCutoffHour        = 21;
-input int               InpCutoffMinute      = 30;
-input bool              InpFridayFlattenEnabled = true;
-input int               InpFridayFlattenHour = 21;
-input int               InpFridayFlattenMinute = 0;
 
 //--- Globals
 SParams              g_params;
@@ -133,21 +120,6 @@ void BuildParams()
    g_params.max_cycles_per_side=InpMaxCyclesPerSide;
    g_params.session_sl_usd     =InpSessionSL_USD;
    g_params.cooldown_bars      =InpCooldownBars;
-   g_params.session_trailing_dd_usd = InpSessionTrailingDD_USD;
-   g_params.rescue_trend_filter = InpRescueTrendFilter;
-   g_params.trend_k_atr        = InpTrendKAtr;
-   g_params.trend_slope_threshold = InpTrendSlopeThreshold;
-   g_params.trend_slope_lookback = InpTrendSlopeLookback;
-   g_params.trend_ema_period   = InpTrendEmaPeriod;
-   g_params.trend_ema_timeframe= InpTrendEmaTimeframe;
-   g_params.tp_distance_z_atr  = InpTPDistance_Z_ATR;
-   g_params.tp_weaken_usd      = InpTPWeakenUsd;
-   g_params.trading_time_filter_enabled = InpTradingCutoffEnabled;
-   g_params.cutoff_hour        = InpCutoffHour;
-   g_params.cutoff_minute      = InpCutoffMinute;
-   g_params.friday_flatten_enabled = InpFridayFlattenEnabled;
-   g_params.friday_flatten_hour= InpFridayFlattenHour;
-   g_params.friday_flatten_minute= InpFridayFlattenMinute;
 
    g_params.slippage_pips      =InpSlippagePips;
    g_params.order_cooldown_sec =InpOrderCooldownSec;

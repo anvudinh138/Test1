@@ -37,21 +37,8 @@ struct SParams
    double       offset_ratio;
    double       exposure_cap_lots;
    int          max_cycles_per_side;
-   double       session_trailing_dd_usd;
-   bool         rescue_trend_filter;
-   double       trend_k_atr;
-   double       trend_slope_threshold;
-   int          trend_slope_lookback;
-   int          trend_ema_period;
-   ENUM_TIMEFRAMES trend_ema_timeframe;
-   double       tp_distance_z_atr;
-   double       tp_weaken_usd;
-   bool         trading_time_filter_enabled;
-   int          cutoff_hour;
-   int          cutoff_minute;
-   bool         friday_flatten_enabled;
-   int          friday_flatten_hour;
-   int          friday_flatten_minute;
+   double       session_sl_usd;
+   int          cooldown_bars;
 
    // execution
    int          slippage_pips;

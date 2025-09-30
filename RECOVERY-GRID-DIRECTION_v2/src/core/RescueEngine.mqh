@@ -61,15 +61,8 @@ public:
                          const double last_grid_price,
                          const double spacing_px,
                          const double current_price,
-                         const double loser_dd_usd,
-                         const bool trend_blocked) const
+                         const double loser_dd_usd) const
      {
-      if(trend_blocked && m_params.rescue_trend_filter)
-        {
-         if(m_log!=NULL)
-            m_log.Status(Tag(),"Trend filter blocked rescue");
-         return false;
-        }
       bool breach=BreachLastGrid(loser_dir,last_grid_price,spacing_px,current_price);
       bool dd=(loser_dd_usd>=m_params.dd_open_usd);
       return breach || dd;

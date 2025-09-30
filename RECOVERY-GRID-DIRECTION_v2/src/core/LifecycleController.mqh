@@ -29,7 +29,6 @@ private:
    CGridBasket      *m_buy;
    CGridBasket      *m_sell;
    bool              m_halted;
-   int               m_trend_handle;
 
    string            Tag() const { return StringFormat("[RGDv2][%s][LC]",m_symbol); }
 
@@ -121,87 +120,6 @@ private:
       return false;
      }
 
-   bool              TradingWindowOpen(const datetime now) const
-     {
-      if(!m_params.trading_time_filter_enabled)
-         return true;
-      int hour=TimeHour(now);
-      int minute=TimeMinute(now);
-      if(hour>m_params.cutoff_hour)
-         return false;
-      if(hour==m_params.cutoff_hour && minute>=m_params.cutoff_minute)
-         return false;
-      if(m_params.friday_flatten_enabled)
-        {
-         int dow=TimeDayOfWeek(now);
-         if(dow==5)
-           {
-            if(hour>m_params.friday_flatten_hour)
-               return false;
-            if(hour==m_params.friday_flatten_hour && minute>=m_params.friday_flatten_minute)
-               return false;
-           }
-        }
-      return true;
-     }
-
-   bool              ShouldFlattenForSession(const datetime now) const
-     {
-      if(!m_params.friday_flatten_enabled)
-         return false;
-      int dow=TimeDayOfWeek(now);
-      if(dow!=5)
-         return false;
-      int hour=TimeHour(now);
-      int minute=TimeMinute(now);
-      if(hour>m_params.friday_flatten_hour ||
-         (hour==m_params.friday_flatten_hour && minute>=m_params.friday_flatten_minute))
-        {
-         bool active_buy=(m_buy!=NULL) && m_buy.IsActive();
-         bool active_sell=(m_sell!=NULL) && m_sell.IsActive();
-         return active_buy || active_sell;
-        }
-      return false;
-     }
-
-   bool              EnsureTrendHandle()
-     {
-      if(m_trend_handle!=INVALID_HANDLE)
-         return true;
-      m_trend_handle=iMA(m_symbol,m_params.trend_ema_timeframe,m_params.trend_ema_period,0,MODE_EMA,PRICE_CLOSE);
-      return m_trend_handle!=INVALID_HANDLE;
-     }
-
-   double           TrendSlopeValue()
-     {
-      if(m_params.trend_slope_lookback<=0)
-         return 0.0;
-      if(!EnsureTrendHandle())
-         return 0.0;
-      int count=m_params.trend_slope_lookback+1;
-      double buf[];
-      if(CopyBuffer(m_trend_handle,0,0,count,buf)!=count)
-         return 0.0;
-      double diff=MathAbs(buf[0]-buf[count-1]);
-      return diff/m_params.trend_slope_lookback;
-     }
-
-   bool              TrendBlocksRescue(const CGridBasket *loser,const double price,const double atr_points)
-     {
-      if(!m_params.rescue_trend_filter)
-         return false;
-      if(loser==NULL)
-         return false;
-      if(atr_points<=0.0)
-         return false;
-      double distance=MathAbs(price-loser.AveragePrice());
-      double multiples=distance/atr_points;
-      if(multiples<m_params.trend_k_atr)
-         return false;
-      double slope=MathAbs(TrendSlopeValue());
-      return slope>=m_params.trend_slope_threshold;
-     }
-
    void              FlattenAll(const string reason)
      {
       if(m_log!=NULL)
@@ -247,8 +165,7 @@ public:
                          m_magic(magic),
                          m_buy(NULL),
                          m_sell(NULL),
-                         m_halted(false),
-                         m_trend_handle(INVALID_HANDLE)
+                         m_halted(false)
      {
      }
 
@@ -331,20 +248,6 @@ public:
          return;
         }
 
-      if(m_params.session_trailing_dd_usd>0.0 && m_ledger!=NULL && m_ledger.TrailingDrawdownHit(m_params.session_trailing_dd_usd))
-        {
-         FlattenAll("Equity trail DD");
-         return;
-        }
-
-      if(ShouldFlattenForSession(now))
-        {
-         FlattenAll("Session cutoff");
-         return;
-        }
-
-      bool allow_new_orders=TradingWindowOpen(now);
-
       if(m_buy!=NULL)
          m_buy.Update();
       if(m_sell!=NULL)
@@ -387,46 +290,26 @@ public:
 
       UpdateRoles(loser,winner);
 
-      double price_loser=0.0;
-      if(loser!=NULL)
-         price_loser=CurrentPrice(loser.Direction());
-      bool trend_block=TrendBlocksRescue(loser,price_loser,atr_points);
-
-      if(loser!=NULL && m_params.tp_distance_z_atr>0.0 && m_params.tp_weaken_usd>0.0 && atr_points>0.0)
-        {
-         double dist_price=MathAbs(loser.GroupTPPrice()-price_loser);
-         double multiples=dist_price/atr_points;
-         if(multiples>=m_params.tp_distance_z_atr && loser.EffectiveTargetUsd()>0.0)
-            loser.TightenTarget(m_params.tp_weaken_usd,"Target tightened by distance");
-        }
-
       if(loser!=NULL && winner!=NULL && m_rescue!=NULL)
         {
-         if(!allow_new_orders)
+         double price_winner=CurrentPrice(winner.Direction());
+         double dd=-MathMin(0.0,loser.BasketPnL());
+         double rescue_lot=winner.NormalizeLot(m_params.recovery_lot);
+         if(rescue_lot>0.0 && m_rescue.CooldownOk() && m_rescue.CyclesAvailable())
            {
-            m_rescue.LogSkip("Trading window closed");
-           }
-         else
-           {
-            double price_winner=CurrentPrice(winner.Direction());
-            double dd=-MathMin(0.0,loser.BasketPnL());
-            double rescue_lot=winner.NormalizeLot(m_params.recovery_lot);
-            if(rescue_lot>0.0 && m_rescue.CooldownOk() && m_rescue.CyclesAvailable())
+            if(m_rescue.ShouldRescue(loser.Direction(),loser.LastGridPrice(),spacing_px,price_winner,dd))
               {
-               if(m_rescue.ShouldRescue(loser.Direction(),loser.LastGridPrice(),spacing_px,price_winner,dd,trend_block))
+               bool exposure_ok=(m_ledger==NULL) || m_ledger.ExposureAllowed(rescue_lot,m_magic,m_symbol);
+               if(exposure_ok)
                  {
-                  bool exposure_ok=(m_ledger==NULL) || m_ledger.ExposureAllowed(rescue_lot,m_magic,m_symbol);
-                  if(exposure_ok)
-                    {
-                     winner.DeployRecovery(price_winner);
-                     m_rescue.RecordRescue();
-                     if(m_log!=NULL)
-                        m_log.Event(Tag(),"Rescue deployed");
-                    }
-                  else
-                    {
-                     m_rescue.LogSkip("Exposure cap blocks rescue");
-                    }
+                  winner.DeployRecovery(price_winner);
+                  m_rescue.RecordRescue();
+                  if(m_log!=NULL)
+                     m_log.Event(Tag(),"Rescue deployed");
+                 }
+               else
+                 {
+                  m_rescue.LogSkip("Exposure cap blocks rescue");
                  }
               }
            }
@@ -437,14 +320,14 @@ public:
          double realized=m_buy.TakeRealizedProfit();
          if(realized>0 && m_sell!=NULL)
             m_sell.ReduceTargetBy(realized);
-         TryReseedBasket(m_buy,DIR_BUY,allow_new_orders);
+         TryReseedBasket(m_buy,DIR_BUY,true);
         }
       if(m_sell!=NULL && m_sell.ClosedRecently())
         {
          double realized=m_sell.TakeRealizedProfit();
          if(realized>0 && m_buy!=NULL)
             m_buy.ReduceTargetBy(realized);
-         TryReseedBasket(m_sell,DIR_SELL,allow_new_orders);
+         TryReseedBasket(m_sell,DIR_SELL,true);
         }
 
       EnsureRescueReset();
@@ -461,11 +344,6 @@ public:
         {
          delete m_sell;
          m_sell=NULL;
-        }
-      if(m_trend_handle!=INVALID_HANDLE)
-        {
-         IndicatorRelease(m_trend_handle);
-         m_trend_handle=INVALID_HANDLE;
         }
      }
   };
