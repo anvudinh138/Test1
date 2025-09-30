@@ -1,0 +1,119 @@
+2025.10.01 00:00:21.547	Tester	"RECOVERY-GRID-DIRECTION_v2\RecoveryGridDirection_v2.ex5" X64
+2025.10.01 00:00:21.570	Tester	EURUSD: history data begins from 2020.02.26 00:00
+2025.10.01 00:00:21.570	Tester	EURUSD: ticks data begins from 2025.05.05 00:00
+2025.10.01 00:00:21.570	Tester	EURUSD: history data begins from 2020.02.26 00:00
+2025.10.01 00:00:21.570	Tester	EURUSD: ticks data begins from 2025.05.05 00:00
+2025.10.01 00:00:21.754	Core 01	agent process started on 127.0.0.1:3000
+2025.10.01 00:00:21.754	Core 01	connecting to 127.0.0.1:3000
+2025.10.01 00:00:22.918	Core 01	connected
+2025.10.01 00:00:22.927	Core 01	authorized (agent build 5320)
+2025.10.01 00:00:22.929	Tester	EURUSD,M1 (Exness-MT5Trial17): testing of Experts\RECOVERY-GRID-DIRECTION_v2\RecoveryGridDirection_v2.ex5 from 2025.07.26 00:00 to 2025.09.23 00:00
+2025.10.01 00:00:22.943	Core 01	common synchronization completed
+2025.10.01 00:00:22.972	Core 01	EURUSD: ticks synchronized already [43 bytes]
+2025.10.01 00:00:24.139	Core 01	MetaTester 5 started on 127.0.0.1:3000
+2025.10.01 00:00:24.139	Core 01	cloud network mode is off
+2025.10.01 00:00:24.139	Core 01	initialization finished
+2025.10.01 00:00:24.139	Core 01	login (build 5320)
+2025.10.01 00:00:24.139	Core 01	12832 bytes of account info loaded
+2025.10.01 00:00:24.139	Core 01	1478 bytes of tester parameters loaded
+2025.10.01 00:00:24.139	Core 01	23236 bytes of input parameters loaded
+2025.10.01 00:00:24.139	Core 01	2200 bytes of symbols list loaded (402 symbols)
+2025.10.01 00:00:24.139	Core 01	expert file added: Experts\RECOVERY-GRID-DIRECTION_v2\RecoveryGridDirection_v2.ex5. 83651 bytes loaded
+2025.10.01 00:00:24.139	Core 01	3318 Mb available, 40 blocks set for ticks generating
+2025.10.01 00:00:24.139	Core 01	initial deposit 1000.00 USD, leverage 1:500
+2025.10.01 00:00:24.139	Core 01	successfully initialized
+2025.10.01 00:00:24.139	Core 01	85 Kb of total initialization data received
+2025.10.01 00:00:24.139	Core 01	VirtualApple @ 2.50GHz, 16383 MB
+2025.10.01 00:00:24.139	Core 01	EURUSD: symbol to be synchronized
+2025.10.01 00:00:24.139	Core 01	EURUSD: symbol synchronized, 3800 bytes of symbol info received
+2025.10.01 00:00:24.139	Core 01	EURUSD: load 27 bytes of history data to synchronize in 0:00:00.001
+2025.10.01 00:00:24.139	Core 01	EURUSD: history synchronized from 2021.01.03 to 2025.09.23
+2025.10.01 00:00:24.139	Core 01	EURUSD: ticks synchronization started
+2025.10.01 00:00:24.139	Core 01	EURUSD: load 34 bytes of tick data to synchronize in 0:00:00.000
+2025.10.01 00:00:24.139	Core 01	EURUSD: history ticks synchronized from 2025.05.05 to 2025.09.22
+2025.10.01 00:00:24.139	Core 01	EURUSD,M1: history cache allocated for 645419 bars and contains 584604 bars from 2024.01.01 22:05 to 2025.07.25 20:58
+2025.10.01 00:00:24.139	Core 01	EURUSD,M1: history begins from 2024.01.01 22:05
+2025.10.01 00:00:24.139	Core 01	EURUSD,M1 (Exness-MT5Trial17): generating based on real ticks
+2025.10.01 00:00:24.139	Core 01	testing with execution delay 50 milliseconds
+2025.10.01 00:00:24.139	Core 01	EURUSD,M1: testing of Experts\RECOVERY-GRID-DIRECTION_v2\RecoveryGridDirection_v2.ex5 from 2025.07.26 00:00 to 2025.09.23 00:00 started with inputs:
+2025.10.01 00:00:24.139	Core 01	  InpAtrTimeframe=15
+2025.10.01 00:00:24.139	Core 01	  InpAtrPeriod=14
+2025.10.01 00:00:24.139	Core 01	  InpSpacingMode=2
+2025.10.01 00:00:24.139	Core 01	  InpSpacingStepPips=25.0
+2025.10.01 00:00:24.139	Core 01	  InpSpacingAtrMult=0.6
+2025.10.01 00:00:24.139	Core 01	  InpMinSpacingPips=12.0
+2025.10.01 00:00:24.139	Core 01	  InpGridLevels=6
+2025.10.01 00:00:24.139	Core 01	  InpLotBase=0.1
+2025.10.01 00:00:24.139	Core 01	  InpLotScale=1.0
+2025.10.01 00:00:24.139	Core 01	  InpTargetCycleUSD=3.0
+2025.10.01 00:00:24.139	Core 01	  InpStatusInterval=60
+2025.10.01 00:00:24.139	Core 01	  InpLogEvents=true
+2025.10.01 00:00:24.139	Core 01	  InpTSLEnabled=true
+2025.10.01 00:00:24.139	Core 01	  InpTSLStartPoints=1000
+2025.10.01 00:00:24.139	Core 01	  InpTSLStepPoints=200
+2025.10.01 00:00:24.139	Core 01	  InpRecoverySteps=1000,2000,3000
+2025.10.01 00:00:24.139	Core 01	  InpRecoveryLot=0.1
+2025.10.01 00:00:24.139	Core 01	  InpDDOpenUSD=8.0
+2025.10.01 00:00:24.139	Core 01	  InpOffsetRatio=0.5
+2025.10.01 00:00:24.139	Core 01	  InpExposureCapLots=2.0
+2025.10.01 00:00:24.139	Core 01	  InpMaxCyclesPerSide=3
+2025.10.01 00:00:24.139	Core 01	  InpSessionSL_USD=30.0
+2025.10.01 00:00:24.139	Core 01	  InpCooldownBars=5
+2025.10.01 00:00:24.139	Core 01	  InpMaxSpreadPips=0.0
+2025.10.01 00:00:24.139	Core 01	  InpOrderCooldownSec=5
+2025.10.01 00:00:24.139	Core 01	  InpSlippagePips=1
+2025.10.01 00:00:24.139	Core 01	  InpRespectStops=true
+2025.10.01 00:00:24.139	Core 01	  InpCommissionPerLot=7.0
+2025.10.01 00:00:24.139	Core 01	  InpMagic=990045
+2025.10.01 00:00:24.139	Core 01	  InpRescueTrendFilter=true
+2025.10.01 00:00:24.139	Core 01	  InpTrendKAtr=3.0
+2025.10.01 00:00:24.139	Core 01	  InpTrendSlopeThreshold=0.0008
+2025.10.01 00:00:24.139	Core 01	  InpTrendSlopeLookback=5
+2025.10.01 00:00:24.139	Core 01	  InpTrendEmaPeriod=200
+2025.10.01 00:00:24.139	Core 01	  InpTrendEmaTimeframe=15
+2025.10.01 00:00:24.139	Core 01	  InpTPDistance_Z_ATR=2.5
+2025.10.01 00:00:24.139	Core 01	  InpTPWeakenUsd=1.0
+2025.10.01 00:00:24.139	Core 01	  InpSessionTrailingDD_USD=0.0
+2025.10.01 00:00:24.139	Core 01	  InpTradingCutoffEnabled=false
+2025.10.01 00:00:24.139	Core 01	  InpCutoffHour=21
+2025.10.01 00:00:24.139	Core 01	  InpCutoffMinute=30
+2025.10.01 00:00:24.139	Core 01	  InpFridayFlattenEnabled=true
+2025.10.01 00:00:24.139	Core 01	  InpFridayFlattenHour=21
+2025.10.01 00:00:24.139	Core 01	  InpFridayFlattenMinute=0
+2025.10.01 00:00:24.139	Core 01	  InpCycleCsvPath=
+2025.10.01 00:00:24.139	Core 01	EURUSD,M15: history cache allocated for 43104 bars and contains 39049 bars from 2024.01.01 22:00 to 2025.07.25 20:45
+2025.10.01 00:00:24.139	Core 01	EURUSD,M15: history begins from 2024.01.01 22:00
+2025.10.01 00:00:24.139	Core 01	EURUSD : real ticks begin from 2025.05.05 00:00:00
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed market buy 0.1 EURUSD [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: market buy 0.10 EURUSD [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed buy limit 0.1 EURUSD at 1.17169 [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: buy limit 0.10 EURUSD at 1.17169 [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed buy limit 0.1 EURUSD at 1.16919 [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: buy limit 0.10 EURUSD at 1.16919 [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed buy limit 0.1 EURUSD at 1.16669 [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: buy limit 0.10 EURUSD at 1.16669 [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed buy limit 0.1 EURUSD at 1.16419 [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: buy limit 0.10 EURUSD at 1.16419 [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed buy limit 0.1 EURUSD at 1.16169 [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: buy limit 0.10 EURUSD at 1.16169 [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   [RGDv2][EURUSD][BUY][PRI] Grid seeded levels=6
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed market sell 0.1 EURUSD [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: market sell 0.10 EURUSD [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed sell limit 0.1 EURUSD at 1.17653 [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: sell limit 0.10 EURUSD at 1.17653 [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed sell limit 0.1 EURUSD at 1.17903 [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: sell limit 0.10 EURUSD at 1.17903 [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed sell limit 0.1 EURUSD at 1.18153 [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: sell limit 0.10 EURUSD at 1.18153 [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed sell limit 0.1 EURUSD at 1.18403 [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: sell limit 0.10 EURUSD at 1.18403 [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   failed sell limit 0.1 EURUSD at 1.18653 [Market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   CTrade::OrderSend: sell limit 0.10 EURUSD at 1.18653 [market closed]
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   [RGDv2][EURUSD][SELL][PRI] Grid seeded levels=6
+2025.10.01 00:00:24.139	Core 01	2025.07.26 00:00:00   [RGDv2][EURUSD][LC] Lifecycle bootstrapped
+2025.10.01 00:00:24.139	Core 01	final balance 1000.00 USD
+2025.10.01 00:00:24.139	Core 01	EURUSD,M1: 2347317 ticks, 59141 bars generated. Environment synchronized in 0:00:00.020. Test passed in 0:00:01.192 (including ticks preprocessing 0:00:00.180).
+2025.10.01 00:00:24.139	Core 01	EURUSD,M1: total time from login to stop testing 0:00:01.212 (including 0:00:00.020 for history data synchronization)
+2025.10.01 00:00:24.139	Core 01	1 Mb memory used including 39 Mb of history data, 64 Mb of tick data
+2025.10.01 00:00:24.139	Core 01	log file "C:\Program Files\MetaTrader 5\Tester\Agent-127.0.0.1-3000\logs\20251001.log" written
+2025.10.01 00:00:24.146	Core 01	connection closed
