@@ -13,9 +13,8 @@ enum EDirection
 
 enum ESpacingMode
   {
-   SPACING_PIPS   = 0,
-   SPACING_ATR    = 1,
-   SPACING_HYBRID = 2
+   SPACING_ATR    = 0,
+   SPACING_HYBRID = 1
   };
 
 enum EBasketKind

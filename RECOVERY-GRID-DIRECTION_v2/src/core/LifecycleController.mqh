@@ -14,6 +14,7 @@
 #include "PortfolioLedger.mqh"
 #include "GridBasket.mqh"
 #include "Logger.mqh"
+#include "CycleCsvWriter.mqh"
 
 class CLifecycleController
   {
@@ -25,6 +26,7 @@ private:
    CRescueEngine    *m_rescue;
    CPortfolioLedger *m_ledger;
    CLogger          *m_log;
+   CCycleCsvWriter  *m_cycle_writer;
    long              m_magic;
 
    CGridBasket      *m_buy;
@@ -33,6 +35,13 @@ private:
    int               m_trend_handle;
 
    string            Tag() const { return StringFormat("[RGDv2][%s][LC]",m_symbol); }
+
+   void              WriteCycleCsv(CGridBasket *basket,
+                                   const double realized,
+                                   const double total_lot,
+                                   const double max_dd,
+                                   const double partial_volume,
+                                   const double target_pull);
 
    double           CurrentPrice(const EDirection dir) const
      {
@@ -268,6 +277,35 @@ private:
       EnsureRescueReset();
      }
 
+   void              WriteCycleCsv(CGridBasket *basket,
+                                   const double realized,
+                                   const double total_lot,
+                                   const double max_dd,
+                                   const double partial_volume,
+                                   const double target_pull)
+     {
+      if(basket==NULL)
+         return;
+      if(m_cycle_writer==NULL || !m_cycle_writer.Enabled())
+         return;
+      SCycleCsvRow row;
+      row.timestamp=TimeCurrent();
+      row.symbol=m_symbol;
+      row.cycle_id=basket.CyclesDone();
+      row.direction=(basket.Direction()==DIR_BUY)?"BUY":"SELL";
+      row.kind=(basket.Kind()==BASKET_PRIMARY)?"PRIMARY":"HEDGE";
+      row.realized_usd=realized;
+      row.total_lot=total_lot;
+      row.max_dd_usd=max_dd;
+      row.spacing_pips=(m_spacing!=NULL)?m_spacing->SpacingPips():0.0;
+      row.adaptive_tier="n/a";
+      row.lockdown_active=false;
+      row.partial_close_volume=partial_volume;
+      row.hedge_profit_pull=target_pull;
+      row.session_equity=AccountInfoDouble(ACCOUNT_EQUITY);
+      m_cycle_writer.Append(row);
+     }
+
 public:
                      CLifecycleController(const string symbol,
                                           const SParams &params,
@@ -284,6 +322,7 @@ public:
                          m_rescue(rescue),
                          m_ledger(ledger),
                          m_log(log),
+                         m_cycle_writer(NULL),
                          m_magic(magic),
                          m_buy(NULL),
                          m_sell(NULL),
@@ -348,6 +387,26 @@ public:
          delete m_sell;
          m_sell=NULL;
          return false;
+        }
+
+      if(m_cycle_writer!=NULL)
+        {
+         delete m_cycle_writer;
+         m_cycle_writer=NULL;
+        }
+      if(StringLen(m_params.cycle_csv_path)>0)
+        {
+         m_cycle_writer=new CCycleCsvWriter();
+         if(m_cycle_writer!=NULL)
+           {
+            if(!m_cycle_writer.Init(m_params.cycle_csv_path,m_symbol))
+              {
+               if(m_log!=NULL)
+                  m_log.Event(Tag(),"Cycle CSV writer init failed");
+               delete m_cycle_writer;
+               m_cycle_writer=NULL;
+              }
+           }
         }
 
       if(m_log!=NULL)
@@ -484,6 +543,11 @@ public:
       if(m_buy!=NULL && m_buy.ClosedRecently())
         {
          double realized=m_buy.TakeRealizedProfit();
+         double total_lot=m_buy.TakeCycleTotalLot();
+         double max_dd=m_buy.TakeCycleMaxDrawdown();
+         double partial=m_buy.TakeCyclePartialVolume();
+         double target_pull=m_buy.TargetReduction();
+         WriteCycleCsv(m_buy,realized,total_lot,max_dd,partial,target_pull);
          if(realized>0 && m_sell!=NULL)
             m_sell.ReduceTargetBy(realized);
          TryReseedBasket(m_buy,DIR_BUY,allow_new_orders && !spread_block);
@@ -491,6 +555,11 @@ public:
       if(m_sell!=NULL && m_sell.ClosedRecently())
         {
          double realized=m_sell.TakeRealizedProfit();
+         double total_lot=m_sell.TakeCycleTotalLot();
+         double max_dd=m_sell.TakeCycleMaxDrawdown();
+         double partial=m_sell.TakeCyclePartialVolume();
+         double target_pull=m_sell.TargetReduction();
+         WriteCycleCsv(m_sell,realized,total_lot,max_dd,partial,target_pull);
          if(realized>0 && m_buy!=NULL)
             m_buy.ReduceTargetBy(realized);
          TryReseedBasket(m_sell,DIR_SELL,allow_new_orders && !spread_block);
@@ -510,6 +579,11 @@ public:
         {
          delete m_sell;
          m_sell=NULL;
+        }
+      if(m_cycle_writer!=NULL)
+        {
+         delete m_cycle_writer;
+         m_cycle_writer=NULL;
         }
       if(m_trend_handle!=INVALID_HANDLE)
         {

@@ -11,7 +11,6 @@ struct SParams
   {
    // spacing
    ESpacingMode spacing_mode;
-   double       spacing_pips;
    double       spacing_atr_mult;
    double       min_spacing_pips;
    int          atr_period;
@@ -31,7 +30,7 @@ struct SParams
    int          tsl_step_points;
 
    // rescue
-   int          recovery_steps[];   // points offsets for staged pending orders
+   double       recovery_steps_atr[]; // ATR multiples for staged pending orders
    double       recovery_lot;
    double       dd_open_usd;
    double       offset_ratio;
@@ -60,6 +59,19 @@ struct SParams
    bool         friday_flatten_enabled;
    int          friday_flatten_hour;
    int          friday_flatten_minute;
+   bool         hedge_retest_enable;
+   int          hedge_wait_bars;
+   double       hedge_wait_atr;
+   double       hedge_retest_atr;
+   double       hedge_retest_slope;
+   int          hedge_retest_confirm_bars;
+   double       lock_min_lots;
+   int          lock_min_bars;
+   int          lock_max_bars;
+   double       lock_cancel_mult;
+   double       lock_hyst_atr;
+   double       lock_hyst_slope;
+   double       lock_hedge_close_pct;
 
    // execution
    int          slippage_pips;
@@ -69,6 +81,7 @@ struct SParams
 
    // misc
    long         magic;
+   string       cycle_csv_path;
   };
 
 #endif // __RGD_V2_PARAMS_MQH__

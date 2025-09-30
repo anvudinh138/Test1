@@ -28,6 +28,7 @@ private:
    bool           m_active;
    bool           m_closed_recently;
    int            m_cycles_done;
+   bool           m_closed_as_hedge;
 
    double         m_total_lot;
    double         m_avg_price;
@@ -39,6 +40,7 @@ private:
    bool           m_trailing_on;
    double         m_last_realized;
    double         m_trail_anchor;
+   double         m_trail_override;
 
    double         m_volume_step;
    double         m_volume_min;
@@ -47,10 +49,14 @@ private:
 
    int            m_max_levels;
    int            m_levels_placed;
+   int            m_pending_count;
    double         m_initial_spacing_pips;
    double         m_seed_price;
    double         m_last_limit_price;
    bool           m_trading_allowed;
+   double         m_cycle_max_dd;
+   double         m_cycle_partial_volume;
+   double         m_last_cycle_total_lot;
 
    string         Tag() const
      {
@@ -117,32 +123,89 @@ ulong          PlaceLimit(const double price,const double lot,const string comme
    return m_executor.Limit(DIR_SELL,price,lot,comment);
   }
 
-int            CountPendingOrders() const
-  {
-   int count=0;
-   int total=(int)OrdersTotal();
-   for(int i=0;i<total;i++)
+   void           UpdateExtremePrice(const double price,bool &have_extreme,double &extreme) const
      {
-      ulong ticket=OrderGetTicket(i);
-      if(ticket==0)
-         continue;
-      if(!OrderSelect(ticket))
-         continue;
-      if(OrderGetString(ORDER_SYMBOL)!=m_symbol)
-         continue;
-      if(OrderGetInteger(ORDER_MAGIC)!=m_magic)
-         continue;
-      string comment=OrderGetString(ORDER_COMMENT);
-      if(StringFind(comment,"RGDv2_Grid",0)!=0)
-         continue;
-      ENUM_ORDER_TYPE type=(ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
-      if(m_direction==DIR_BUY && (type==ORDER_TYPE_BUY_LIMIT || type==ORDER_TYPE_BUY_STOP))
-         count++;
-      if(m_direction==DIR_SELL && (type==ORDER_TYPE_SELL_LIMIT || type==ORDER_TYPE_SELL_STOP))
-         count++;
+      if(!have_extreme)
+        {
+         extreme=price;
+         have_extreme=true;
+         return;
+        }
+      if(m_direction==DIR_BUY)
+        {
+         if(price<extreme)
+            extreme=price;
+        }
+      else
+        {
+         if(price>extreme)
+            extreme=price;
+        }
      }
-   return count;
-  }
+
+   void           SyncDepthMetrics()
+     {
+      bool   have_extreme=false;
+      double extreme=m_seed_price;
+
+      int positions=(int)PositionsTotal();
+      for(int i=0;i<positions;i++)
+        {
+         ulong ticket=PositionGetTicket(i);
+         if(ticket==0)
+            continue;
+         if(!PositionSelectByTicket(ticket))
+            continue;
+         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
+            continue;
+         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
+            continue;
+         long type=PositionGetInteger(POSITION_TYPE);
+         if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
+            (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
+            continue;
+         double price=PositionGetDouble(POSITION_PRICE_OPEN);
+         UpdateExtremePrice(price,have_extreme,extreme);
+        }
+
+      int pending=0;
+      int total=(int)OrdersTotal();
+      for(int i=0;i<total;i++)
+        {
+         ulong ticket=OrderGetTicket(i);
+         if(ticket==0)
+            continue;
+         if(!OrderSelect(ticket))
+            continue;
+         if(OrderGetString(ORDER_SYMBOL)!=m_symbol)
+            continue;
+         if(OrderGetInteger(ORDER_MAGIC)!=m_magic)
+            continue;
+         string comment=OrderGetString(ORDER_COMMENT);
+         if(StringFind(comment,"RGDv2_Grid",0)!=0)
+            continue;
+         ENUM_ORDER_TYPE type=(ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+         if(m_direction==DIR_BUY)
+           {
+            if(type!=ORDER_TYPE_BUY_LIMIT && type!=ORDER_TYPE_BUY_STOP && type!=ORDER_TYPE_BUY_STOP_LIMIT)
+               continue;
+           }
+         else
+           {
+            if(type!=ORDER_TYPE_SELL_LIMIT && type!=ORDER_TYPE_SELL_STOP && type!=ORDER_TYPE_SELL_STOP_LIMIT)
+               continue;
+           }
+         double price=OrderGetDouble(ORDER_PRICE_OPEN);
+         pending++;
+         UpdateExtremePrice(price,have_extreme,extreme);
+        }
+
+      m_pending_count=pending;
+      if(have_extreme)
+         m_last_grid_price=extreme;
+      else
+         m_last_grid_price=m_seed_price;
+     }
 
 double         ComputeSpacingPips() const
   {
@@ -171,7 +234,7 @@ void           MaintainDynamicGrid()
       return;
    if(m_max_levels<=0 || m_levels_placed>=m_max_levels)
       return;
-   int pending=CountPendingOrders();
+   int pending=m_pending_count;
    int threshold=m_params.grid_refill_threshold;
    if(threshold<0)
       threshold=0;
@@ -212,15 +275,17 @@ void           MaintainDynamicGrid()
          RecordLevel(target,lot,ticket,false);
          m_last_limit_price=target;
          pending++;
+         m_pending_count=pending;
          price=target;
          if(m_log!=NULL)
-           m_log.Status(Tag(),StringFormat("Refill idx=%d price=%.5f lot=%.2f",m_levels_placed-1,target,lot));
+            m_log.Status(Tag(),StringFormat("Refill idx=%d price=%.5f lot=%.2f",m_levels_placed-1,target,lot));
         }
       else
         {
          break;
         }
      }
+   m_pending_count=pending;
   }
 
    void           RefreshState()
@@ -268,7 +333,11 @@ void           MaintainDynamicGrid()
         }
 
       if(m_total_lot>0.0)
+        {
+         if(m_pnl_usd<m_cycle_max_dd)
+            m_cycle_max_dd=m_pnl_usd;
          CalculateGroupTP();
+        }
      }
 
    void           CalculateGroupTP()
@@ -312,6 +381,7 @@ void           MaintainDynamicGrid()
       if(!m_active)
          return;
       m_last_realized=m_pnl_usd;
+      m_last_cycle_total_lot=m_total_lot;
       if(m_executor!=NULL)
         {
          m_executor.SetMagic(m_magic);
@@ -321,8 +391,11 @@ void           MaintainDynamicGrid()
       m_active=false;
       m_closed_recently=true;
       m_cycles_done++;
+      m_closed_as_hedge=(m_kind==BASKET_HEDGE);
       if(m_log!=NULL)
-        m_log.Event(Tag(),StringFormat("Basket closed: %s",reason));
+         m_log.Event(Tag(),StringFormat("Basket closed: %s",reason));
+      SyncDepthMetrics();
+      m_trail_override=0.0;
      }
 
    void           ManageTrailing()
@@ -355,6 +428,8 @@ void           MaintainDynamicGrid()
         }
 
       double step=m_params.tsl_step_points*point;
+      if(m_trail_override>0.0 && (step<=0.0 || m_trail_override<step))
+         step=m_trail_override;
       if(step<=0.0)
          return;
 
@@ -454,6 +529,120 @@ void           MaintainDynamicGrid()
 public:
    void           SetTradingAllowed(const bool allow) { m_trading_allowed=allow; }
 
+   void           CancelPendingBeyond(const double offset_px)
+     {
+      if(offset_px<=0.0)
+         return;
+      double anchor=AveragePrice();
+      if(anchor<=0.0)
+         anchor=m_seed_price;
+      if(anchor<=0.0)
+         return;
+      double limit=(m_direction==DIR_BUY)?(anchor-offset_px):(anchor+offset_px);
+      CTrade trade;
+      trade.SetExpertMagicNumber(m_magic);
+      bool changed=false;
+      int total=(int)OrdersTotal();
+      for(int i=total-1;i>=0;i--)
+        {
+         ulong ticket=OrderGetTicket(i);
+         if(ticket==0)
+            continue;
+         if(!OrderSelect(ticket))
+            continue;
+         if(OrderGetString(ORDER_SYMBOL)!=m_symbol)
+            continue;
+         if(OrderGetInteger(ORDER_MAGIC)!=m_magic)
+            continue;
+         ENUM_ORDER_TYPE type=(ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+         bool dir_match=false;
+         if(m_direction==DIR_BUY)
+            dir_match=(type==ORDER_TYPE_BUY_LIMIT || type==ORDER_TYPE_BUY_STOP || type==ORDER_TYPE_BUY_STOP_LIMIT);
+         else
+            dir_match=(type==ORDER_TYPE_SELL_LIMIT || type==ORDER_TYPE_SELL_STOP || type==ORDER_TYPE_SELL_STOP_LIMIT);
+         if(!dir_match)
+            continue;
+         string comment=OrderGetString(ORDER_COMMENT);
+         if(StringFind(comment,"RGDv2_Grid",0)!=0 && StringFind(comment,"RGDv2_Rescue",0)!=0)
+            continue;
+         double price=OrderGetDouble(ORDER_PRICE_OPEN);
+         bool cancel=(m_direction==DIR_BUY)?(price<=limit):(price>=limit);
+         if(!cancel)
+            continue;
+         if(trade.OrderDelete(ticket))
+            changed=true;
+        }
+      if(changed)
+         SyncDepthMetrics();
+     }
+
+   void           CloseFraction(const double pct)
+     {
+      if(pct<=0.0)
+         return;
+      double fraction=MathMin(1.0,MathMax(0.0,pct));
+      double target=m_total_lot*fraction;
+      if(target<=0.0)
+         return;
+      double remaining=target;
+      CTrade trade;
+      trade.SetExpertMagicNumber(m_magic);
+      bool closed_any=false;
+      int total=(int)PositionsTotal();
+      for(int i=total-1;i>=0 && remaining>0.0;i--)
+        {
+         ulong ticket=PositionGetTicket(i);
+         if(ticket==0)
+            continue;
+         if(!PositionSelectByTicket(ticket))
+            continue;
+         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
+            continue;
+         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
+            continue;
+         long type=PositionGetInteger(POSITION_TYPE);
+         if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
+            (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
+            continue;
+         double vol=PositionGetDouble(POSITION_VOLUME);
+         if(vol<=0.0)
+            continue;
+         double close_vol=MathMin(vol,remaining);
+         double normalized=NormalizeLot(close_vol);
+         if(normalized>vol)
+            normalized=vol;
+         if(normalized<=0.0)
+            continue;
+         bool ok=false;
+         if(MathAbs(normalized-vol)<=1e-6)
+            ok=trade.PositionClose(ticket);
+         else
+            ok=trade.PositionClosePartial(ticket,normalized);
+        if(ok)
+          {
+           remaining=MathMax(0.0,remaining-normalized);
+           closed_any=true;
+           m_cycle_partial_volume+=normalized;
+          }
+        }
+      if(closed_any)
+        {
+         RefreshState();
+         SyncDepthMetrics();
+        }
+     }
+
+   void           SetTrailOverride(const double step_price)
+     {
+      if(step_price>0.0)
+         m_trail_override=step_price;
+     }
+
+   void           ResetTrailOverride()
+     {
+      m_trail_override=0.0;
+     }
+
    void           DeployRecovery(const double price)
      {
       if(m_params.recovery_lot<=0.0)
@@ -461,7 +650,7 @@ public:
       if(m_executor==NULL)
          return;
       m_executor.SetMagic(m_magic);
-      int pendings=1+ArraySize(m_params.recovery_steps);
+      int pendings=1+ArraySize(m_params.recovery_steps_atr);
       if(pendings<1)
          pendings=1;
       m_executor.BypassNext(pendings);
@@ -469,33 +658,37 @@ public:
       if(rescue_lot<=0.0)
          return;
       m_executor.Market(m_direction,rescue_lot,"RGDv2_RescueSeed");
-      double point=SymbolInfoDouble(m_symbol,SYMBOL_POINT);
-      if(point<=0.0)
-         point=_Point;
       double updated_last=m_last_grid_price;
-      if(m_direction==DIR_BUY)
+      double atr_points=m_spacing->AtrPoints();
+      if(atr_points<=0.0)
         {
-         for(int i=0;i<ArraySize(m_params.recovery_steps);i++)
-           {
-            double level=price-m_params.recovery_steps[i]*point;
-            ulong ticket=m_executor.Limit(DIR_BUY,level,rescue_lot,"RGDv2_RescueGrid");
-            if(ticket>0 && (updated_last==0.0 || level<updated_last))
-               updated_last=level;
-           }
+         double fallback_pips=m_spacing->SpacingPips();
+         atr_points=m_spacing->ToPrice(MathMax(m_params.min_spacing_pips,fallback_pips));
         }
-      else
+      for(int i=0;i<ArraySize(m_params.recovery_steps_atr);i++)
         {
-         for(int i=0;i<ArraySize(m_params.recovery_steps);i++)
+         double mult=m_params.recovery_steps_atr[i];
+         if(mult<=0.0)
+            continue;
+         double distance=atr_points*mult;
+         if(distance<=0.0)
+            continue;
+         double level=(m_direction==DIR_BUY)?(price-distance):(price+distance);
+         ulong ticket=m_executor.Limit(m_direction,level,rescue_lot,"RGDv2_RescueGrid");
+         if(ticket>0)
            {
-            double level=price+m_params.recovery_steps[i]*point;
-            ulong ticket=m_executor.Limit(DIR_SELL,level,rescue_lot,"RGDv2_RescueGrid");
-            if(ticket>0 && (updated_last==0.0 || level>updated_last))
+            if(updated_last==0.0)
+               updated_last=level;
+            else if(m_direction==DIR_BUY && level<updated_last)
+               updated_last=level;
+            else if(m_direction==DIR_SELL && level>updated_last)
                updated_last=level;
            }
         }
       if(updated_last!=0.0)
          m_last_grid_price=updated_last;
       RefreshState();
+      SyncDepthMetrics();
       if(m_log!=NULL)
          m_log.Event(Tag(),"Rescue layer deployed");
      }
@@ -519,6 +712,7 @@ public:
                          m_active(false),
                          m_closed_recently(false),
                          m_cycles_done(0),
+                         m_closed_as_hedge(false),
                          m_total_lot(0.0),
                          m_avg_price(0.0),
                          m_pnl_usd(0.0),
@@ -528,16 +722,21 @@ public:
                          m_trailing_on(false),
                          m_last_realized(0.0),
                          m_trail_anchor(0.0),
+                         m_trail_override(0.0),
                          m_volume_step(0.0),
                          m_volume_min(0.0),
                          m_volume_max(0.0),
                          m_volume_digits(0),
                          m_max_levels(0),
                          m_levels_placed(0),
+                         m_pending_count(0),
                          m_initial_spacing_pips(0.0),
                          m_seed_price(0.0),
                          m_last_limit_price(0.0),
-                         m_trading_allowed(true)
+                         m_trading_allowed(true),
+                         m_cycle_max_dd(0.0),
+                         m_cycle_partial_volume(0.0),
+                         m_last_cycle_total_lot(0.0)
      {
       m_volume_step=SymbolInfoDouble(m_symbol,SYMBOL_VOLUME_STEP);
       m_volume_min=SymbolInfoDouble(m_symbol,SYMBOL_VOLUME_MIN);
@@ -564,12 +763,14 @@ public:
       m_active=false;
       m_closed_recently=false;
       m_cycles_done=0;
+      m_closed_as_hedge=false;
       m_seed_price=anchor_price;
       m_last_limit_price=anchor_price;
       m_last_grid_price=anchor_price;
       m_initial_spacing_pips=m_spacing->SpacingPips();
       m_max_levels=MathMax(1,m_params.grid_levels);
       m_levels_placed=0;
+      m_pending_count=0;
       m_trading_allowed=true;
 
       if(m_executor==NULL)
@@ -600,6 +801,10 @@ public:
       m_last_realized=0.0;
       m_trailing_on=false;
       m_trail_anchor=0.0;
+      m_trail_override=0.0;
+      m_cycle_max_dd=0.0;
+      m_cycle_partial_volume=0.0;
+      m_last_cycle_total_lot=0.0;
 
       double spacing_px=m_spacing->ToPrice(m_initial_spacing_pips);
       double price=(m_direction==DIR_BUY)?SymbolInfoDouble(m_symbol,SYMBOL_BID):SymbolInfoDouble(m_symbol,SYMBOL_ASK);
@@ -618,6 +823,7 @@ public:
            }
         }
 
+      SyncDepthMetrics();
       m_active=true;
       RefreshState();
       if(m_log!=NULL)
@@ -636,15 +842,16 @@ public:
         {
          CloseBasket("GroupTP");
         }
+      SyncDepthMetrics();
       if(m_trading_allowed)
-        MaintainDynamicGrid();
+         MaintainDynamicGrid();
 
       if(m_active)
         {
          bool no_positions=(m_total_lot<=0.0);
-         bool no_pending=(CountPendingOrders()==0);
+         bool no_pending=(m_pending_count==0);
          if(no_positions && no_pending)
-           m_active=false;
+            m_active=false;
         }
      }
 
@@ -668,6 +875,12 @@ public:
 
    bool           IsActive() const { return m_active; }
    bool           ClosedRecently() const { return m_closed_recently; }
+   bool           ClosedAsHedge()
+     {
+      bool flag=m_closed_as_hedge;
+      m_closed_as_hedge=false;
+      return flag;
+     }
    double         TakeRealizedProfit()
      {
       double value=m_last_realized;
@@ -681,6 +894,25 @@ public:
    double         AveragePrice() const { return m_avg_price; }
    double         TotalLot() const { return m_total_lot; }
    double         GroupTPPrice() const { return m_tp_price; }
+   double         TargetReduction() const { return m_target_reduction; }
+   double         TakeCycleMaxDrawdown()
+     {
+      double value=m_cycle_max_dd;
+      m_cycle_max_dd=0.0;
+      return value;
+     }
+   double         TakeCyclePartialVolume()
+     {
+      double value=m_cycle_partial_volume;
+      m_cycle_partial_volume=0.0;
+      return value;
+     }
+   double         TakeCycleTotalLot()
+     {
+      double value=m_last_cycle_total_lot;
+      m_last_cycle_total_lot=0.0;
+      return value;
+     }
    void           SetKind(const EBasketKind kind) { m_kind=kind; }
 
    EBasketKind    Kind() const { return m_kind; }
