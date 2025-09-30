@@ -24,6 +24,12 @@ enum EBasketKind
    BASKET_HEDGE   = 1
   };
 
+enum EGridRefillMode
+  {
+   GRID_REFILL_STATIC = 0,
+   GRID_REFILL_LIVE   = 1
+  };
+
 struct SGridLevel
   {
    double price;   // entry price for pending level

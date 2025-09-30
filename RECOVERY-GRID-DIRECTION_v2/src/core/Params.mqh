@@ -37,7 +37,14 @@ struct SParams
    double       offset_ratio;
    double       exposure_cap_lots;
    int          max_cycles_per_side;
+   double       session_sl_usd;
+   int          cooldown_bars;
    double       session_trailing_dd_usd;
+   int          grid_warm_levels;
+   int          grid_refill_threshold;
+   int          grid_refill_batch;
+   EGridRefillMode grid_refill_mode;
+   int          grid_max_pendings;
    bool         rescue_trend_filter;
    double       trend_k_atr;
    double       trend_slope_threshold;
@@ -46,6 +53,7 @@ struct SParams
    ENUM_TIMEFRAMES trend_ema_timeframe;
    double       tp_distance_z_atr;
    double       tp_weaken_usd;
+   double       max_spread_pips;
    bool         trading_time_filter_enabled;
    int          cutoff_hour;
    int          cutoff_minute;

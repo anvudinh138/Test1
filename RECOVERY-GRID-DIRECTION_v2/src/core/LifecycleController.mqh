@@ -4,6 +4,7 @@
 #ifndef __RGD_V2_LIFECYCLE_CONTROLLER_MQH__
 #define __RGD_V2_LIFECYCLE_CONTROLLER_MQH__
 
+#include <Trade/Trade.mqh>
 #include <Indicators/Trend.mqh>
 #include "Types.mqh"
 #include "Params.mqh"
@@ -72,6 +73,33 @@ private:
       return result;
      }
 
+   double           PipPointSize() const
+     {
+      int digits=(int)SymbolInfoInteger(m_symbol,SYMBOL_DIGITS);
+      if(digits==3 || digits==5)
+         return 10.0*_Point;
+      return _Point;
+     }
+
+   double           SpreadPoints() const
+     {
+      double ask=SymbolInfoDouble(m_symbol,SYMBOL_ASK);
+      double bid=SymbolInfoDouble(m_symbol,SYMBOL_BID);
+      double point=SymbolInfoDouble(m_symbol,SYMBOL_POINT);
+      if(point<=0.0)
+         point=_Point;
+      return (ask-bid)/point;
+     }
+
+   bool              SpreadTooWide() const
+     {
+      if(m_params.max_spread_pips<=0.0)
+         return false;
+      double pip_points=PipPointSize()/_Point;
+      double spread=SpreadPoints();
+      return spread>m_params.max_spread_pips*pip_points;
+     }
+
    CGridBasket*      Basket(const EDirection dir)
      {
       return (dir==DIR_BUY)?m_buy:m_sell;
@@ -114,6 +142,7 @@ private:
       basket.ResetTargetReduction();
       if(basket.Init(price))
         {
+         basket.SetTradingAllowed(allow_new_orders);
          if(m_log!=NULL)
            m_log.Event(Tag(),StringFormat("Reseed %s grid", (dir==DIR_BUY)?"BUY":"SELL"));
          return true;
@@ -125,15 +154,17 @@ private:
      {
       if(!m_params.trading_time_filter_enabled)
          return true;
-      int hour=TimeHour(now);
-      int minute=TimeMinute(now);
+      MqlDateTime dt;
+      TimeToStruct(now, dt);
+      int hour=dt.hour;
+      int minute=dt.min;
       if(hour>m_params.cutoff_hour)
          return false;
       if(hour==m_params.cutoff_hour && minute>=m_params.cutoff_minute)
          return false;
       if(m_params.friday_flatten_enabled)
         {
-         int dow=TimeDayOfWeek(now);
+         int dow=dt.day_of_week;
          if(dow==5)
            {
             if(hour>m_params.friday_flatten_hour)
@@ -149,11 +180,13 @@ private:
      {
       if(!m_params.friday_flatten_enabled)
          return false;
-      int dow=TimeDayOfWeek(now);
+      MqlDateTime dt;
+      TimeToStruct(now, dt);
+      int dow=dt.day_of_week;
       if(dow!=5)
          return false;
-      int hour=TimeHour(now);
-      int minute=TimeMinute(now);
+      int hour=dt.hour;
+      int minute=dt.min;
       if(hour>m_params.friday_flatten_hour ||
          (hour==m_params.friday_flatten_hour && minute>=m_params.friday_flatten_minute))
         {
@@ -199,7 +232,8 @@ private:
       if(multiples<m_params.trend_k_atr)
          return false;
       double slope=MathAbs(TrendSlopeValue());
-      return slope>=m_params.trend_slope_threshold;
+      double slope_ratio=(atr_points>0.0)? slope/atr_points : 0.0;
+      return slope_ratio>=m_params.trend_slope_threshold;
      }
 
    void              FlattenAll(const string reason)
@@ -221,9 +255,15 @@ private:
            }
         }
       if(m_buy!=NULL)
+        {
          m_buy.MarkInactive();
+         m_buy.SetTradingAllowed(false);
+        }
       if(m_sell!=NULL)
+        {
          m_sell.MarkInactive();
+         m_sell.SetTradingAllowed(false);
+        }
       m_halted=true;
       EnsureRescueReset();
      }
@@ -344,6 +384,12 @@ public:
         }
 
       bool allow_new_orders=TradingWindowOpen(now);
+      bool spread_block=SpreadTooWide();
+
+      if(m_buy!=NULL)
+         m_buy.SetTradingAllowed(allow_new_orders && !spread_block);
+      if(m_sell!=NULL)
+         m_sell.SetTradingAllowed(allow_new_orders && !spread_block);
 
       if(m_buy!=NULL)
          m_buy.Update();
@@ -402,9 +448,12 @@ public:
 
       if(loser!=NULL && winner!=NULL && m_rescue!=NULL)
         {
-         if(!allow_new_orders)
+         if(!allow_new_orders || spread_block)
            {
-            m_rescue.LogSkip("Trading window closed");
+            if(!allow_new_orders && m_rescue!=NULL)
+               m_rescue.LogSkip("Trading window closed");
+            else if(spread_block && m_rescue!=NULL)
+               m_rescue.LogSkip("Spread guard active");
            }
          else
            {
@@ -437,14 +486,14 @@ public:
          double realized=m_buy.TakeRealizedProfit();
          if(realized>0 && m_sell!=NULL)
             m_sell.ReduceTargetBy(realized);
-         TryReseedBasket(m_buy,DIR_BUY,allow_new_orders);
+         TryReseedBasket(m_buy,DIR_BUY,allow_new_orders && !spread_block);
         }
       if(m_sell!=NULL && m_sell.ClosedRecently())
         {
          double realized=m_sell.TakeRealizedProfit();
          if(realized>0 && m_buy!=NULL)
             m_buy.ReduceTargetBy(realized);
-         TryReseedBasket(m_sell,DIR_SELL,allow_new_orders);
+         TryReseedBasket(m_sell,DIR_SELL,allow_new_orders && !spread_block);
         }
 
       EnsureRescueReset();

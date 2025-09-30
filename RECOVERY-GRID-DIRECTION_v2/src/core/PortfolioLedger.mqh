@@ -5,6 +5,7 @@
 #define __RGD_V2_PORTFOLIO_LEDGER_MQH__
 
 #include "Types.mqh"
+#include <Trade/Trade.mqh>
 
 class CPortfolioLedger
   {

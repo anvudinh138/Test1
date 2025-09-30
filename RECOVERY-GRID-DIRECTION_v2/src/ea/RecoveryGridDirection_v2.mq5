@@ -24,6 +24,12 @@ input double            InpSpacingAtrMult   = 0.6;
 input double            InpMinSpacingPips   = 12.0;
 
 input int               InpGridLevels       = 6;
+input int               InpGridWarmLevels   = 4;
+input int               InpGridRefillThreshold = 2;
+input int               InpGridRefillBatch  = 2;
+enum InpGridRefillModeEnum { InpGridRefill_Static=0, InpGridRefill_Live=1 };
+input InpGridRefillModeEnum InpGridRefillMode = InpGridRefill_Live;
+input int               InpGridMaxPendings  = 12;
 input double            InpLotBase          = 0.10;
 input double            InpLotScale         = 1.00;
 
@@ -50,6 +56,9 @@ input bool              InpRespectStops     = true;
 input double            InpCommissionPerLot = 7.0;
 input long              InpMagic            = 990045;
 
+input bool              InpLogEvents        = true;
+input int               InpStatusInterval   = 60;
+
 input bool              InpRescueTrendFilter   = true;
 input double            InpTrendKAtr         = 3.0;
 input double            InpTrendSlopeThreshold = 0.0008;
@@ -58,6 +67,7 @@ input int               InpTrendEmaPeriod    = 200;
 input ENUM_TIMEFRAMES   InpTrendEmaTimeframe = PERIOD_M15;
 input double            InpTPDistance_Z_ATR  = 2.5;
 input double            InpTPWeakenUsd       = 1.0;
+input double            InpMaxSpreadPips     = 3.0;
 input double            InpSessionTrailingDD_USD = 0.0;
 input bool              InpTradingCutoffEnabled = false;
 input int               InpCutoffHour        = 21;
@@ -117,6 +127,11 @@ void BuildParams()
    g_params.atr_timeframe      =InpAtrTimeframe;
 
    g_params.grid_levels        =InpGridLevels;
+   g_params.grid_warm_levels   =InpGridWarmLevels;
+   g_params.grid_refill_threshold =InpGridRefillThreshold;
+   g_params.grid_refill_batch  =InpGridRefillBatch;
+   g_params.grid_refill_mode   =(EGridRefillMode)InpGridRefillMode;
+   g_params.grid_max_pendings  =InpGridMaxPendings;
    g_params.lot_base           =InpLotBase;
    g_params.lot_scale          =InpLotScale;
    g_params.target_cycle_usd   =InpTargetCycleUSD;
@@ -143,6 +158,7 @@ void BuildParams()
    g_params.tp_distance_z_atr  = InpTPDistance_Z_ATR;
    g_params.tp_weaken_usd      = InpTPWeakenUsd;
    g_params.trading_time_filter_enabled = InpTradingCutoffEnabled;
+   g_params.max_spread_pips     = InpMaxSpreadPips;
    g_params.cutoff_hour        = InpCutoffHour;
    g_params.cutoff_minute      = InpCutoffMinute;
    g_params.friday_flatten_enabled = InpFridayFlattenEnabled;
@@ -164,7 +180,10 @@ int OnInit()
    g_logger   = new CLogger(InpStatusInterval,InpLogEvents);
    g_spacing  = new CSpacingEngine(_Symbol,g_params.spacing_mode,g_params.atr_period,g_params.atr_timeframe,g_params.spacing_atr_mult,g_params.spacing_pips,g_params.min_spacing_pips);
    g_validator= new COrderValidator(_Symbol,g_params.respect_stops_level);
-   g_executor = new COrderExecutor(_Symbol,g_validator,g_params.slippage_pips,g_params.order_cooldown_sec);
+   int digits=(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS);
+   int pip_points=(digits==3 || digits==5)?10:1;
+   int slippage_points=(int)MathMax(1,MathRound(g_params.slippage_pips*pip_points));
+   g_executor = new COrderExecutor(_Symbol,g_validator,slippage_points,g_params.order_cooldown_sec);
    if(g_executor!=NULL)
       g_executor.SetMagic(g_params.magic);
    g_ledger   = new CPortfolioLedger(g_params.exposure_cap_lots,g_params.session_sl_usd);
