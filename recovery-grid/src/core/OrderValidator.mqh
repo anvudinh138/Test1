@@ -4,7 +4,6 @@
 #ifndef __RGD_V2_ORDER_VALIDATOR_MQH__
 #define __RGD_V2_ORDER_VALIDATOR_MQH__
 
-#include <Trade/Trade.mqh>
 #include "Types.mqh"
 #include "MathHelpers.mqh"
 
@@ -16,17 +15,9 @@ private:
 
    double StopsLevelPoints() const
      {
-      return (double)SymbolInfoInteger(m_symbol,SYMBOL_TRADE_STOPS_LEVEL)*_Point;
-     }
-
-   double FreezeLevelPoints() const
-     {
-      return (double)SymbolInfoInteger(m_symbol,SYMBOL_TRADE_FREEZE_LEVEL)*_Point;
-     }
-
-   double MinDistancePoints() const
-     {
-      double min_level=MathMax(StopsLevelPoints(),FreezeLevelPoints());
+      double stops=(double)SymbolInfoInteger(m_symbol,SYMBOL_TRADE_STOPS_LEVEL)*_Point;
+      double freeze=(double)SymbolInfoInteger(m_symbol,SYMBOL_TRADE_FREEZE_LEVEL)*_Point;
+      double min_level=MathMax(stops,freeze);
       if(min_level<=0.0)
          min_level=2*_Point;
       return min_level;
@@ -45,7 +36,7 @@ public:
          return true;
       double bid=SymbolInfoDouble(m_symbol,SYMBOL_BID);
       double ask=SymbolInfoDouble(m_symbol,SYMBOL_ASK);
-      double min_level=MinDistancePoints();
+      double min_level=StopsLevelPoints();
       if(dir==DIR_BUY)
          return price<=bid-min_level;
       return price>=ask+min_level;
@@ -57,7 +48,7 @@ public:
          return true;
       double bid=SymbolInfoDouble(m_symbol,SYMBOL_BID);
       double ask=SymbolInfoDouble(m_symbol,SYMBOL_ASK);
-      double min_level=MinDistancePoints();
+      double min_level=StopsLevelPoints();
       if(dir==DIR_BUY)
          return price>=ask+min_level;
       return price<=bid-min_level;

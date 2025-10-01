@@ -11,6 +11,7 @@ struct SParams
   {
    // spacing
    ESpacingMode spacing_mode;
+   double       spacing_pips;
    double       spacing_atr_mult;
    double       min_spacing_pips;
    int          atr_period;
@@ -37,7 +38,7 @@ struct SParams
    int          tsl_step_points;
 
    // rescue
-   double       recovery_steps_atr[]; // ATR multiples for staged pending orders
+   int          recovery_steps[];   // points offsets for staged pending orders
    double       recovery_lot;
    double       dd_open_usd;
    double       offset_ratio;
