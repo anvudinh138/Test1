@@ -49,6 +49,9 @@ private:
    double         m_partial_realized;
    double         m_furthest_entry;
 
+   double         m_initial_atr;
+   int            m_entry_bar;
+
    double         m_volume_step;
    double         m_volume_min;
    double         m_volume_max;
@@ -319,6 +322,69 @@ private:
          CalculateGroupTP();
      }
 
+   double         CalculateAtrFactor() const
+     {
+      if(!m_params.dts_atr_enabled || m_initial_atr<=0.0)
+         return 1.0;
+      double atr_current=(m_spacing!=NULL)?m_spacing.AtrPoints():0.0;
+      if(atr_current<=0.0)
+         return 1.0;
+      double atr_ratio=atr_current/m_initial_atr;
+      atr_ratio=1.0+(atr_ratio-1.0)*m_params.dts_atr_weight;
+      atr_ratio=MathMax(atr_ratio,0.5);
+      atr_ratio=MathMin(atr_ratio,2.0);
+      return atr_ratio;
+     }
+
+   double         CalculateTimeFactor() const
+     {
+      if(!m_params.dts_time_decay_enabled)
+         return 1.0;
+      int bars_in_trade=Bars(m_symbol,PERIOD_CURRENT)-m_entry_bar;
+      if(bars_in_trade<0)
+         bars_in_trade=0;
+      double time_factor=1.0/(1.0+bars_in_trade*m_params.dts_time_decay_rate);
+      time_factor=MathMax(time_factor,m_params.dts_time_decay_floor);
+      return time_factor;
+     }
+
+   double         CalculateDdFactor() const
+     {
+      if(!m_params.dts_dd_scaling_enabled || m_pnl_usd>=0.0)
+         return 1.0;
+      double dd_abs=MathAbs(m_pnl_usd);
+      if(dd_abs<=m_params.dts_dd_threshold)
+         return 1.0;
+      double excess_dd=dd_abs-m_params.dts_dd_threshold;
+      double dd_factor=1.0+(excess_dd/m_params.dts_dd_scale_factor);
+      dd_factor=MathMin(dd_factor,m_params.dts_dd_max_factor);
+      return dd_factor;
+     }
+
+   double         CalculateDynamicTarget() const
+     {
+      if(!m_params.dts_enabled)
+         return m_params.target_cycle_usd;
+      double base_target=m_params.target_cycle_usd;
+      double atr_factor=CalculateAtrFactor();
+      double time_factor=CalculateTimeFactor();
+      double dd_factor=CalculateDdFactor();
+      double adjusted=base_target*atr_factor*time_factor;
+      if(dd_factor>1.0)
+         adjusted=adjusted/dd_factor;
+      double min_target=base_target*m_params.dts_min_multiplier;
+      double max_target=base_target*m_params.dts_max_multiplier;
+      adjusted=MathMax(adjusted,min_target);
+      adjusted=MathMin(adjusted,max_target);
+      if(m_log && m_params.dts_enabled)
+        {
+         string msg=StringFormat("[DTS] base=%.2f atr_f=%.2f time_f=%.2f dd_f=%.2f adj=%.2f",
+                                base_target,atr_factor,time_factor,dd_factor,adjusted);
+         m_log.Event(Tag(),msg);
+        }
+      return adjusted;
+     }
+
    void           CalculateGroupTP()
      {
       double tick_value=SymbolInfoDouble(m_symbol,SYMBOL_TRADE_TICK_VALUE);
@@ -329,7 +395,8 @@ private:
          return;
         }
       double usd_per_point=(tick_value/tick_size)*m_total_lot;
-      double target=MathMax(0.0,m_params.target_cycle_usd-m_target_reduction);
+      double target=CalculateDynamicTarget()-m_target_reduction;
+      target=MathMax(0.0,target);
       if(m_params.commission_per_lot>0.0)
          target+=m_params.commission_per_lot*m_total_lot;
       if(usd_per_point<=0.0)
@@ -730,6 +797,8 @@ public:
                          m_trail_anchor(0.0),
                          m_partial_realized(0.0),
                          m_furthest_entry(0.0),
+                         m_initial_atr(0.0),
+                         m_entry_bar(0),
                          m_volume_step(0.0),
                          m_volume_min(0.0),
                          m_volume_max(0.0),
@@ -768,6 +837,8 @@ public:
       m_last_realized=0.0;
       m_trailing_on=false;
       m_trail_anchor=0.0;
+      m_initial_atr=(m_spacing!=NULL)?m_spacing.AtrPoints():0.0;
+      m_entry_bar=Bars(m_symbol,PERIOD_CURRENT);
       PlaceInitialOrders();
       m_active=true;
       m_closed_recently=false;

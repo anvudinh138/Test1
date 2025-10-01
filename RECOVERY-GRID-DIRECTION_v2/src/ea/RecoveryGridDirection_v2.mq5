@@ -72,6 +72,20 @@ input double            InpPcPendingGuardMult  = 0.5;
 input double            InpPcGuardExitAtr      = 0.6;
 input double            InpPcMinLotsRemain     = 0.20;
 
+input group "=== Dynamic Target Scaling ==="
+input bool              InpDtsEnabled           = false;
+input bool              InpDtsAtrEnabled        = true;
+input double            InpDtsAtrWeight         = 0.8;
+input bool              InpDtsTimeDecayEnabled  = true;
+input double            InpDtsTimeDecayRate     = 0.01;
+input double            InpDtsTimeDecayFloor    = 0.5;
+input bool              InpDtsDdScalingEnabled  = true;
+input double            InpDtsDdThreshold       = 10.0;
+input double            InpDtsDdScaleFactor     = 50.0;
+input double            InpDtsDdMaxFactor       = 2.0;
+input double            InpDtsMinMultiplier     = 0.5;
+input double            InpDtsMaxMultiplier     = 2.5;
+
 //--- Globals
 SParams              g_params;
 CLogger             *g_logger        = NULL;
@@ -165,6 +179,19 @@ void BuildParams()
    g_params.pc_pending_guard_mult=InpPcPendingGuardMult;
    g_params.pc_guard_exit_atr    =InpPcGuardExitAtr;
    g_params.pc_min_lots_remain   =InpPcMinLotsRemain;
+
+   g_params.dts_enabled            =InpDtsEnabled;
+   g_params.dts_atr_enabled        =InpDtsAtrEnabled;
+   g_params.dts_atr_weight         =InpDtsAtrWeight;
+   g_params.dts_time_decay_enabled =InpDtsTimeDecayEnabled;
+   g_params.dts_time_decay_rate    =InpDtsTimeDecayRate;
+   g_params.dts_time_decay_floor   =InpDtsTimeDecayFloor;
+   g_params.dts_dd_scaling_enabled =InpDtsDdScalingEnabled;
+   g_params.dts_dd_threshold       =InpDtsDdThreshold;
+   g_params.dts_dd_scale_factor    =InpDtsDdScaleFactor;
+   g_params.dts_dd_max_factor      =InpDtsDdMaxFactor;
+   g_params.dts_min_multiplier     =InpDtsMinMultiplier;
+   g_params.dts_max_multiplier     =InpDtsMaxMultiplier;
   }
 
 int OnInit()

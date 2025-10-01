@@ -68,6 +68,20 @@ struct SParams
    double       pc_pending_guard_mult;
    double       pc_guard_exit_atr;
    double       pc_min_lots_remain;
+
+   // dynamic target scaling
+   bool         dts_enabled;
+   bool         dts_atr_enabled;
+   double       dts_atr_weight;
+   bool         dts_time_decay_enabled;
+   double       dts_time_decay_rate;
+   double       dts_time_decay_floor;
+   bool         dts_dd_scaling_enabled;
+   double       dts_dd_threshold;
+   double       dts_dd_scale_factor;
+   double       dts_dd_max_factor;
+   double       dts_min_multiplier;
+   double       dts_max_multiplier;
   };
 
 #endif // __RGD_V2_PARAMS_MQH__
