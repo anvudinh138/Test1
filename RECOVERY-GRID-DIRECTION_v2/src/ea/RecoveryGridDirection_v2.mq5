@@ -59,6 +59,33 @@ input bool              InpRespectStops     = false;  // Set false for backtest
 input double            InpCommissionPerLot = 7.0;
 input long              InpMagic            = 990045;
 
+input group "=== Partial Close ==="
+input bool              InpPcEnabled           = false;
+input double            InpPcRetestAtr         = 0.8;
+input double            InpPcSlopeHysteresis   = 0.0002;
+input double            InpPcMinProfitUsd      = 1.5;
+input double            InpPcCloseFraction     = 0.30;
+input int               InpPcMaxTickets        = 3;
+input int               InpPcCooldownBars      = 10;
+input int               InpPcGuardBars         = 6;
+input double            InpPcPendingGuardMult  = 0.5;
+input double            InpPcGuardExitAtr      = 0.6;
+input double            InpPcMinLotsRemain     = 0.20;
+
+input group "=== Dynamic Target Scaling ==="
+input bool              InpDtsEnabled           = false;
+input bool              InpDtsAtrEnabled        = true;
+input double            InpDtsAtrWeight         = 0.8;
+input bool              InpDtsTimeDecayEnabled  = true;
+input double            InpDtsTimeDecayRate     = 0.01;
+input double            InpDtsTimeDecayFloor    = 0.5;
+input bool              InpDtsDdScalingEnabled  = true;
+input double            InpDtsDdThreshold       = 10.0;
+input double            InpDtsDdScaleFactor     = 50.0;
+input double            InpDtsDdMaxFactor       = 2.0;
+input double            InpDtsMinMultiplier     = 0.5;
+input double            InpDtsMaxMultiplier     = 2.5;
+
 //--- Globals
 SParams              g_params;
 CLogger             *g_logger        = NULL;
@@ -140,6 +167,31 @@ void BuildParams()
    g_params.commission_per_lot =InpCommissionPerLot;
 
    g_params.magic              =InpMagic;
+
+   g_params.pc_enabled           =InpPcEnabled;
+   g_params.pc_retest_atr        =InpPcRetestAtr;
+   g_params.pc_slope_hysteresis  =InpPcSlopeHysteresis;
+   g_params.pc_min_profit_usd    =InpPcMinProfitUsd;
+   g_params.pc_close_fraction    =InpPcCloseFraction;
+   g_params.pc_max_tickets       =InpPcMaxTickets;
+   g_params.pc_cooldown_bars     =InpPcCooldownBars;
+   g_params.pc_guard_bars        =InpPcGuardBars;
+   g_params.pc_pending_guard_mult=InpPcPendingGuardMult;
+   g_params.pc_guard_exit_atr    =InpPcGuardExitAtr;
+   g_params.pc_min_lots_remain   =InpPcMinLotsRemain;
+
+   g_params.dts_enabled            =InpDtsEnabled;
+   g_params.dts_atr_enabled        =InpDtsAtrEnabled;
+   g_params.dts_atr_weight         =InpDtsAtrWeight;
+   g_params.dts_time_decay_enabled =InpDtsTimeDecayEnabled;
+   g_params.dts_time_decay_rate    =InpDtsTimeDecayRate;
+   g_params.dts_time_decay_floor   =InpDtsTimeDecayFloor;
+   g_params.dts_dd_scaling_enabled =InpDtsDdScalingEnabled;
+   g_params.dts_dd_threshold       =InpDtsDdThreshold;
+   g_params.dts_dd_scale_factor    =InpDtsDdScaleFactor;
+   g_params.dts_dd_max_factor      =InpDtsDdMaxFactor;
+   g_params.dts_min_multiplier     =InpDtsMinMultiplier;
+   g_params.dts_max_multiplier     =InpDtsMaxMultiplier;
   }
 
 int OnInit()

@@ -48,6 +48,12 @@ private:
    double         m_trail_anchor;
    double         m_trail_override;
 
+   double         m_partial_realized;
+   double         m_furthest_entry;
+
+   double         m_initial_atr;
+   int            m_entry_bar;
+
    double         m_volume_step;
    double         m_volume_min;
    double         m_volume_max;
@@ -447,6 +453,69 @@ void           MaintainDynamicGrid()
         }
      }
 
+   double         CalculateAtrFactor() const
+     {
+      if(!m_params.dts_atr_enabled || m_initial_atr<=0.0)
+         return 1.0;
+      double atr_current=(m_spacing!=NULL)?m_spacing.AtrPoints():0.0;
+      if(atr_current<=0.0)
+         return 1.0;
+      double atr_ratio=atr_current/m_initial_atr;
+      atr_ratio=1.0+(atr_ratio-1.0)*m_params.dts_atr_weight;
+      atr_ratio=MathMax(atr_ratio,0.5);
+      atr_ratio=MathMin(atr_ratio,2.0);
+      return atr_ratio;
+     }
+
+   double         CalculateTimeFactor() const
+     {
+      if(!m_params.dts_time_decay_enabled)
+         return 1.0;
+      int bars_in_trade=Bars(m_symbol,PERIOD_CURRENT)-m_entry_bar;
+      if(bars_in_trade<0)
+         bars_in_trade=0;
+      double time_factor=1.0/(1.0+bars_in_trade*m_params.dts_time_decay_rate);
+      time_factor=MathMax(time_factor,m_params.dts_time_decay_floor);
+      return time_factor;
+     }
+
+   double         CalculateDdFactor() const
+     {
+      if(!m_params.dts_dd_scaling_enabled || m_pnl_usd>=0.0)
+         return 1.0;
+      double dd_abs=MathAbs(m_pnl_usd);
+      if(dd_abs<=m_params.dts_dd_threshold)
+         return 1.0;
+      double excess_dd=dd_abs-m_params.dts_dd_threshold;
+      double dd_factor=1.0+(excess_dd/m_params.dts_dd_scale_factor);
+      dd_factor=MathMin(dd_factor,m_params.dts_dd_max_factor);
+      return dd_factor;
+     }
+
+   double         CalculateDynamicTarget() const
+     {
+      if(!m_params.dts_enabled)
+         return m_params.target_cycle_usd;
+      double base_target=m_params.target_cycle_usd;
+      double atr_factor=CalculateAtrFactor();
+      double time_factor=CalculateTimeFactor();
+      double dd_factor=CalculateDdFactor();
+      double adjusted=base_target*atr_factor*time_factor;
+      if(dd_factor>1.0)
+         adjusted=adjusted/dd_factor;
+      double min_target=base_target*m_params.dts_min_multiplier;
+      double max_target=base_target*m_params.dts_max_multiplier;
+      adjusted=MathMax(adjusted,min_target);
+      adjusted=MathMin(adjusted,max_target);
+      if(m_log && m_params.dts_enabled)
+        {
+         string msg=StringFormat("[DTS] base=%.2f atr_f=%.2f time_f=%.2f dd_f=%.2f adj=%.2f",
+                                base_target,atr_factor,time_factor,dd_factor,adjusted);
+         m_log.Event(Tag(),msg);
+        }
+      return adjusted;
+     }
+
    void           CalculateGroupTP()
      {
       double tick_value=SymbolInfoDouble(m_symbol,SYMBOL_TRADE_TICK_VALUE);
@@ -457,7 +526,8 @@ void           MaintainDynamicGrid()
          return;
         }
       double usd_per_point=(tick_value/tick_size)*m_total_lot;
-      double target=MathMax(0.0,m_params.target_cycle_usd-m_target_reduction);
+      double target=CalculateDynamicTarget()-m_target_reduction;
+      target=MathMax(0.0,target);
       if(m_params.commission_per_lot>0.0)
          target+=m_params.commission_per_lot*m_total_lot;
       if(usd_per_point<=0.0)
@@ -619,6 +689,15 @@ void           MaintainDynamicGrid()
       return applied;
      }
 
+   struct SPcTicket
+     {
+      ulong  ticket;
+      double volume;
+      double entry;
+      double pnl;
+      double distance;
+     };
+
   void           AdjustTarget(const double delta,const string reason)
      {
       if(delta<=0.0)
@@ -634,69 +713,13 @@ void           MaintainDynamicGrid()
      }
 
 public:
-   void           SetTradingAllowed(const bool allow) { m_trading_allowed=allow; }
-
-   void           CancelPendingBeyond(const double offset_px)
+   double         GetFurthestEntryPrice() const
      {
-      if(offset_px<=0.0)
-         return;
-      double anchor=AveragePrice();
-      if(anchor<=0.0)
-         anchor=m_seed_price;
-      if(anchor<=0.0)
-         return;
-      double limit=(m_direction==DIR_BUY)?(anchor-offset_px):(anchor+offset_px);
-      CTrade trade;
-      trade.SetExpertMagicNumber(m_magic);
-      bool changed=false;
-      int total=(int)OrdersTotal();
-      for(int i=total-1;i>=0;i--)
-        {
-         ulong ticket=OrderGetTicket(i);
-         if(ticket==0)
-            continue;
-         if(!OrderSelect(ticket))
-            continue;
-         if(OrderGetString(ORDER_SYMBOL)!=m_symbol)
-            continue;
-         if(OrderGetInteger(ORDER_MAGIC)!=m_magic)
-            continue;
-         ENUM_ORDER_TYPE type=(ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
-         bool dir_match=false;
-         if(m_direction==DIR_BUY)
-            dir_match=(type==ORDER_TYPE_BUY_LIMIT || type==ORDER_TYPE_BUY_STOP || type==ORDER_TYPE_BUY_STOP_LIMIT);
-         else
-            dir_match=(type==ORDER_TYPE_SELL_LIMIT || type==ORDER_TYPE_SELL_STOP || type==ORDER_TYPE_SELL_STOP_LIMIT);
-         if(!dir_match)
-            continue;
-         string comment=OrderGetString(ORDER_COMMENT);
-         if(StringFind(comment,"RGDv2_Grid",0)!=0 && StringFind(comment,"RGDv2_Rescue",0)!=0)
-            continue;
-         double price=OrderGetDouble(ORDER_PRICE_OPEN);
-         bool cancel=(m_direction==DIR_BUY)?(price<=limit):(price>=limit);
-         if(!cancel)
-            continue;
-         if(trade.OrderDelete(ticket))
-            changed=true;
-        }
-      if(changed)
-         SyncDepthMetrics();
-     }
-
-   void           CloseFraction(const double pct)
-     {
-      if(pct<=0.0)
-         return;
-      double fraction=MathMin(1.0,MathMax(0.0,pct));
-      double target=m_total_lot*fraction;
-      if(target<=0.0)
-         return;
-      double remaining=target;
-      CTrade trade;
-      trade.SetExpertMagicNumber(m_magic);
-      bool closed_any=false;
+      if(m_total_lot<=0.0)
+         return 0.0;
+      double furthest=0.0;
       int total=(int)PositionsTotal();
-      for(int i=total-1;i>=0 && remaining>0.0;i--)
+      for(int i=0;i<total;i++)
         {
          ulong ticket=PositionGetTicket(i);
          if(ticket==0)
@@ -711,44 +734,125 @@ public:
          if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
             (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
             continue;
-         double vol=PositionGetDouble(POSITION_VOLUME);
-         if(vol<=0.0)
-            continue;
-         double close_vol=MathMin(vol,remaining);
-         double normalized=NormalizeLot(close_vol);
-         if(normalized>vol)
-            normalized=vol;
-         if(normalized<=0.0)
-            continue;
-         bool ok=false;
-         if(MathAbs(normalized-vol)<=1e-6)
-            ok=trade.PositionClose(ticket);
+         double entry=PositionGetDouble(POSITION_PRICE_OPEN);
+         if(m_direction==DIR_SELL)
+            furthest=(furthest==0.0)?entry:MathMax(furthest,entry);
          else
-            ok=trade.PositionClosePartial(ticket,normalized);
-        if(ok)
-          {
-           remaining=MathMax(0.0,remaining-normalized);
-           closed_any=true;
-           m_cycle_partial_volume+=normalized;
-          }
+            furthest=(furthest==0.0)?entry:MathMin(furthest,entry);
         }
-      if(closed_any)
+      return furthest;
+     }
+
+   bool           HasProfitableTickets(double min_profit_usd,int max_tickets,double ref_price)
+     {
+      SPcTicket tickets[];
+      int count=0;
+      int total=(int)PositionsTotal();
+      for(int i=0;i<total;i++)
         {
-         RefreshState();
-         SyncDepthMetrics();
+         ulong ticket=PositionGetTicket(i);
+         if(ticket==0)
+            continue;
+         if(!PositionSelectByTicket(ticket))
+            continue;
+         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
+            continue;
+         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
+            continue;
+         long type=PositionGetInteger(POSITION_TYPE);
+         if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
+            (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
+            continue;
+         count++;
+         ArrayResize(tickets,count);
+         tickets[count-1].ticket=ticket;
+         tickets[count-1].volume=PositionGetDouble(POSITION_VOLUME);
+         tickets[count-1].entry=PositionGetDouble(POSITION_PRICE_OPEN);
+         tickets[count-1].pnl=PositionGetDouble(POSITION_PROFIT);
+         tickets[count-1].distance=MathAbs(tickets[count-1].entry-ref_price);
         }
+      if(count==0)
+         return false;
+      for(int i=0;i<count-1;i++)
+         for(int j=i+1;j<count;j++)
+            if(tickets[i].distance>tickets[j].distance)
+              {
+               SPcTicket tmp=tickets[i];
+               tickets[i]=tickets[j];
+               tickets[j]=tmp;
+              }
+      double total_pnl=0.0;
+      int check_count=MathMin(max_tickets,count);
+      for(int i=0;i<check_count;i++)
+         total_pnl+=tickets[i].pnl;
+      return(total_pnl>=min_profit_usd);
      }
 
-   void           SetTrailOverride(const double step_price)
+   int            CloseNearestTickets(double target_volume,int max_tickets,double min_profit_usd,double ref_price)
      {
-      if(step_price>0.0)
-         m_trail_override=step_price;
+      SPcTicket tickets[];
+      int count=0;
+      int total=(int)PositionsTotal();
+      for(int i=0;i<total;i++)
+        {
+         ulong ticket=PositionGetTicket(i);
+         if(ticket==0)
+            continue;
+         if(!PositionSelectByTicket(ticket))
+            continue;
+         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
+            continue;
+         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
+            continue;
+         long type=PositionGetInteger(POSITION_TYPE);
+         if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
+            (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
+            continue;
+         count++;
+         ArrayResize(tickets,count);
+         tickets[count-1].ticket=ticket;
+         tickets[count-1].volume=PositionGetDouble(POSITION_VOLUME);
+         tickets[count-1].entry=PositionGetDouble(POSITION_PRICE_OPEN);
+         tickets[count-1].pnl=PositionGetDouble(POSITION_PROFIT);
+         tickets[count-1].distance=MathAbs(tickets[count-1].entry-ref_price);
+        }
+      if(count==0)
+         return 0;
+      for(int i=0;i<count-1;i++)
+         for(int j=i+1;j<count;j++)
+            if(tickets[i].distance>tickets[j].distance)
+              {
+               SPcTicket tmp=tickets[i];
+               tickets[i]=tickets[j];
+               tickets[j]=tmp;
+              }
+      double closed_volume=0.0;
+      int closed_count=0;
+      CTrade trade;
+      trade.SetExpertMagicNumber(m_magic);
+      for(int i=0;i<count && closed_count<max_tickets;i++)
+        {
+         if(closed_volume>=target_volume)
+            break;
+         if(tickets[i].pnl<-min_profit_usd*0.5)
+            continue;
+         if(trade.PositionClose(tickets[i].ticket))
+           {
+            m_partial_realized+=tickets[i].pnl;
+            closed_volume+=tickets[i].volume;
+            closed_count++;
+           }
+        }
+      return closed_count;
      }
 
-   void           ResetTrailOverride()
+   double         TakePartialCloseProfit()
      {
-      m_trail_override=0.0;
+      double val=m_partial_realized;
+      m_partial_realized=0.0;
+      return val;
      }
+
 
    void           DeployRecovery(const double price)
      {
@@ -833,7 +937,10 @@ public:
                          m_trailing_on(false),
                          m_last_realized(0.0),
                          m_trail_anchor(0.0),
-                         m_trail_override(0.0),
+                         m_partial_realized(0.0),
+                         m_furthest_entry(0.0),
+                         m_initial_atr(0.0),
+                         m_entry_bar(0),
                          m_volume_step(0.0),
                          m_volume_min(0.0),
                          m_volume_max(0.0),
@@ -909,29 +1016,9 @@ public:
       m_last_realized=0.0;
       m_trailing_on=false;
       m_trail_anchor=0.0;
-      m_trail_override=0.0;
-      m_cycle_max_dd=0.0;
-      m_cycle_partial_volume=0.0;
-      m_last_cycle_total_lot=0.0;
-
-      double spacing_px=m_spacing->ToPrice(m_initial_spacing_pips);
-      double price=(m_direction==DIR_BUY)?SymbolInfoDouble(m_symbol,SYMBOL_BID):SymbolInfoDouble(m_symbol,SYMBOL_ASK);
-      for(int i=0;i<warm;i++)
-        {
-         if(spacing_px<=0.0)
-            break;
-         double target=NextLimitPrice(price,spacing_px);
-         double lot=LevelLot(m_levels_placed);
-         ulong ticket=PlaceLimit(target,lot,"RGDv2_Grid");
-         if(ticket>0)
-           {
-            RecordLevel(target,lot,ticket,false);
-            m_last_limit_price=target;
-            price=target;
-           }
-        }
-
-      SyncDepthMetrics();
+      m_initial_atr=(m_spacing!=NULL)?m_spacing.AtrPoints():0.0;
+      m_entry_bar=Bars(m_symbol,PERIOD_CURRENT);
+      PlaceInitialOrders();
       m_active=true;
       RefreshState();
       if(m_log!=NULL)
