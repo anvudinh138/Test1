@@ -21,6 +21,13 @@ struct SParams
    int          grid_levels;        // number of levels including market seed
    double       lot_base;
    double       lot_scale;
+   
+   // dynamic grid
+   bool         grid_dynamic_enabled;
+   int          grid_warm_levels;      // initial pending count
+   int          grid_refill_threshold; // refill when pending <= this
+   int          grid_refill_batch;     // add this many per refill
+   int          grid_max_pendings;     // hard limit for safety
 
    // profit target
    double       target_cycle_usd;

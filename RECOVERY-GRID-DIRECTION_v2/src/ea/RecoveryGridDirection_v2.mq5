@@ -30,6 +30,12 @@ input int               InpGridLevels       = 6;
 input double            InpLotBase          = 0.10;
 input double            InpLotScale         = 1.00;
 
+input bool              InpDynamicGrid      = false;
+input int               InpWarmLevels       = 5;
+input int               InpRefillThreshold  = 2;
+input int               InpRefillBatch      = 3;
+input int               InpMaxPendings      = 15;
+
 input double            InpTargetCycleUSD   = 3.0;
 
 input bool              InpTSLEnabled       = true;
@@ -48,7 +54,7 @@ input int               InpCooldownBars     = 5;
 
 input int               InpOrderCooldownSec = 5;
 input int               InpSlippagePips     = 1;
-input bool              InpRespectStops     = true;
+input bool              InpRespectStops     = false;  // Set false for backtest
 
 input double            InpCommissionPerLot = 7.0;
 input long              InpMagic            = 990045;
@@ -106,6 +112,13 @@ void BuildParams()
    g_params.grid_levels        =InpGridLevels;
    g_params.lot_base           =InpLotBase;
    g_params.lot_scale          =InpLotScale;
+   
+   g_params.grid_dynamic_enabled=InpDynamicGrid;
+   g_params.grid_warm_levels   =InpWarmLevels;
+   g_params.grid_refill_threshold=InpRefillThreshold;
+   g_params.grid_refill_batch  =InpRefillBatch;
+   g_params.grid_max_pendings  =InpMaxPendings;
+   
    g_params.target_cycle_usd   =InpTargetCycleUSD;
 
    g_params.tsl_enabled        =InpTSLEnabled;
@@ -149,12 +162,34 @@ int OnInit()
          g_logger.Event("[RGDv2]","Controller init failed");
       return(INIT_FAILED);
      }
+   
+   // Debug info
+   if(g_logger!=NULL)
+     {
+      double ask=SymbolInfoDouble(_Symbol,SYMBOL_ASK);
+      double bid=SymbolInfoDouble(_Symbol,SYMBOL_BID);
+      g_logger.Event("[RGDv2]",StringFormat("Init OK - Ask=%.5f Bid=%.5f LotBase=%.2f GridLevels=%d Dynamic=%s",
+                                            ask,bid,g_params.lot_base,g_params.grid_levels,
+                                            g_params.grid_dynamic_enabled?"ON":"OFF"));
+     }
 
    return(INIT_SUCCEEDED);
   }
 
 void OnTick()
   {
+   // Check if market is open
+   MqlDateTime dt;
+   TimeToStruct(TimeCurrent(),dt);
+   
+   // Skip weekend
+   if(dt.day_of_week==0 || dt.day_of_week==6)
+      return;
+   
+   // Check symbol trading allowed
+   if(!SymbolInfoInteger(_Symbol,SYMBOL_TRADE_MODE))
+      return;
+      
    if(g_controller!=NULL)
       g_controller.Update();
   }

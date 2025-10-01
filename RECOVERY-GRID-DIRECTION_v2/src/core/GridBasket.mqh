@@ -35,6 +35,12 @@ private:
    double         m_tp_price;
    double         m_last_grid_price;
    double         m_target_reduction;
+   
+   // dynamic grid state
+   int            m_max_levels;
+   int            m_levels_placed;
+   int            m_pending_count;
+   double         m_initial_spacing_pips;
 
    bool           m_trailing_on;
    double         m_last_realized;
@@ -50,6 +56,32 @@ private:
       string side=(m_direction==DIR_BUY)?"BUY":"SELL";
       string role=(m_kind==BASKET_PRIMARY)?"PRI":"HEDGE";
       return StringFormat("[RGDv2][%s][%s][%s]",m_symbol,side,role);
+     }
+
+   string         DirectionLabel() const
+     {
+      return (m_direction==DIR_BUY)?"BUY":"SELL";
+     }
+
+   bool           MatchesOrderDirection(const ENUM_ORDER_TYPE type) const
+     {
+      if(m_direction==DIR_BUY)
+         return (type==ORDER_TYPE_BUY_LIMIT || type==ORDER_TYPE_BUY_STOP);
+      return (type==ORDER_TYPE_SELL_LIMIT || type==ORDER_TYPE_SELL_STOP);
+     }
+
+   void           LogDynamic(const string action,const int level,const double price)
+     {
+      if(m_log==NULL)
+         return;
+      int digits=(int)SymbolInfoInteger(m_symbol,SYMBOL_DIGITS);
+      m_log.Event(Tag(),StringFormat("DG/%s dir=%s level=%d price=%s pendings=%d last=%s",
+                                     action,
+                                     DirectionLabel(),
+                                     level,
+                                     DoubleToString(price,digits),
+                                     m_pending_count,
+                                     DoubleToString(m_last_grid_price,digits)));
      }
 
    double         LevelLot(const int idx) const
@@ -100,17 +132,37 @@ private:
    void           BuildGrid(const double anchor_price,const double spacing_px)
      {
       ClearLevels();
-      AppendLevel(anchor_price,LevelLot(0));
-      for(int i=1;i<m_params.grid_levels;i++)
+      m_max_levels=m_params.grid_levels;
+      m_levels_placed=0;
+      m_pending_count=0;
+      
+      // Pre-allocate full array but only fill warm levels
+      if(m_params.grid_dynamic_enabled)
         {
-         double price=anchor_price;
-         if(m_direction==DIR_BUY)
-            price-=spacing_px*i;
-         else
-            price+=spacing_px*i;
-         AppendLevel(price,LevelLot(i));
+         ArrayResize(m_levels,m_max_levels);
+         for(int i=0;i<m_max_levels;i++)
+           {
+            m_levels[i].price=0.0;
+            m_levels[i].lot=0.0;
+            m_levels[i].ticket=0;
+            m_levels[i].filled=false;
+           }
         }
-      m_last_grid_price=m_levels[ArraySize(m_levels)-1].price;
+      else
+        {
+         // Old behavior: build all levels
+         AppendLevel(anchor_price,LevelLot(0));
+         for(int i=1;i<m_params.grid_levels;i++)
+           {
+            double price=anchor_price;
+            if(m_direction==DIR_BUY)
+               price-=spacing_px*i;
+            else
+               price+=spacing_px*i;
+            AppendLevel(price,LevelLot(i));
+           }
+         m_last_grid_price=m_levels[ArraySize(m_levels)-1].price;
+        }
      }
 
    void           PlaceInitialOrders()
@@ -121,35 +173,99 @@ private:
          return;
 
       m_executor.SetMagic(m_magic);
-      m_executor.BypassNext(ArraySize(m_levels));
-
-      double seed_lot=m_levels[0].lot;
-      if(seed_lot<=0.0)
-         return;
-      ulong market_ticket=m_executor.Market(m_direction,seed_lot,"RGDv2_Seed");
-      if(market_ticket>0)
+      
+      if(m_params.grid_dynamic_enabled)
         {
-         m_levels[0].ticket=market_ticket;
-         m_levels[0].filled=true;
-        }
+         // Dynamic mode: only place seed + warm levels
+         int warm=MathMin(m_params.grid_warm_levels,m_max_levels-1);
+         int warm_cap=warm;
+         if(m_params.grid_max_pendings>0)
+            warm_cap=MathMin(warm,m_params.grid_max_pendings);
+         m_executor.BypassNext(1+warm_cap);
+         
+         double spacing_px=m_spacing.ToPrice(m_initial_spacing_pips);
+         double anchor=SymbolInfoDouble(m_symbol,(m_direction==DIR_BUY)?SYMBOL_ASK:SYMBOL_BID);
+         
+         // Place seed
+         double seed_lot=LevelLot(0);
+         ulong market_ticket=m_executor.Market(m_direction,seed_lot,"RGDv2_Seed");
+         if(market_ticket>0)
+           {
+            m_levels[0].price=anchor;
+            m_levels[0].lot=seed_lot;
+            m_levels[0].ticket=market_ticket;
+            m_levels[0].filled=true;
+            m_levels_placed++;
+            m_last_grid_price=anchor;
+            LogDynamic("SEED",0,anchor);
+           }
+         
+         // Place warm pending
+         for(int i=1;i<=warm_cap;i++)
+           {
+            double price=anchor;
+            if(m_direction==DIR_BUY)
+               price-=spacing_px*i;
+            else
+               price+=spacing_px*i;
+            double lot=LevelLot(i);
+            ulong pending=(m_direction==DIR_BUY)?m_executor.Limit(DIR_BUY,price,lot,"RGDv2_Grid")
+                                                :m_executor.Limit(DIR_SELL,price,lot,"RGDv2_Grid");
+            if(pending>0)
+              {
+               m_levels[i].price=price;
+               m_levels[i].lot=lot;
+               m_levels[i].ticket=pending;
+               m_levels[i].filled=false;
+               m_levels_placed++;
+               m_pending_count++;
+               m_last_grid_price=price;
+               LogDynamic("SEED",i,price);
+              }
+           }
 
-      for(int i=1;i<ArraySize(m_levels);i++)
+         if((warm>warm_cap) || (m_params.grid_max_pendings>0 && m_pending_count>=m_params.grid_max_pendings))
+            LogDynamic("LIMIT",m_levels_placed,m_last_grid_price);
+
+         if(m_pending_count==0)
+            m_last_grid_price=anchor;
+         
+         if(m_log!=NULL)
+            m_log.Event(Tag(),StringFormat("Dynamic grid warm=%d/%d",m_levels_placed,m_max_levels));
+        }
+      else
         {
-         double price=m_levels[i].price;
-         double lot=m_levels[i].lot;
-         if(lot<=0.0)
-            continue;
-         ulong pending=0;
-         if(m_direction==DIR_BUY)
-            pending=m_executor.Limit(DIR_BUY,price,lot,"RGDv2_Grid");
-         else
-            pending=m_executor.Limit(DIR_SELL,price,lot,"RGDv2_Grid");
-         if(pending>0)
-            m_levels[i].ticket=pending;
+         // Old static mode: place all
+         m_executor.BypassNext(ArraySize(m_levels));
+         
+         double seed_lot=m_levels[0].lot;
+         if(seed_lot<=0.0)
+            return;
+         ulong market_ticket=m_executor.Market(m_direction,seed_lot,"RGDv2_Seed");
+         if(market_ticket>0)
+           {
+            m_levels[0].ticket=market_ticket;
+            m_levels[0].filled=true;
+           }
+         
+         for(int i=1;i<ArraySize(m_levels);i++)
+           {
+            double price=m_levels[i].price;
+            double lot=m_levels[i].lot;
+            if(lot<=0.0)
+               continue;
+            ulong pending=0;
+            if(m_direction==DIR_BUY)
+               pending=m_executor.Limit(DIR_BUY,price,lot,"RGDv2_Grid");
+            else
+               pending=m_executor.Limit(DIR_SELL,price,lot,"RGDv2_Grid");
+            if(pending>0)
+               m_levels[i].ticket=pending;
+           }
+         
+         if(m_log!=NULL)
+            m_log.Event(Tag(),StringFormat("Grid seeded levels=%d",ArraySize(m_levels)));
         }
-
-      if(m_log!=NULL)
-        m_log.Event(Tag(),StringFormat("Grid seeded levels=%d",ArraySize(m_levels)));
      }
 
    void           RefreshState()
@@ -452,6 +568,10 @@ public:
                          m_tp_price(0.0),
                          m_last_grid_price(0.0),
                          m_target_reduction(0.0),
+                         m_max_levels(0),
+                         m_levels_placed(0),
+                         m_pending_count(0),
+                         m_initial_spacing_pips(0.0),
                          m_trailing_on(false),
                          m_last_realized(0.0),
                          m_trail_anchor(0.0),
@@ -487,6 +607,7 @@ public:
       double spacing_px=m_spacing.ToPrice(spacing_pips);
       if(spacing_px<=0.0)
          return false;
+      m_initial_spacing_pips=spacing_pips;
       BuildGrid(anchor_price,spacing_px);
       m_target_reduction=0.0;
       m_last_realized=0.0;
@@ -499,12 +620,97 @@ public:
       return true;
      }
 
+   void           RefillBatch()
+     {
+      if(!m_params.grid_dynamic_enabled)
+         return;
+      if(m_levels_placed>=m_max_levels)
+         return;
+      if(m_pending_count>m_params.grid_refill_threshold)
+         return;
+      if(m_params.grid_max_pendings>0 && m_pending_count>=m_params.grid_max_pendings)
+         return;
+      
+      double spacing_px=m_spacing.ToPrice(m_initial_spacing_pips);
+      double anchor_price=SymbolInfoDouble(m_symbol,(m_direction==DIR_BUY)?SYMBOL_BID:SYMBOL_ASK);
+      int to_add=MathMin(m_params.grid_refill_batch,m_max_levels-m_levels_placed);
+      int added=0;
+      
+      for(int i=0;i<to_add;i++)
+        {
+         int idx=m_levels_placed;
+         if(idx>=m_max_levels)
+            break;
+         
+         double base_price=(m_levels_placed==0)?anchor_price:m_last_grid_price;
+         double price=base_price;
+         if(m_direction==DIR_BUY)
+            price-=spacing_px;
+         else
+            price+=spacing_px;
+         
+         double lot=LevelLot(idx);
+         if(lot<=0.0)
+            continue;
+         
+         ulong pending=(m_direction==DIR_BUY)?m_executor.Limit(DIR_BUY,price,lot,"RGDv2_GridRefill")
+                                             :m_executor.Limit(DIR_SELL,price,lot,"RGDv2_GridRefill");
+         if(pending>0)
+           {
+            m_levels[idx].price=price;
+            m_levels[idx].lot=lot;
+            m_levels[idx].ticket=pending;
+            m_levels[idx].filled=false;
+            m_levels_placed++;
+            m_pending_count++;
+            m_last_grid_price=price;
+            LogDynamic("REFILL",idx,price);
+            added++;
+
+            if(m_params.grid_max_pendings>0 && m_pending_count>=m_params.grid_max_pendings)
+              {
+               LogDynamic("LIMIT",idx,price);
+               break;
+              }
+           }
+        }
+      
+      if(added>0 && m_log!=NULL)
+         m_log.Event(Tag(),StringFormat("Refill +%d placed=%d/%d pending=%d",added,m_levels_placed,m_max_levels,m_pending_count));
+     }
+
    void           Update()
      {
       if(!m_active)
          return;
       m_closed_recently=false;
       RefreshState();
+      
+      // Dynamic grid refill
+      if(m_params.grid_dynamic_enabled)
+        {
+         // Update pending count by direction
+         m_pending_count=0;
+         int total=(int)OrdersTotal();
+         for(int i=0;i<total;i++)
+           {
+            ulong ticket=OrderGetTicket(i);
+            if(ticket==0)
+               continue;
+            if(!OrderSelect(ticket))
+               continue;
+            if(OrderGetString(ORDER_SYMBOL)!=m_symbol)
+               continue;
+            if(OrderGetInteger(ORDER_MAGIC)!=m_magic)
+               continue;
+            ENUM_ORDER_TYPE type=(ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+            if(!MatchesOrderDirection(type))
+               continue;
+            m_pending_count++;
+           }
+         RefillBatch();
+        }
+      
       ManageTrailing();
       if((m_pnl_usd>=EffectiveTargetUsd()) || PriceReachedTP())
         {

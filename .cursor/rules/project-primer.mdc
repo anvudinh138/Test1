@@ -1,0 +1,42 @@
+---
+alwaysApply: false
+description: "Short project primer so any AI grasps the Two-Sided Recovery Grid bot quickly and follows cost-aware output rules."
+---
+
+# Project Primer — Two-Sided Recovery Grid
+
+## What this bot does
+- ignore old-project -> project cũ ,đã failed hoặc ko thành công , lưu lại để xem lại idea cho feature , ko cần đọc
+- Luôn duy trì **2 basket BUY/SELL**. Bên đang lỗ (**loser**) sẽ được hỗ trợ bằng **hedge đối hướng** nhỏ + **TSL** để ăn pullback.
+- Lãi từ hedge được dùng để **kéo Group TP** của loser **về gần giá**; khi chạm **Group TP** thì **đóng nguyên basket** và **flip roles** cho chu kỳ tiếp theo.
+
+## Modules (core, tách UI/broker)
+- `CLifecycleController` (điều phối 2 basket, rescue, flip, safety)
+- `CGridDirection` (avg, PnL, Group TP, TSL cho 1 basket)
+- `CRescueEngine` (quyết định mở hedge)
+- `CSpacingEngine` (PIPS/ATR/HYBRID + floor)
+- `COrderExecutor/Validator` (đặt/sửa/đóng + luật broker)
+- `CPortfolioLedger` (exposure, session SL)
+- `CLogger` (log sự kiện có cấu trúc)
+
+## Tick Flow (rút gọn)
+1. Cập nhật A/B → xác định **loser/winner**  
+2. Nếu **breach DD** & **guard OK** → mở **hedge** phía winner (market + staged limits)  
+3. **TSL** chỉ cho hedge, kích hoạt khi `tsl_start_points`, step `tsl_step_points`  
+4. Khi **Group TP/TSL hit** → **đóng nguyên basket**  
+5. Nếu bên còn lại vẫn DD → **flip** và xét hedge mới  
+6. Nếu vi phạm risk → **flatten & halt**
+
+## Công thức/Trạng thái chính
+- Tính `avg_price`, `pnl`, `tp_price` mỗi tick; **Group TP = BE + δ** để đạt `target_cycle_usd`.
+- Hedge lãi `H` ⇒ giảm `target_cycle_usd` phía loser bằng `H` (kéo TP gần hơn).
+- Rescue khi vượt **last grid × offset_ratio** hoặc **DD ≥ dd_open_usd** (có cooldown/exposure/cycles guard).
+- State: `BasketState{avg_price,pnl,tp_price,tsl_on,cycles_done}`.
+
+## Output & Cost rules
+- **Ưu tiên unified diff** khi sửa; tạo file mới: in `// path: <...>` + nội dung.
+- **Giới hạn đầu ra ≤ 1,800 tokens**; nếu sắp vượt, **dừng** và in `__CUT__`.
+- Mặc định **không dùng thinking/1M context** trừ khi thật cần; gộp nhiều mục trong **1 request** khi hợp lý.
+
+## Testing (quick)
+- Seed đúng 2 basket; mở hedge đúng điều kiện; TSL chạy; hedge-profit **kéo TP**; đóng nguyên basket khi chạm TP; **flip** chuẩn; guard `exposure_cap/session_sl`; log đủ tag **BREACH/DD/TSL/TP/HALT**.

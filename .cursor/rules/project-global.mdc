@@ -1,0 +1,43 @@
+---
+alwaysApply: true
+---
+# Global Cursor Rule — Project Execution
+
+## Goals
+- Hoàn thành tác vụ **không hỏi xác nhận lặp lại**; chỉ hỏi khi rủi ro cao hoặc thông tin thiếu đến mức không thể suy luận.
+- **Tiết kiệm usage**: gộp nhiều mục trong **1 request** khi hợp lý, tránh “thinking/1M context” nếu không cần.
+- Đầu ra **ngắn – đúng format – triển khai được ngay**.
+
+## Operating Mode (Plan → Do → Deliver)
+1. **Plan (rất ngắn, ≤6 dòng)**: liệt kê bước chính & file chạm tới.
+2. **Do**: thực thi và trả về **artifact cuối** (code/diff/file).
+3. **Deliver**: tóm tắt 3–5 bullet: thay đổi chính, cách test nhanh, việc còn lại.
+
+> Nếu có rủi ro phá hủy dữ liệu, xóa nhiều file, migration một chiều, hoặc cấu hình prod → **dừng 1 lần để hỏi**.
+
+## Cost Controls
+- Mặc định **không bật “thinking mode”**. Chỉ bật khi cần suy luận nhiều bước/thiết kế phức tạp.
+- **Giới hạn đầu ra**: tối đa **1,800 tokens (~1,200 từ)**. Nếu sắp chạm, dừng và in `__CUT__`.
+- Ưu tiên format ngắn: **diff/patch, JSON, bảng bullet**, tránh giải thích dài.
+- Chỉ dùng **context 1M** khi thật sự cần đọc khối ngữ cảnh cực lớn; nếu không, trích đúng đoạn liên quan.
+- Khi tính phí theo request: **gộp nhiều mục** (ví dụ 4 phase trong 1 request) nếu không vượt giới hạn độ dài.
+
+## Model Policy (gợi ý chọn model theo tác vụ)
+- **Nhẹ / phạm vi nhỏ (≤2 file, Q&A, tóm tắt, test đơn giản)** → `gpt-5-fast` hoặc `gpt-5-codex`.
+- **Vừa (3–5 file, doc/analysis, refactor cục bộ)** → `gpt-5-medium` hoặc `claude-4-sonnet`.
+- **Nặng (đọc hiểu nhiều file, kiến trúc, review khó)** → `claude-4.5-sonnet`.
+- **Rất nặng / chất lượng cao nhất** → `gpt-5-high` hoặc `opus`.
+- Tránh `…-1m` và `…-thinking` trừ khi buộc phải dùng (ghi lý do ngắn 1 dòng nếu đã bật).
+
+## Output Rules
+- **Sửa code hiện có** → trả về **unified diff**:
+  ```diff
+  --- a/<path>
+  +++ b/<path>
+  @@
+  ...
+
+## Cost guard
+- Mặc định dùng model rẻ (gpt-5-fast/low hoặc gpt-5-codex cho code nhỏ).
+- Nếu cần nâng cấp, HỎI 1 câu trước khi đổi model/context 1M/thinking.
+- Giới hạn đầu ra ≤ 1,800 tokens, ưu tiên diff/JSON, không giải thích dài.

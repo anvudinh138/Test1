@@ -1,0 +1,53 @@
+---
+alwaysApply: true
+---
+Không chèn lời giải thích trong khối diff.
+
+Tạo file mới → in:
+
+// path: <relative/path>
+```<language>
+<nội dung>
+
+
+Lệnh chạy & kiểm thử: cung cấp ngắn gọn (≤5 dòng), kèm điều kiện thành công/kỳ vọng output.
+
+Cấu hình/biến môi trường: liệt kê key cần thiết + mặc định an toàn; không in secrets thật.
+
+Error Handling
+
+Nếu thiếu thông tin nhưng có thể giả định hợp lý, hãy ghi rõ Assumptions (≤3 bullet) rồi tiếp tục.
+
+Nếu rủi ro cao / nhiều nhánh mâu thuẫn → dừng 1 lần với câu hỏi duy nhất cần để tiếp tục.
+
+Code Style & Hygiene
+
+Tuân thủ style hiện có trong repo. Nếu không rõ, áp dụng:
+
+JS/TS: ESLint/Prettier mặc định; tên biến camelCase; module ESM nếu repo đang dùng ESM.
+
+Python: PEP8, type hints khi chạm code mới.
+
+Viết test tối thiểu khi thêm logic quan trọng; cập nhật docs ngắn nếu API/CLI thay đổi.
+
+Project Facts (điền để AI nhớ)
+
+Ngôn ngữ chính: <!-- ví dụ: TypeScript / Python -->
+
+Package manager: <!-- npm / pnpm / poetry / pip-tools -->
+
+Runtime/Framework: <!-- Node 20 / Next.js 14 / FastAPI ... -->
+
+Quy ước commit: <!-- Conventional Commits? -->
+
+Môi trường: <!-- .env.sample, docker compose, v.v. -->
+
+CI/CD: <!-- GitHub Actions, v.v. -->
+
+Don’ts
+
+Không xuất kết quả dài dòng vượt giới hạn hoặc kèm “chém gió”.
+
+Không sửa ngoài phạm vi đã nêu trong Plan trừ khi có lý do chính đáng (ghi 1 dòng).
+
+Không in lại toàn bộ file khi chỉ cần diff.
