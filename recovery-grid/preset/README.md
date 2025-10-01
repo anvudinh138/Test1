@@ -8,7 +8,7 @@
 **Features**:
 - ❌ Partial Close: Disabled
 - ❌ Dynamic Target Scaling: Disabled
-
+![alt text](image.png)
 ---
 
 ### 02_DTS_Default.set
@@ -24,7 +24,7 @@
 - `InpDtsDdThreshold = 10.0` - Moderate DD trigger
 - `InpDtsMinMultiplier = 0.5` - Can reduce to 50%
 - `InpDtsMaxMultiplier = 2.5` - Can increase to 250%
-
+![alt text](image-1.png)
 ---
 
 ### 03_DTS_Conservative.set ⭐ **Recommended First Test**
@@ -47,7 +47,7 @@
 - Closest to baseline behavior
 - Lower risk of over-adjustment
 - Good starting point for optimization
-
+![alt text](image-2.png)
 ---
 
 ### 04_DTS_Aggressive.set
@@ -66,7 +66,7 @@
 - `InpDtsDdMaxFactor = 3.0` - Can reduce to 33%
 - `InpDtsMinMultiplier = 0.4` - Min 40% of base
 - `InpDtsMaxMultiplier = 3.0` - Max 300% of base
-
+![alt text](image-3.png)
 ---
 
 ### 05_DTS_ATR_Only.set
@@ -79,7 +79,7 @@
 - ❌ DD Scaling: Disabled
 
 **Use Case**: Test if ATR adaptation alone improves results
-
+![alt text](image-4.png)
 ---
 
 ### 06_DTS_DD_Focus.set
@@ -92,7 +92,7 @@
 - ✅ DD Scaling: Aggressive (threshold=8, factor=40)
 
 **Use Case**: Optimize for quick recovery from drawdowns
-
+![alt text](image-5.png)
 ---
 
 ### 07_PC_DTS_Combo.set 🚀 **High Priority**
@@ -103,7 +103,87 @@
 - ✅ DTS: Balanced settings
 
 **Expected**: Best overall performance with DD reduction + profit optimization
+![alt text](image-6.png)
+![alt text](image-7.png)
+Tóm tắt nhanh 7 preset (nhìn đồ thị)
 
+Set 1→6 (hình 1–6): đường balance tăng khá đều, thi thoảng equity (xanh lá) cắm sâu theo cụm — đúng “chữ ký” của grid/recovery. Deposit Load chủ yếu thấp, chỉ vài chỗ nhô cao.
+
+Set 7 (PC + DTS Combo, hình 7): balance nhảy bậc (nhờ Partial Close) và tăng rất nhanh; equity drawdown cắm cực sâu tại các cụm. Ở phần “Deposit Load” có đỉnh ~50% → gánh nặng ký quỹ lớn khi trung bình giá/cứu lệnh.
+
+Số liệu chi tiết Set 7 (từ hình 8)
+
+Initial: 10,000 → Final ≈ 15,074.69 (Total Net Profit 5,074.69).
+
+Profit Factor 5.64, Expected Payoff 9.18.
+
+Total Trades 553, Win rate ≈60.94% (337/553).
+
+Equity DD Max ≈ 4,436.19 (42.98%); Balance DD nhỏ: 423.85 (3.26%) → rủi ro chủ yếu nằm ở floating DD, không phải realized DD.
+
+Largest profit 810.30; largest loss -146.70.
+
+Consecutive losses tối đa 5 lệnh; chuỗi lợi nhuận tối đa $1,919.25 (8 lệnh).
+Những điểm trên lấy từ README + bảng MT5 bạn chụp. 
+
+README
+
+Nhận định về Set 7
+
+Điểm mạnh
+
+Lợi nhuận/hiệu suất vượt trội (PF 5.64) và nhờ Partial Close nên balance “bậc thang”, chốt lời đều. 
+
+README
+
+Điểm yếu
+
+Equity DD quá lớn (~43%) + Deposit Load chạm ~50% → rủi ro “đứt gánh” khi gặp chuỗi giá kéo dài; yêu cầu vốn dự phòng cao.
+
+Đồ thị cho thấy các “cụm” DD đúng lúc biến động mạnh → khả năng DTS scaling nới khối lượng/giữ vị thế hơi sâu.
+
+Hướng giảm DD cho Set 7 (ưu tiên theo README)
+
+Mục tiêu: giữ phần “ngon” của PC + DTS nhưng hạ rủi ro equity. Đề xuất từng nấc, kiểm A/B trên cùng dữ liệu:
+
+Giảm độ hung hăng của DTS khi gặp DD
+
+Tăng InpDtsDdThreshold 10 → 12–15 (kích hoạt scaling muộn hơn).
+
+Hạ trần InpDtsMaxMultiplier 2.5 → 2.0 (giới hạn khuếch đại khối lượng). 
+
+
+Làm “nguội” hệ số theo thời gian
+
+Nhích InpDtsTimeDecayRate 0.01 → 0.012–0.015 để điều chỉnh tan nhanh hơn sau spike.
+
+Nâng InpDtsTimeDecayFloor lên ~0.7 để không giảm multiplier quá sâu khi thị trường chưa hồi. 
+
+
+Giảm nhạy với biến động thuần ATR
+
+Hạ InpDtsAtrWeight 0.8 → 0.6–0.7 nếu thấy các cú spike do biến động “kéo” lượng vào quá nhanh. 
+
+
+Tối ưu Partial Close để hạ floating
+
+MinProfit tăng 2.0 → 2.5–3.0: chốt sớm hơn các cụm lợi nhuận nhỏ, giúp equity bám balance sát hơn. (PC đã bật ở Set 7). 
+
+
+Kiểm tra thêm bản “DD_Focus” làm mốc
+
+Nếu 06_DTS_DD_Focus (hình 6) cho recovery nhanh và DD thấp hơn, cân nhắc “pha” thông số DD Focus vào Combo: giữ PC + DdScaleFactor cao nhưng đặt DdMaxFactor thấp. 
+
+
+Kế hoạch test tiếp theo (ngắn gọn)
+
+Clone Set 7 → tạo “07_Combo_Safer_v1” với:
+AtrWeight=0.7; TimeDecayRate=0.012; TimeDecayFloor=0.7; DdThreshold=12; MaxMultiplier=2.0; PC MinProfit=2.5.
+
+Chạy lại đúng khung thời gian/symbol hiện tại → đối chiếu các metric trong bảng README: Final Balance, Max Equity DD%, Total Trades, Win Rate, PF, Recovery Speed (bars). 
+
+
+Nếu DD vẫn >30%: tiếp tục tăng DdThreshold lên 15, hoặc hạ AtrWeight 0.6.
 ---
 
 ## 🎯 Recommended Testing Order

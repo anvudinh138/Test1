@@ -26,37 +26,37 @@ input double            InpSpacingStepPips  = 25.0;
 input double            InpSpacingAtrMult   = 0.6;
 input double            InpMinSpacingPips   = 12.0;
 
-input int               InpGridLevels       = 6;
-input double            InpLotBase          = 0.10;
-input double            InpLotScale         = 1.00;
+input int               InpGridLevels       = 1000;
+input double            InpLotBase          = 0.01;
+input double            InpLotScale         = 1.5;
 
-input bool              InpDynamicGrid      = false;
+input bool              InpDynamicGrid      = true;
 input int               InpWarmLevels       = 5;
 input int               InpRefillThreshold  = 2;
 input int               InpRefillBatch      = 3;
 input int               InpMaxPendings      = 15;
 
-input double            InpTargetCycleUSD   = 3.0;
+input double            InpTargetCycleUSD   = 5.0;
 
 input bool              InpTSLEnabled       = true;
 input int               InpTSLStartPoints   = 1000;
 input int               InpTSLStepPoints    = 200;
 
 input string            InpRecoverySteps    = "1000,2000,3000";
-input double            InpRecoveryLot      = 0.10;
-input double            InpDDOpenUSD        = 8.0;
+input double            InpRecoveryLot      = 0.02;
+input double            InpDDOpenUSD        = 10000;
 input double            InpOffsetRatio      = 0.5;
 
 input double            InpExposureCapLots  = 2.0;
 input int               InpMaxCyclesPerSide = 3;
-input double            InpSessionSL_USD    = 30.0;
+input double            InpSessionSL_USD    = 100000;
 input int               InpCooldownBars     = 5;
 
 input int               InpOrderCooldownSec = 5;
 input int               InpSlippagePips     = 1;
 input bool              InpRespectStops     = false;  // Set false for backtest
 
-input double            InpCommissionPerLot = 7.0;
+input double            InpCommissionPerLot = 0.0; // 7.0
 input long              InpMagic            = 990045;
 
 input group "=== Partial Close ==="
