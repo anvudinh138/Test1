@@ -59,6 +59,19 @@ input bool              InpRespectStops     = false;  // Set false for backtest
 input double            InpCommissionPerLot = 7.0;
 input long              InpMagic            = 990045;
 
+input group "=== Partial Close ==="
+input bool              InpPcEnabled           = false;
+input double            InpPcRetestAtr         = 0.8;
+input double            InpPcSlopeHysteresis   = 0.0002;
+input double            InpPcMinProfitUsd      = 1.5;
+input double            InpPcCloseFraction     = 0.30;
+input int               InpPcMaxTickets        = 3;
+input int               InpPcCooldownBars      = 10;
+input int               InpPcGuardBars         = 6;
+input double            InpPcPendingGuardMult  = 0.5;
+input double            InpPcGuardExitAtr      = 0.6;
+input double            InpPcMinLotsRemain     = 0.20;
+
 //--- Globals
 SParams              g_params;
 CLogger             *g_logger        = NULL;
@@ -140,6 +153,18 @@ void BuildParams()
    g_params.commission_per_lot =InpCommissionPerLot;
 
    g_params.magic              =InpMagic;
+
+   g_params.pc_enabled           =InpPcEnabled;
+   g_params.pc_retest_atr        =InpPcRetestAtr;
+   g_params.pc_slope_hysteresis  =InpPcSlopeHysteresis;
+   g_params.pc_min_profit_usd    =InpPcMinProfitUsd;
+   g_params.pc_close_fraction    =InpPcCloseFraction;
+   g_params.pc_max_tickets       =InpPcMaxTickets;
+   g_params.pc_cooldown_bars     =InpPcCooldownBars;
+   g_params.pc_guard_bars        =InpPcGuardBars;
+   g_params.pc_pending_guard_mult=InpPcPendingGuardMult;
+   g_params.pc_guard_exit_atr    =InpPcGuardExitAtr;
+   g_params.pc_min_lots_remain   =InpPcMinLotsRemain;
   }
 
 int OnInit()

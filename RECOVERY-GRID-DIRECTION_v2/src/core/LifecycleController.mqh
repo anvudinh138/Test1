@@ -30,6 +30,11 @@ private:
    CGridBasket      *m_sell;
    bool              m_halted;
 
+   int               m_pc_last_close_bar;
+   bool              m_pc_guard_active;
+   double            m_pc_guard_price;
+   int               m_pc_guard_start_bar;
+
    string            Tag() const { return StringFormat("[RGDv2][%s][LC]",m_symbol); }
 
    double           CurrentPrice(const EDirection dir) const
@@ -146,6 +151,123 @@ private:
       EnsureRescueReset();
      }
 
+   int               CurrentBarIndex() const
+     {
+      return Bars(m_symbol,PERIOD_CURRENT);
+     }
+
+   int               BarsSince(int bar_index) const
+     {
+      return CurrentBarIndex()-bar_index;
+     }
+
+   bool              GuardExpired(double price,double atr_points)
+     {
+      if(!m_pc_guard_active)
+         return true;
+      if(BarsSince(m_pc_guard_start_bar)>=m_params.pc_guard_bars)
+         return true;
+      double distance=MathAbs(price-m_pc_guard_price);
+      if(distance>=m_params.pc_guard_exit_atr*atr_points)
+         return true;
+      return false;
+     }
+
+   void              ActivatePcGuard(double price)
+     {
+      m_pc_guard_active=true;
+      m_pc_guard_price=price;
+      m_pc_guard_start_bar=CurrentBarIndex();
+     }
+
+   void              CancelPendingAround(double price,double offset_px)
+     {
+      if(offset_px<=0.0)
+         return;
+      double lower=price-offset_px;
+      double upper=price+offset_px;
+      int total=(int)OrdersTotal();
+      CTrade trade;
+      trade.SetExpertMagicNumber(m_magic);
+      for(int i=total-1;i>=0;i--)
+        {
+         ulong ticket=OrderGetTicket(i);
+         if(ticket==0)
+            continue;
+         if(!OrderSelect(ticket))
+            continue;
+         if(OrderGetString(ORDER_SYMBOL)!=m_symbol)
+            continue;
+         if(OrderGetInteger(ORDER_MAGIC)!=m_magic)
+            continue;
+         double order_price=OrderGetDouble(ORDER_PRICE_OPEN);
+         if(order_price>=lower && order_price<=upper)
+            trade.OrderDelete(ticket);
+        }
+     }
+
+   bool              CanPartialClose(CGridBasket *loser,double price,double atr_points)
+     {
+      if(!m_params.pc_enabled)
+         return false;
+      if(loser==NULL || !loser.IsActive())
+         return false;
+      if(loser.BasketPnL()>=0.0)
+         return false;
+      if(m_pc_guard_active && !GuardExpired(price,atr_points))
+         return false;
+      double total_lot=loser.TotalLot();
+      if(total_lot<=m_params.pc_min_lots_remain)
+         return false;
+      if(BarsSince(m_pc_last_close_bar)<m_params.pc_cooldown_bars)
+         return false;
+      double furthest=loser.GetFurthestEntryPrice();
+      if(furthest==0.0)
+         return false;
+      double retest_dist=MathAbs(furthest-price);
+      if(atr_points<=0.0)
+         atr_points=m_spacing.ToPrice(m_spacing.SpacingPips());
+      if(retest_dist<m_params.pc_retest_atr*atr_points)
+         return false;
+      if(!loser.HasProfitableTickets(m_params.pc_min_profit_usd,
+                                     m_params.pc_max_tickets,
+                                     price))
+         return false;
+      return true;
+     }
+
+   void              ExecutePartialClose(CGridBasket *loser,double price,double spacing_px)
+     {
+      if(loser==NULL)
+         return;
+      double total_lot=loser.TotalLot();
+      double target_volume=total_lot*m_params.pc_close_fraction;
+      if(total_lot-target_volume<m_params.pc_min_lots_remain)
+         target_volume=total_lot-m_params.pc_min_lots_remain;
+      if(target_volume<=0.0)
+         return;
+      int closed=loser.CloseNearestTickets(target_volume,
+                                          m_params.pc_max_tickets,
+                                          m_params.pc_min_profit_usd,
+                                          price);
+      if(closed>0)
+        {
+         double realized=loser.TakePartialCloseProfit();
+         if(realized>0.0)
+            loser.ReduceTargetBy(realized);
+         double guard_offset=spacing_px*m_params.pc_pending_guard_mult;
+         CancelPendingAround(price,guard_offset);
+         ActivatePcGuard(price);
+         m_pc_last_close_bar=CurrentBarIndex();
+         if(m_log!=NULL)
+           {
+            int digits=(int)SymbolInfoInteger(m_symbol,SYMBOL_DIGITS);
+            m_log.Event(Tag(),StringFormat("[PartialClose] tickets=%d profit=%.2f price=%s",
+                                          closed,realized,DoubleToString(price,digits)));
+           }
+        }
+     }
+
 public:
                      CLifecycleController(const string symbol,
                                           const SParams &params,
@@ -165,7 +287,11 @@ public:
                          m_magic(magic),
                          m_buy(NULL),
                          m_sell(NULL),
-                         m_halted(false)
+                         m_halted(false),
+                         m_pc_last_close_bar(0),
+                         m_pc_guard_active(false),
+                         m_pc_guard_price(0.0),
+                         m_pc_guard_start_bar(0)
      {
      }
 
@@ -312,6 +438,16 @@ public:
                   m_rescue.LogSkip("Exposure cap blocks rescue");
                  }
               }
+           }
+        }
+
+      if(loser!=NULL && m_params.pc_enabled)
+        {
+         double price_loser=CurrentPrice(loser.Direction());
+         if(CanPartialClose(loser,price_loser,atr_points))
+           {
+            ExecutePartialClose(loser,price_loser,spacing_px);
+            loser.Update();
            }
         }
 

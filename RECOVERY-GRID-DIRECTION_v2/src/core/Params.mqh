@@ -55,6 +55,19 @@ struct SParams
 
    // misc
    long         magic;
+
+   // partial close
+   bool         pc_enabled;
+   double       pc_retest_atr;
+   double       pc_slope_hysteresis;
+   double       pc_min_profit_usd;
+   double       pc_close_fraction;
+   int          pc_max_tickets;
+   int          pc_cooldown_bars;
+   int          pc_guard_bars;
+   double       pc_pending_guard_mult;
+   double       pc_guard_exit_atr;
+   double       pc_min_lots_remain;
   };
 
 #endif // __RGD_V2_PARAMS_MQH__
