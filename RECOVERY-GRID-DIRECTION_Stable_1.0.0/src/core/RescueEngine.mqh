@@ -6,7 +6,6 @@
 
 #include "Types.mqh"
 #include "Params.mqh"
-#include <Trade/Trade.mqh>
 #include "Logger.mqh"
 
 class CRescueEngine
@@ -44,7 +43,7 @@ public:
      {
       if(m_params.cooldown_bars<=0)
          return true;
-      int seconds=(int)PeriodSeconds(_Period);
+      int seconds=PeriodSeconds();
       if(seconds<=0)
          seconds=60;
       datetime window=m_params.cooldown_bars*seconds;
