@@ -1,0 +1,126 @@
+quá đã 😄 nhìn equity thì cơ bản logic đúng (đều tay – cứ đến nhịp hồi là kéo TP rồi “pop” lên). Spike xanh dương nhô lên khỏi xanh lá = đóng cả basket thua ở BE+δ y như mình muốn. Cú “đâm thẳng xuống” ở cuối không phải bug backtest đâu—đó là bức tranh thật của một trend kéo dài đúng lúc test kết thúc ⇒ còn nguyên rổ thua + deposit load ~100% nên equity rơi mạnh.
+
+Dưới đây là checklist “độ cứng” + patch gợi ý để bạn tránh cảnh cuối đồ thị:
+
+1) Chẩn đoán nhanh biểu đồ
+
+Răng cưa xanh dương đều nhau → hedge kéo TP chạy ổn.
+
+Cột Deposit Load thỉnh thoảng chạm cao → lúc đó recovery/hedge đang mở to.
+
+Cú cuối: thị trường trend dai, loser basket vẫn mở, chưa kịp hồi về group TP, và test dừng ⇒ equity hiển thị đúng trạng thái đang gồng.
+
+2) 5 “công tắc an toàn” nên bật
+(A) Spacing động theo ATR (đừng cố định 1000 mọi lúc)
+
+Khi ATR lớn, nới spacing & giảm recovery lot để không chất đống lệnh.
+
+Công thức nhanh:
+
+spacing_points = max(min_spacing, ATR(14) * atr_mult)
+
+recovery_steps = [1.0, 2.0, 3.0] * spacing_points
+
+Lợi: khi biến động tăng, lưới thưa ra → ít fill, ít DD.
+
+(B) Kill-switch theo trend (ngưng thêm lệnh vào rổ thua)
+
+Nếu |distance(price, loser.avg)| > k * ATR và MA slope > ngưỡng → tạm dừng DeployRecovery(); chỉ cho hedge nhỏ kiếm pullback, không add cùng hướng nữa.
+
+Điều kiện bật lại khi giá quay về trong ≤ m * ATR.
+
+Pseudo (trong RescueEngine.ShouldRescue):
+
+bool trendStrong = (Slope(EMA(200)) > slope_th)
+                && (DistanceFrom(losing.avg_price, price) > k_atr*ATR);
+if(trendStrong) return false; // block rescue add
+
+(C) Equity trailing stop cho phiên (khác SessionSL tĩnh)
+
+Ghi peak_equity mỗi lần đóng 1 cycle; nếu equity < peak_equity - trail_dd_usd ⇒ Flatten & Halt.
+
+Dùng nhỏ hơn InpSessionSL_USD rất nhiều (ví dụ 4–8% balance) để không đi đến 100% deposit load.
+
+if(ledger.Equity() < ledger.PeakEquity() - params.session_trailing_dd_usd){
+    FlattenAll(); Halt();
+}
+
+(D) Cap theo “Khoảng cách TP còn lại”
+
+Tính distance_to_tp = |tp_price - price| theo point.
+
+Nếu distance_to_tp > z * ATR(14) ⇒ khóa basket (không thêm lệnh mới) và/hoặc giảm target_cycle_usd để TP bớt xa (điểm giống video: kéo nhanh TP về).
+
+if(DistToTPPoints(loser) > z_atr*ATRPoints)
+    loser.WeakenTarget(delta_usd); // giảm δ
+
+(E) Lịch & đóng phiên
+
+Thứ 6, 30–60 phút trước close: đóng sạch & restart tuần sau.
+
+Mỗi ngày một “cut-off” (tránh swap/rollover): không mở rescue mới sau 21:30 server.
+
+3) Tham số khởi điểm an toàn (cho US30/Gold tuỳ broker)
+spacing_mode: HYBRID
+spacing_atr_mult: 0.7
+min_spacing_pips: 15          # đừng để spacing < stops level * 2
+
+grid_levels: 5
+lot_base: 0.10
+lot_scale: 1.0
+
+target_cycle_usd: 2.5         # BE + $2.5 cho mỗi basket
+dd_open_usd: 8.0              # mở hedge khi thua ~8$
+
+recovery_steps: [1.0, 2.0, 3.0]   # nhân với spacing động
+recovery_lot: 0.05            # hedge nhỏ hơn seed
+
+tsl_enabled: true
+tsl_start_points: 1.0 * spacing   # “TSL START” tỉ lệ spacing
+tsl_step_points: 0.4 * spacing
+
+exposure_cap_lots: 1.5
+max_cycles_per_side: 2
+session_sl_usd: 6% balance
+session_trailing_dd_usd: 4% balance
+
+trend_k_atr: 3.0
+slope_th: 0.0008
+dist_tp_z_atr: 2.5
+
+4) Patch nhanh vào code bạn (điểm đặt)
+
+LifecycleController.Update():
+
+Gọi SessionTrailingDD() trước Rescue.
+
+Sau khi xác định loser, tính dist_tp_atr → nếu quá xa, loser.WeakenTarget() và rescue.Disable().
+
+RescueEngine.ShouldRescue(): thêm trendStrong gate như trên.
+
+GridBasket: đã có ReduceTargetBy(); bổ sung WeakenTarget(x) (giảm δ trực tiếp) và gọi RecomputeTPPrice().
+
+SpacingEngine: thêm chế độ HYBRID thật sự:
+spacing = max(min_spacing, ATR(14)*atr_mult) và expose ATRPoints() cho Rescue/Controller.
+
+Scheduler: chặn lệnh mới sau giờ quy định, FlushFriday().
+
+5) Runbook tái test
+
+Bật log: BREACH/DD/TSL/TP/FLATTEN/FRIDAY.
+
+Backtest 3 tháng, tick real nếu có.
+
+Plot thêm 3 dòng debug vào journal CSV:
+
+distance_to_tp, ATR, exposure_lots.
+
+Quan sát: khi distance_to_tp vượt 2–3 ATR, bot có ngừng add chưa? Equity có “rơi tự do” nữa không?
+
+6) TL;DR
+
+Đồ thị của bạn chứng minh chiến thuật chạy đúng—những spike xanh là “đóng rổ thua ở BE+δ”.
+
+Cú rơi cuối là trend kéo dài + test kết thúc khi còn rổ thua.
+
+Thêm ATR-hybrid spacing, trend kill-switch, equity trailing stop, TP-distance cap, lịch đóng phiên → bạn sẽ tránh được “cột cuối cùng”.
