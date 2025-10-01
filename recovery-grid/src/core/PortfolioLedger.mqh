@@ -79,6 +79,23 @@ public:
          return false;
       return (m_peak_equity-equity)>=trail_dd_usd;
      }
+
+   double   GetEquityDrawdownPercent()
+     {
+      UpdateEquitySnapshot();
+      double equity=AccountInfoDouble(ACCOUNT_EQUITY);
+      if(m_peak_equity<=0.0)
+         return 0.0;
+      return ((m_peak_equity-equity)/m_peak_equity)*100.0;
+     }
+
+   bool     IsDrawdownCushionActive(const double threshold_pct)
+     {
+      if(threshold_pct<=0.0)
+         return false;
+      double dd_pct=GetEquityDrawdownPercent();
+      return dd_pct>=threshold_pct;
+     }
   };
 
 #endif // __RGD_V2_PORTFOLIO_LEDGER_MQH__

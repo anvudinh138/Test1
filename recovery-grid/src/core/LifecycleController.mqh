@@ -40,6 +40,9 @@ private:
    bool              m_trm_initialized;
    bool              m_trm_in_news_window;  // State tracking to reduce log spam
 
+   // ADC (anti-drawdown cushion)
+   bool              m_adc_cushion_active;  // State tracking for cushion mode
+
    string            Tag() const { return StringFormat("[RGDv2][%s][LC]",m_symbol); }
 
    double           CurrentPrice(const EDirection dir) const
@@ -111,6 +114,19 @@ private:
       // TRM: Block reseeding during news
       if(m_params.trm_enabled && m_params.trm_pause_orders && IsNewsTime())
          return false;
+      // ADC: Block reseeding during equity drawdown cushion
+      if(m_params.adc_enabled && m_params.adc_pause_new_grids && m_ledger!=NULL)
+        {
+         if(m_ledger.IsDrawdownCushionActive(m_params.adc_equity_dd_threshold))
+           {
+            if(m_log!=NULL)
+               m_log.Event(Tag(),StringFormat("[ADC] BLOCKED reseed %s (equity DD %.2f%% > %.2f%%)",
+                                            dir==DIR_BUY?"BUY":"SELL",
+                                            m_ledger.GetEquityDrawdownPercent(),
+                                            m_params.adc_equity_dd_threshold));
+            return false;
+           }
+        }
       if(basket==NULL)
          return false;
       if(basket.IsActive())
@@ -431,7 +447,8 @@ public:
                          m_pc_guard_price(0.0),
                          m_pc_guard_start_bar(0),
                          m_trm_initialized(false),
-                         m_trm_in_news_window(false)
+                         m_trm_in_news_window(false),
+                         m_adc_cushion_active(false)
      {
       ArrayResize(m_news_windows,0);
      }
@@ -514,6 +531,20 @@ public:
       if(m_ledger!=NULL)
          m_ledger.UpdateEquitySnapshot();
 
+      // ADC: Check and log cushion state transitions
+      if(m_params.adc_enabled && m_ledger!=NULL)
+        {
+         bool is_cushion=m_ledger.IsDrawdownCushionActive(m_params.adc_equity_dd_threshold);
+         double dd_pct=m_ledger.GetEquityDrawdownPercent();
+         if(is_cushion && !m_adc_cushion_active && m_log!=NULL)
+            m_log.Event(Tag(),StringFormat("[ADC] CUSHION ACTIVATED: Equity DD %.2f%% > %.2f%% - pausing risky operations",
+                                         dd_pct,m_params.adc_equity_dd_threshold));
+         if(!is_cushion && m_adc_cushion_active && m_log!=NULL)
+            m_log.Event(Tag(),StringFormat("[ADC] CUSHION DEACTIVATED: Equity DD %.2f%% < %.2f%% - resuming normal operations",
+                                         dd_pct,m_params.adc_equity_dd_threshold));
+         m_adc_cushion_active=is_cushion;
+        }
+
       if(m_ledger!=NULL && m_ledger.SessionRiskBreached())
         {
          FlattenAll("Session SL");
@@ -566,7 +597,17 @@ public:
         {
          // TRM: Block rescue during news
          bool news_active=(m_params.trm_enabled && m_params.trm_pause_orders && IsNewsTime());
-         if(!news_active)
+         // ADC: Block rescue during equity drawdown cushion
+         bool cushion_active=false;
+         if(m_params.adc_enabled && m_params.adc_pause_rescue && m_ledger!=NULL)
+           {
+            cushion_active=m_ledger.IsDrawdownCushionActive(m_params.adc_equity_dd_threshold);
+            if(cushion_active && m_log!=NULL)
+               m_log.Event(Tag(),StringFormat("[ADC] BLOCKED rescue (equity DD %.2f%% > %.2f%%)",
+                                            m_ledger.GetEquityDrawdownPercent(),
+                                            m_params.adc_equity_dd_threshold));
+           }
+         if(!news_active && !cushion_active)
            {
             double price_winner=CurrentPrice(winner.Direction());
             double dd=-MathMin(0.0,loser.BasketPnL());

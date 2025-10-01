@@ -447,10 +447,55 @@ For each preset, record:
 
 ---
 
-**Version**: 2.2
+### 10_ADC_Test.set ⭐ **NEW - Anti-Drawdown Cushion**
+**Description**: Set 8 (PC + DTS + SSL) with ADC enabled @ 10% threshold
+**Use**: Test equity-based drawdown protection for sub-10% DD target
+**Features**:
+- ✅ Partial Close: Enabled (Min $2.50, 30% fraction)
+- ✅ DTS: Conservative (ATR=0.7, TD=0.70, DD threshold=12)
+- ✅ SSL: Enabled (3x multiplier, BE @ $5, Trail by avg, 100pt offset)
+- ❌ TRM: Disabled (focus on ADC only)
+- ✅ **ADC: ENABLED @ 10% threshold** 🆕
+
+**New Parameters**:
+- `InpAdcEnabled = true` - Anti-Drawdown Cushion ON
+- `InpAdcEquityDdThreshold = 10.0` - Activate cushion at 10% equity DD
+- `InpAdcPauseNewGrids = true` - Block grid reseeding during cushion
+- `InpAdcPauseRescue = true` - Block rescue deployment during cushion
+
+**How ADC Works**:
+1. Tracks peak equity (running max)
+2. Calculates real-time DD%: `(peak - current) / peak × 100`
+3. When DD% > 10% → **Cushion Mode** (pauses risky ops)
+4. When DD% < 10% → **Resume Normal** (allows new grids/rescue)
+
+**Expected Impact**:
+- SSL reduced DD from 42.98% → 16.99% (60% reduction)
+- ADC target: **< 10% DD** (additional 40% reduction)
+- Prevents "death spiral" during adverse trends
+- Allows existing positions to recover naturally
+
+**Expected Logs** (monitor for ADC activity):
+```
+[ADC] CUSHION ACTIVATED: Equity DD 10.23% > 10.00% - pausing risky operations
+[ADC] BLOCKED reseed BUY (equity DD 11.45% > 10.00%)
+[ADC] BLOCKED rescue (equity DD 12.78% > 10.00%)
+[ADC] CUSHION DEACTIVATED: Equity DD 8.92% < 10.00% - resuming normal operations
+```
+
+**Testing Strategy**:
+1. Run on same EURUSD 2-month period as Set 8
+2. Compare DD: Set 8 (16.99%) vs Set 10 (target < 10%)
+3. Compare profit: Should be similar or slightly lower (tradeoff)
+4. Check ADC activation frequency in logs
+5. Verify PF stays > 2.0
+
+---
+
+**Version**: 2.4
 **Created**: 2025-10-01
 **Last Updated**: 2025-10-01
-**Compatible with**: Recovery Grid Direction v2.2+
+**Compatible with**: Recovery Grid Direction v2.4+
 
 ---
 
@@ -458,5 +503,5 @@ For each preset, record:
 1. Run Baseline test (if not done)
 2. Run Conservative test
 3. Compare metrics
-4. Optimize based on results
-5. Test Combo for best performance
+4. Test Set 8 (SSL) if haven't
+5. **Test Set 10 (ADC)** - Target sub-10% DD! 🎯

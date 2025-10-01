@@ -1,16 +1,17 @@
 //+------------------------------------------------------------------+
-//| Recovery Grid Direction v2.3.1                                    |
-//| Two-sided recovery grid with PC + DTS + SSL + TRM               |
+//| Recovery Grid Direction v2.4                                     |
+//| Two-sided recovery grid with PC + DTS + SSL + TRM + ADC         |
 //+------------------------------------------------------------------+
 //| PRODUCTION DEFAULTS: Based on 08_Combo_SSL backtest results      |
 //| - Max Equity DD: 16.99% (vs 42.98% without SSL)                  |
 //| - Profit Factor: 5.76                                            |
 //| - Win Rate: 73.04%                                               |
 //| - Features: Partial Close + Conservative DTS + SSL Protection    |
-//| - TRM: Time-based Risk Management (DEFAULT OFF, enable for NFP) |
+//| - TRM: Time-based Risk Management (DEFAULT OFF, enable for NFP)  |
+//| - ADC: Anti-Drawdown Cushion (DEFAULT OFF, target sub-10% DD)   |
 //+------------------------------------------------------------------+
 #property strict
-#property version "2.31"
+#property version "2.40"
 
 #include <Trade/Trade.mqh>
 
@@ -113,6 +114,12 @@ input bool              InpTrmPauseOrders          = true;   // Pause new orders
 input bool              InpTrmTightenSL            = false;  // Tighten SSL during news (requires SSL)
 input double            InpTrmSLMultiplier         = 0.5;    // SL tightening factor (0.5 = half distance)
 input bool              InpTrmCloseOnNews          = false;  // Close all positions before news window
+
+input group "=== Anti-Drawdown Cushion (ADC) ==="
+input bool              InpAdcEnabled              = false;  // Master switch (DEFAULT OFF)
+input double            InpAdcEquityDdThreshold    = 10.0;   // Equity DD % threshold to activate cushion
+input bool              InpAdcPauseNewGrids        = true;   // Pause grid reseeding during cushion
+input bool              InpAdcPauseRescue          = true;   // Pause rescue hedge deployment during cushion
 
 //--- Globals
 SParams              g_params;
@@ -234,6 +241,11 @@ void BuildParams()
    g_params.trm_sl_multiplier      =InpTrmSLMultiplier;
    g_params.trm_close_on_news      =InpTrmCloseOnNews;
    g_params.trm_news_windows       =InpTrmNewsWindows;
+
+   g_params.adc_enabled            =InpAdcEnabled;
+   g_params.adc_equity_dd_threshold=InpAdcEquityDdThreshold;
+   g_params.adc_pause_new_grids    =InpAdcPauseNewGrids;
+   g_params.adc_pause_rescue       =InpAdcPauseRescue;
   }
 
 int OnInit()

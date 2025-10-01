@@ -98,6 +98,12 @@ struct SParams
    double       trm_sl_multiplier;        // SL tightening factor (e.g. 0.5 = half distance)
    bool         trm_close_on_news;        // close all positions before news window
    string       trm_news_windows;         // CSV format: "HH:MM-HH:MM,HH:MM-HH:MM" (UTC)
+
+   // anti-drawdown cushion (ADC)
+   bool         adc_enabled;              // master switch
+   double       adc_equity_dd_threshold;  // % equity DD to activate cushion (e.g. 10.0)
+   bool         adc_pause_new_grids;      // pause grid reseeding during cushion
+   bool         adc_pause_rescue;         // pause rescue hedge deployment during cushion
   };
 
 #endif // __RGD_V2_PARAMS_MQH__

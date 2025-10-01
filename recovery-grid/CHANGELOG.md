@@ -4,6 +4,54 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.4] - 2025-10-01
+
+### 🆕 New Feature: Anti-Drawdown Cushion (ADC)
+
+**Priority 5 Implementation** - Equity-based risk protection to achieve sub-10% drawdown
+
+#### Anti-Drawdown Cushion (ADC) - NEW!
+**Concept**: Pause risky operations when equity drawdown exceeds threshold, allowing existing positions to recover naturally.
+
+**How It Works**:
+1. Tracks peak equity (running maximum)
+2. Calculates real-time equity DD%: `(peak - current) / peak × 100`
+3. When DD% > threshold → **Cushion Mode Activated**
+4. Pauses: New grid reseeding, rescue hedge deployment
+5. Allows: Existing position closes, TP/SL hits, partial closes
+6. Resumes normal ops when equity recovers below threshold
+
+**New Parameters**:
+```cpp
+InpAdcEnabled           = false  // Master switch (DEFAULT OFF)
+InpAdcEquityDdThreshold = 10.0   // % equity DD to activate (e.g. 10%)
+InpAdcPauseNewGrids     = true   // Pause grid reseeding during cushion
+InpAdcPauseRescue       = true   // Pause rescue deployment during cushion
+```
+
+**Expected Impact**:
+- **10-15% additional DD reduction** (SSL: 42.98% → 16.99%, ADC target: < 10%)
+- Prevents "death spiral" during strong adverse trends
+- Allows safer recovery without adding more exposure
+- **State-based logging** (entry/exit) - no spam
+
+**Expected Logs**:
+```
+[ADC] CUSHION ACTIVATED: Equity DD 10.23% > 10.00% - pausing risky operations
+[ADC] BLOCKED reseed BUY (equity DD 11.45% > 10.00%)
+[ADC] BLOCKED rescue (equity DD 12.78% > 10.00%)
+[ADC] CUSHION DEACTIVATED: Equity DD 8.92% < 10.00% - resuming normal operations
+```
+
+**Use Cases**:
+- **Volatile Markets**: Prevents over-leveraging during equity drawdown
+- **Trend Following**: Lets existing grids recover without adding fuel
+- **Conservative Trading**: Stack with SSL for ultra-safe DD control
+
+**Test Preset**: `10_ADC_Test.set` (based on 08_Combo_SSL + ADC @ 10%)
+
+---
+
 ## [2.3.1] - 2025-10-01
 
 ### 🐛 Bugfix: TRM Log Spam Reduction
