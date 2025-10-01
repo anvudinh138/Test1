@@ -11,7 +11,6 @@ struct SParams
   {
    // spacing
    ESpacingMode spacing_mode;
-   double       spacing_pips;
    double       spacing_atr_mult;
    double       min_spacing_pips;
    int          atr_period;
@@ -38,7 +37,7 @@ struct SParams
    int          tsl_step_points;
 
    // rescue
-   int          recovery_steps[];   // points offsets for staged pending orders
+   double       recovery_steps_atr[]; // ATR multiples for staged pending orders
    double       recovery_lot;
    double       dd_open_usd;
    double       offset_ratio;
@@ -55,6 +54,7 @@ struct SParams
 
    // misc
    long         magic;
+   string       cycle_csv_path;
   };
 
 #endif // __RGD_V2_PARAMS_MQH__

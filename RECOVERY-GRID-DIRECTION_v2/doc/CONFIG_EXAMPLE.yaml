@@ -1,7 +1,6 @@
 Example configuration (tune for your symbol & broker)
 
 spacing_mode: HYBRID
-spacing_pips: 25
 spacing_atr_mult: 0.6
 min_spacing_pips: 12
 
@@ -15,7 +14,7 @@ tsl_enabled: true
 tsl_start_points: 1000 # corresponds to 'TSL START: 1000' on the UI
 tsl_step_points: 200
 
-recovery_steps: [1000, 2000, 3000]
+recovery_steps: [1.0, 2.0, 3.0]  # ATR multiples for staged pending orders
 recovery_lot: 0.10
 
 dd_open_usd: 8.00
@@ -27,3 +26,4 @@ session_sl_usd: 30.0
 cooldown_bars: 5
 slippage_pips: 1
 commission_per_lot: 7.0
+cycle_csv_path: ""  # ví dụ: logs/%symbol%_%date%_cycles.csv
