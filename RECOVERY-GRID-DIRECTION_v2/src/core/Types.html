@@ -13,15 +13,20 @@ enum EDirection
 
 enum ESpacingMode
   {
-   SPACING_PIPS   = 0,
-   SPACING_ATR    = 1,
-   SPACING_HYBRID = 2
+   SPACING_ATR    = 0,
+   SPACING_HYBRID = 1
   };
 
 enum EBasketKind
   {
    BASKET_PRIMARY = 0,
    BASKET_HEDGE   = 1
+  };
+
+enum EGridRefillMode
+  {
+   GRID_REFILL_STATIC = 0,
+   GRID_REFILL_LIVE   = 1
   };
 
 struct SGridLevel

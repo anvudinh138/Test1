@@ -11,9 +11,8 @@
 ## 2. Parameters
 | Name | Type | Meaning |
 |---|---:|---|
-| `spacing_mode` | enum(`PIPS`,`ATR`,`HYBRID`) | How to compute grid step distance. |
-| `spacing_pips` | int | Base step if `PIPS`. |
-| `spacing_atr_mult` | float | Multiplier of ATR if `ATR`/`HYBRID`. |
+| `spacing_mode` | enum(`ATR`,`HYBRID`) | How to compute grid step distance (pure ATR vs ATR with floor). |
+| `spacing_atr_mult` | float | Multiplier of ATR for spacing computation. |
 | `min_spacing_pips` | int | Floor for hybrid spacing. |
 | `grid_levels` | int | Levels per side (incl. market seed). |
 | `lot_base` | float | Lot size for seed order. |
@@ -22,7 +21,7 @@
 | `tsl_enabled` | bool | Enable trailing on hedge basket. |
 | `tsl_start_points` | int | **TSL START** threshold. |
 | `tsl_step_points` | int | Trail step. |
-| `recovery_steps` | list[int] | Distances for staged rescue/hedge (e.g., `[1000, 2000, 3000]`). |
+| `recovery_steps` | list[float] | ATR multiples for staged rescue/hedge (e.g., `[1.0, 2.0, 3.0]`). |
 | `recovery_lot` | float | Lot for each rescue stage (opposite hedge). |
 | `dd_open_usd` | float | Open hedge if basket drawdown beyond this. |
 | `offset_ratio` | float | Open hedge if price breaches last grid by `ratio*spacing`. |
@@ -32,6 +31,7 @@
 | `cooldown_bars` | int | Min bars between new hedges. |
 | `slippage_pips` | int | Execution allowance. |
 | `commission_per_lot` | float | For realistic PnL computation. |
+| `cycle_csv_path` | string | Optional CSV path for per-cycle export (`%symbol%`, `%date%`). |
 
 ## 3. Math
 - **Average price**: `avg = Σ(l_i * p_i) / Σ(l_i)`  
