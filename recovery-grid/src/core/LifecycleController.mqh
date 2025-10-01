@@ -35,6 +35,11 @@ private:
    double            m_pc_guard_price;
    int               m_pc_guard_start_bar;
 
+   // TRM (time-based risk management)
+   SNewsWindow       m_news_windows[];
+   bool              m_trm_initialized;
+   bool              m_trm_in_news_window;  // State tracking to reduce log spam
+
    string            Tag() const { return StringFormat("[RGDv2][%s][LC]",m_symbol); }
 
    double           CurrentPrice(const EDirection dir) const
@@ -102,6 +107,9 @@ private:
    bool              TryReseedBasket(CGridBasket *basket,const EDirection dir,const bool allow_new_orders)
      {
       if(!allow_new_orders)
+         return false;
+      // TRM: Block reseeding during news
+      if(m_params.trm_enabled && m_params.trm_pause_orders && IsNewsTime())
          return false;
       if(basket==NULL)
          return false;
@@ -268,6 +276,136 @@ private:
         }
      }
 
+   void              ParseNewsWindows()
+     {
+      if(m_trm_initialized)
+         return;
+      if(!m_params.trm_enabled)
+        {
+         if(m_log!=NULL)
+            m_log.Event(Tag(),"[TRM] Disabled");
+         m_trm_initialized=true;
+         return;
+        }
+      string csv=m_params.trm_news_windows;
+      if(m_log!=NULL)
+         m_log.Event(Tag(),StringFormat("[TRM] Parsing windows: '%s'",csv));
+      if(StringLen(csv)==0)
+        {
+         if(m_log!=NULL)
+            m_log.Event(Tag(),"[TRM] No windows configured");
+         ArrayResize(m_news_windows,0);
+         m_trm_initialized=true;
+         return;
+        }
+      string parts[];
+      int count=StringSplit(csv,',',parts);
+      if(m_log!=NULL)
+         m_log.Event(Tag(),StringFormat("[TRM] Split result: %d parts",count));
+      if(count<=0)
+        {
+         if(m_log!=NULL)
+            m_log.Event(Tag(),"[TRM] ERROR: Failed to split CSV");
+         ArrayResize(m_news_windows,0);
+         m_trm_initialized=true;
+         return;
+        }
+      ArrayResize(m_news_windows,count);
+      int valid=0;
+      for(int i=0;i<count;i++)
+        {
+         string trimmed=parts[i];
+         StringTrimLeft(trimmed);
+         StringTrimRight(trimmed);
+         if(m_log!=NULL)
+            m_log.Event(Tag(),StringFormat("[TRM] Processing part[%d]: '%s'",i,trimmed));
+         string time_parts[];
+         if(StringSplit(trimmed,'-',time_parts)==2)
+           {
+            string start_parts[];
+            string end_parts[];
+            if(StringSplit(time_parts[0],':',start_parts)==2 &&
+               StringSplit(time_parts[1],':',end_parts)==2)
+              {
+               SNewsWindow window;
+               window.start_hour=(int)StringToInteger(start_parts[0]);
+               window.start_minute=(int)StringToInteger(start_parts[1]);
+               window.end_hour=(int)StringToInteger(end_parts[0]);
+               window.end_minute=(int)StringToInteger(end_parts[1]);
+               m_news_windows[valid]=window;
+               if(m_log!=NULL)
+                  m_log.Event(Tag(),StringFormat("[TRM] Window[%d]: %02d:%02d-%02d:%02d",
+                                                valid,window.start_hour,window.start_minute,
+                                                window.end_hour,window.end_minute));
+               valid++;
+              }
+            else if(m_log!=NULL)
+               m_log.Event(Tag(),StringFormat("[TRM] ERROR: Invalid time format in '%s'",trimmed));
+           }
+         else if(m_log!=NULL)
+            m_log.Event(Tag(),StringFormat("[TRM] ERROR: Missing '-' separator in '%s'",trimmed));
+        }
+      ArrayResize(m_news_windows,valid);
+      m_trm_initialized=true;
+      if(m_log!=NULL)
+         m_log.Event(Tag(),StringFormat("[TRM] Initialization complete: %d windows active",valid));
+     }
+
+   bool              IsNewsTime()
+     {
+      if(!m_params.trm_enabled)
+         return false;
+      if(!m_trm_initialized)
+         ParseNewsWindows();
+      if(ArraySize(m_news_windows)==0)
+         return false;
+      MqlDateTime dt;
+      TimeToStruct(TimeGMT(),dt);
+      int current_minutes=dt.hour*60+dt.min;
+      for(int i=0;i<ArraySize(m_news_windows);i++)
+        {
+         int start_minutes=m_news_windows[i].start_hour*60+m_news_windows[i].start_minute;
+         int end_minutes=m_news_windows[i].end_hour*60+m_news_windows[i].end_minute;
+         if(current_minutes>=start_minutes && current_minutes<=end_minutes)
+           {
+            // Log only on ENTRY to news window (state transition)
+            if(!m_trm_in_news_window && m_log!=NULL)
+               m_log.Event(Tag(),StringFormat("[TRM] News window ENTERED: %02d:%02d-%02d:%02d (UTC)",
+                                            m_news_windows[i].start_hour,m_news_windows[i].start_minute,
+                                            m_news_windows[i].end_hour,m_news_windows[i].end_minute));
+            m_trm_in_news_window=true;
+            return true;
+           }
+        }
+      // Log only on EXIT from news window (state transition)
+      if(m_trm_in_news_window && m_log!=NULL)
+         m_log.Event(Tag(),"[TRM] News window EXITED - trading resumed");
+      m_trm_in_news_window=false;
+      return false;
+     }
+
+   void              HandleNewsWindow()
+     {
+      if(!IsNewsTime())
+         return;
+      if(m_params.trm_close_on_news)
+        {
+         if(m_log!=NULL)
+            m_log.Event(Tag(),"[TRM] Closing all positions (close_on_news=true)");
+         if(m_buy!=NULL && m_buy.IsActive())
+            m_buy.CloseBasket("TRM close_on_news");
+         if(m_sell!=NULL && m_sell.IsActive())
+            m_sell.CloseBasket("TRM close_on_news");
+         m_halted=true;
+         return;
+        }
+      if(m_params.trm_tighten_sl && m_params.ssl_enabled)
+        {
+         if(m_log!=NULL)
+            m_log.Event(Tag(),"[TRM] Tightening SL during news");
+        }
+     }
+
 public:
                      CLifecycleController(const string symbol,
                                           const SParams &params,
@@ -291,8 +429,11 @@ public:
                          m_pc_last_close_bar(0),
                          m_pc_guard_active(false),
                          m_pc_guard_price(0.0),
-                         m_pc_guard_start_bar(0)
+                         m_pc_guard_start_bar(0),
+                         m_trm_initialized(false),
+                         m_trm_in_news_window(false)
      {
+      ArrayResize(m_news_windows,0);
      }
 
    bool              Init()
@@ -363,6 +504,11 @@ public:
       if(m_halted)
          return;
 
+      // TRM: Handle news windows first
+      HandleNewsWindow();
+      if(m_halted)
+         return;
+
       datetime now=TimeCurrent();
 
       if(m_ledger!=NULL)
@@ -418,24 +564,29 @@ public:
 
       if(loser!=NULL && winner!=NULL && m_rescue!=NULL)
         {
-         double price_winner=CurrentPrice(winner.Direction());
-         double dd=-MathMin(0.0,loser.BasketPnL());
-         double rescue_lot=winner.NormalizeLot(m_params.recovery_lot);
-         if(rescue_lot>0.0 && m_rescue.CooldownOk() && m_rescue.CyclesAvailable())
+         // TRM: Block rescue during news
+         bool news_active=(m_params.trm_enabled && m_params.trm_pause_orders && IsNewsTime());
+         if(!news_active)
            {
-            if(m_rescue.ShouldRescue(loser.Direction(),loser.LastGridPrice(),spacing_px,price_winner,dd))
+            double price_winner=CurrentPrice(winner.Direction());
+            double dd=-MathMin(0.0,loser.BasketPnL());
+            double rescue_lot=winner.NormalizeLot(m_params.recovery_lot);
+            if(rescue_lot>0.0 && m_rescue.CooldownOk() && m_rescue.CyclesAvailable())
               {
-               bool exposure_ok=(m_ledger==NULL) || m_ledger.ExposureAllowed(rescue_lot,m_magic,m_symbol);
-               if(exposure_ok)
+               if(m_rescue.ShouldRescue(loser.Direction(),loser.LastGridPrice(),spacing_px,price_winner,dd))
                  {
-                  winner.DeployRecovery(price_winner);
-                  m_rescue.RecordRescue();
-                  if(m_log!=NULL)
-                     m_log.Event(Tag(),"Rescue deployed");
-                 }
-               else
-                 {
-                  m_rescue.LogSkip("Exposure cap blocks rescue");
+                  bool exposure_ok=(m_ledger==NULL) || m_ledger.ExposureAllowed(rescue_lot,m_magic,m_symbol);
+                  if(exposure_ok)
+                    {
+                     winner.DeployRecovery(price_winner);
+                     m_rescue.RecordRescue();
+                     if(m_log!=NULL)
+                        m_log.Event(Tag(),"Rescue deployed");
+                    }
+                  else
+                    {
+                     m_rescue.LogSkip("Exposure cap blocks rescue");
+                    }
                  }
               }
            }

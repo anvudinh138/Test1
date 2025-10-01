@@ -44,4 +44,21 @@ struct SBasketSummary
    bool   trailing_active;
   };
 
+struct SNewsWindow
+  {
+   int start_hour;      // UTC hour (0-23)
+   int start_minute;    // 0-59
+   int end_hour;        // UTC hour (0-23)
+   int end_minute;      // 0-59
+  };
+
+struct SPcTicket
+  {
+   ulong  ticket;
+   double volume;
+   double entry;
+   double pnl;
+   double distance;
+  };
+
 #endif // __RGD_V2_TYPES_MQH__

@@ -1,15 +1,16 @@
 //+------------------------------------------------------------------+
-//| Recovery Grid Direction v2.2                                      |
-//| Two-sided recovery grid with PC + DTS + SSL                      |
+//| Recovery Grid Direction v2.3.1                                    |
+//| Two-sided recovery grid with PC + DTS + SSL + TRM               |
 //+------------------------------------------------------------------+
 //| PRODUCTION DEFAULTS: Based on 08_Combo_SSL backtest results      |
 //| - Max Equity DD: 16.99% (vs 42.98% without SSL)                  |
 //| - Profit Factor: 5.76                                            |
 //| - Win Rate: 73.04%                                               |
 //| - Features: Partial Close + Conservative DTS + SSL Protection    |
+//| - TRM: Time-based Risk Management (DEFAULT OFF, enable for NFP) |
 //+------------------------------------------------------------------+
 #property strict
-#property version "2.20"
+#property version "2.31"
 
 #include <Trade/Trade.mqh>
 
@@ -104,6 +105,14 @@ input double            InpSslBreakevenThreshold   = 5.0;    // USD profit to mo
 input bool              InpSslTrailByAverage       = true;   // Trail from average price
 input int               InpSslTrailOffsetPoints    = 100;    // Trail offset in points
 input bool              InpSslRespectMinStop       = true;   // Respect broker min stop level
+
+input group "=== Time-based Risk Management (TRM) ==="
+input bool              InpTrmEnabled              = false;  // Master switch (DEFAULT OFF)
+input string            InpTrmNewsWindows          = "08:30-09:00,14:00-14:30";  // CSV format HH:MM-HH:MM (UTC)
+input bool              InpTrmPauseOrders          = true;   // Pause new orders during news
+input bool              InpTrmTightenSL            = false;  // Tighten SSL during news (requires SSL)
+input double            InpTrmSLMultiplier         = 0.5;    // SL tightening factor (0.5 = half distance)
+input bool              InpTrmCloseOnNews          = false;  // Close all positions before news window
 
 //--- Globals
 SParams              g_params;
@@ -218,6 +227,13 @@ void BuildParams()
    g_params.ssl_trail_by_average   =InpSslTrailByAverage;
    g_params.ssl_trail_offset_points=InpSslTrailOffsetPoints;
    g_params.ssl_respect_min_stop   =InpSslRespectMinStop;
+
+   g_params.trm_enabled            =InpTrmEnabled;
+   g_params.trm_pause_orders       =InpTrmPauseOrders;
+   g_params.trm_tighten_sl         =InpTrmTightenSL;
+   g_params.trm_sl_multiplier      =InpTrmSLMultiplier;
+   g_params.trm_close_on_news      =InpTrmCloseOnNews;
+   g_params.trm_news_windows       =InpTrmNewsWindows;
   }
 
 int OnInit()

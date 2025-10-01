@@ -90,6 +90,14 @@ struct SParams
    bool         ssl_trail_by_average;     // trail from average price
    int          ssl_trail_offset_points;  // trail offset in points
    bool         ssl_respect_min_stop;     // respect broker min stop level
+
+   // time-based risk management (TRM)
+   bool         trm_enabled;              // master switch
+   bool         trm_pause_orders;         // pause new orders during news
+   bool         trm_tighten_sl;           // tighten SSL during news (requires ssl_enabled)
+   double       trm_sl_multiplier;        // SL tightening factor (e.g. 0.5 = half distance)
+   bool         trm_close_on_news;        // close all positions before news window
+   string       trm_news_windows;         // CSV format: "HH:MM-HH:MM,HH:MM-HH:MM" (UTC)
   };
 
 #endif // __RGD_V2_PARAMS_MQH__

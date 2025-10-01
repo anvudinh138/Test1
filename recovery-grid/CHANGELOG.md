@@ -4,6 +4,68 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.3.1] - 2025-10-01
+
+### 🐛 Bugfix: TRM Log Spam Reduction
+
+**Optimized TRM logging** - State-based logging to prevent thousands of duplicate logs
+
+**Changes**:
+- Added `m_trm_in_news_window` state variable to track news window entry/exit
+- Changed IsNewsTime() to log only on **state transitions** (ENTERED/EXITED)
+- Removed per-tick blocking logs from reseed and rescue checks
+- Kept detailed parsing logs for init diagnostics
+
+**Before** (10,000+ logs): Every tick during news window logged
+**After** (2 logs per window): Only entry/exit logged
+
+**Expected Logs**:
+```
+[TRM] Parsing windows: '12:00-13:00,18:00-18:45'
+[TRM] Split result: 2 parts
+[TRM] Window[0]: 12:00-13:00
+[TRM] Window[1]: 18:00-18:45
+[TRM] Initialization complete: 2 windows active
+[TRM] News window ENTERED: 12:00-13:00 (UTC)
+[TRM] News window EXITED - trading resumed
+```
+
+**Why**: Initial EURUSD test produced 10,000 identical logs. State tracking reduces this to ~10-20 meaningful logs per session.
+
+---
+
+## [2.3] - 2025-10-01
+
+### 🆕 New Feature: Time-based Risk Management (TRM)
+
+**Priority 4 Implementation** - News avoidance and time-based filters
+
+#### Time-based Risk Management (TRM) - NEW!
+- **News Window Filtering**: CSV-based time windows to pause trading during high-impact events
+- **Pause Orders**: Stop new order placements (grid seeds, rescue hedge) during news
+- **Optional Close**: Close all positions before news window (configurable)
+- **Optional SSL Tightening**: Reduce SL distance during news (requires SSL enabled)
+- **Full Logging**: All TRM actions tagged with `[TRM]` for monitoring
+
+**New Parameters**:
+```cpp
+InpTrmEnabled          = false   // Master switch (DEFAULT OFF)
+InpTrmNewsWindows      = "08:30-09:00,14:00-14:30"  // CSV UTC times
+InpTrmPauseOrders      = true    // Pause new orders during news
+InpTrmTightenSL        = false   // Tighten SSL during news
+InpTrmSLMultiplier     = 0.5     // SL tightening factor
+InpTrmCloseOnNews      = false   // Close all before news
+```
+
+**Use Cases**:
+- Avoid NFP (First Friday, 12:30 UTC)
+- Avoid FOMC (18:00 UTC, 8 times/year)
+- Avoid CPI releases (12:30 UTC)
+
+**Expected Impact**: Additional 5-10% DD reduction by avoiding news spike whipsaws
+
+---
+
 ## [2.2] - 2025-10-01
 
 ### 🚀 Major Release: Smart Stop Loss (SSL) Implementation

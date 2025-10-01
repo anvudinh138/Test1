@@ -270,6 +270,46 @@ Nếu DD vẫn >30%: tiếp tục tăng DdThreshold lên 15, hoặc hạ AtrWeig
 **Target**: Max Equity DD < 30%, reduced realized DD, earlier profit lock
 ---
 
+### 09_TRM_NFP_Test.set 🕐 **NEW - News Avoidance**
+**Description**: Set 8 (SSL) + TRM enabled for NFP/FOMC avoidance
+**Use**: Test time-based risk management during major news events
+**Features**:
+- ✅ Partial Close: Enabled (MinProfit=2.5)
+- ✅ DTS: Conservative settings
+- ✅ SSL: Enabled
+- ✅ **TRM: Enabled** (NEW!)
+
+**TRM Configuration**:
+- `InpTrmEnabled = true` - Master switch ON
+- `InpTrmNewsWindows = "12:00-13:00,18:00-18:45"` - NFP (12:30 UTC) + FOMC (18:00 UTC)
+- `InpTrmPauseOrders = true` - Stop new orders during windows
+- `InpTrmTightenSL = false` - Don't tighten (optional for Phase 2)
+- `InpTrmCloseOnNews = false` - Don't close positions (conservative)
+
+**How TRM Works**:
+1. **Parse Windows**: Converts CSV `"HH:MM-HH:MM,HH:MM-HH:MM"` into time filters
+2. **Check Every Tick**: `IsNewsTime()` compares current UTC time against windows
+3. **Pause Actions**: If in window:
+   - ❌ Block new grid seeds (`TryReseedBasket` returns false)
+   - ❌ Block rescue hedge deployment
+   - ✅ Allow existing positions to reach Group TP
+   - ✅ Allow SSL to manage risk
+
+**Expected Logs** (when `InpLogEvents=true`):
+```
+[RGDv2][EURUSD][LC] [TRM] Parsed 2 news windows
+[RGDv2][EURUSD][LC] [TRM] News window active: 12:00-13:00
+```
+
+**Testing Strategy**:
+1. Run on historical period with known NFP dates (e.g., Sep 6 2024, Oct 4 2024)
+2. Compare vs Set 8 (no TRM) on same dates
+3. Check if DD spikes reduced during 12:30-13:00 UTC
+4. Verify no new orders logged during windows
+
+**Target**: Further 5-10% DD reduction during news volatility
+---
+
 ## 🎯 Recommended Testing Order
 
 ### Phase 1: DTS Validation

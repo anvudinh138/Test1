@@ -426,24 +426,6 @@ private:
       return (ask<=m_tp_price);
      }
 
-   void           CloseBasket(const string reason)
-     {
-      if(!m_active)
-         return;
-      m_last_realized=m_pnl_usd;
-      if(m_executor!=NULL)
-        {
-         m_executor.SetMagic(m_magic);
-         m_executor.CloseAllByDirection(m_direction,m_magic);
-         m_executor.CancelPendingByDirection(m_direction,m_magic);
-        }
-      m_active=false;
-      m_closed_recently=true;
-      m_cycles_done++;
-      if(m_log!=NULL)
-        m_log.Event(Tag(),StringFormat("Basket closed: %s",reason));
-     }
-
    void           ManageTrailing()
      {
       if(!m_params.tsl_enabled)
@@ -762,6 +744,25 @@ private:
      }
 
 public:
+   void           CloseBasket(const string reason)
+      {
+         if(!m_active)
+            return;
+         m_last_realized=m_pnl_usd;
+         if(m_executor!=NULL)
+         {
+            m_executor.SetMagic(m_magic);
+            m_executor.CloseAllByDirection(m_direction,m_magic);
+            m_executor.CancelPendingByDirection(m_direction,m_magic);
+         }
+         m_active=false;
+         m_closed_recently=true;
+         m_cycles_done++;
+         if(m_log!=NULL)
+         m_log.Event(Tag(),StringFormat("Basket closed: %s",reason));
+      }
+
+
    double         GetFurthestEntryPrice() const
      {
       if(m_total_lot<=0.0)
