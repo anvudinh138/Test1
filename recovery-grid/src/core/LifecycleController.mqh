@@ -4,6 +4,7 @@
 #ifndef __RGD_V2_LIFECYCLE_CONTROLLER_MQH__
 #define __RGD_V2_LIFECYCLE_CONTROLLER_MQH__
 
+#include <Trade/Trade.mqh>
 #include <Indicators/Trend.mqh>
 #include "Types.mqh"
 #include "Params.mqh"
@@ -13,6 +14,7 @@
 #include "PortfolioLedger.mqh"
 #include "GridBasket.mqh"
 #include "Logger.mqh"
+#include "CycleCsvWriter.mqh"
 
 class CLifecycleController
   {
@@ -24,6 +26,7 @@ private:
    CRescueEngine    *m_rescue;
    CPortfolioLedger *m_ledger;
    CLogger          *m_log;
+   CCycleCsvWriter  *m_cycle_writer;
    long              m_magic;
 
    CGridBasket      *m_buy;
@@ -36,6 +39,13 @@ private:
    int               m_pc_guard_start_bar;
 
    string            Tag() const { return StringFormat("[RGDv2][%s][LC]",m_symbol); }
+
+   void              WriteCycleCsv(CGridBasket *basket,
+                                   const double realized,
+                                   const double total_lot,
+                                   const double max_dd,
+                                   const double partial_volume,
+                                   const double target_pull);
 
    double           CurrentPrice(const EDirection dir) const
      {
@@ -74,6 +84,33 @@ private:
       if(digits>0)
          result=NormalizeDouble(result,digits);
       return result;
+     }
+
+   double           PipPointSize() const
+     {
+      int digits=(int)SymbolInfoInteger(m_symbol,SYMBOL_DIGITS);
+      if(digits==3 || digits==5)
+         return 10.0*_Point;
+      return _Point;
+     }
+
+   double           SpreadPoints() const
+     {
+      double ask=SymbolInfoDouble(m_symbol,SYMBOL_ASK);
+      double bid=SymbolInfoDouble(m_symbol,SYMBOL_BID);
+      double point=SymbolInfoDouble(m_symbol,SYMBOL_POINT);
+      if(point<=0.0)
+         point=_Point;
+      return (ask-bid)/point;
+     }
+
+   bool              SpreadTooWide() const
+     {
+      if(m_params.max_spread_pips<=0.0)
+         return false;
+      double pip_points=PipPointSize()/_Point;
+      double spread=SpreadPoints();
+      return spread>m_params.max_spread_pips*pip_points;
      }
 
    CGridBasket*      Basket(const EDirection dir)
@@ -118,6 +155,7 @@ private:
       basket.ResetTargetReduction();
       if(basket.Init(price))
         {
+         basket.SetTradingAllowed(allow_new_orders);
          if(m_log!=NULL)
            m_log.Event(Tag(),StringFormat("Reseed %s grid", (dir==DIR_BUY)?"BUY":"SELL"));
          return true;
@@ -144,9 +182,15 @@ private:
            }
         }
       if(m_buy!=NULL)
+        {
          m_buy.MarkInactive();
+         m_buy.SetTradingAllowed(false);
+        }
       if(m_sell!=NULL)
+        {
          m_sell.MarkInactive();
+         m_sell.SetTradingAllowed(false);
+        }
       m_halted=true;
       EnsureRescueReset();
      }
@@ -284,6 +328,7 @@ public:
                          m_rescue(rescue),
                          m_ledger(ledger),
                          m_log(log),
+                         m_cycle_writer(NULL),
                          m_magic(magic),
                          m_buy(NULL),
                          m_sell(NULL),
@@ -351,6 +396,26 @@ public:
          delete m_sell;
          m_sell=NULL;
          return false;
+        }
+
+      if(m_cycle_writer!=NULL)
+        {
+         delete m_cycle_writer;
+         m_cycle_writer=NULL;
+        }
+      if(StringLen(m_params.cycle_csv_path)>0)
+        {
+         m_cycle_writer=new CCycleCsvWriter();
+         if(m_cycle_writer!=NULL)
+           {
+            if(!m_cycle_writer.Init(m_params.cycle_csv_path,m_symbol))
+              {
+               if(m_log!=NULL)
+                  m_log.Event(Tag(),"Cycle CSV writer init failed");
+               delete m_cycle_writer;
+               m_cycle_writer=NULL;
+              }
+           }
         }
 
       if(m_log!=NULL)
@@ -454,6 +519,11 @@ public:
       if(m_buy!=NULL && m_buy.ClosedRecently())
         {
          double realized=m_buy.TakeRealizedProfit();
+         double total_lot=m_buy.TakeCycleTotalLot();
+         double max_dd=m_buy.TakeCycleMaxDrawdown();
+         double partial=m_buy.TakeCyclePartialVolume();
+         double target_pull=m_buy.TargetReduction();
+         WriteCycleCsv(m_buy,realized,total_lot,max_dd,partial,target_pull);
          if(realized>0 && m_sell!=NULL)
             m_sell.ReduceTargetBy(realized);
          TryReseedBasket(m_buy,DIR_BUY,true);
@@ -461,6 +531,11 @@ public:
       if(m_sell!=NULL && m_sell.ClosedRecently())
         {
          double realized=m_sell.TakeRealizedProfit();
+         double total_lot=m_sell.TakeCycleTotalLot();
+         double max_dd=m_sell.TakeCycleMaxDrawdown();
+         double partial=m_sell.TakeCyclePartialVolume();
+         double target_pull=m_sell.TargetReduction();
+         WriteCycleCsv(m_sell,realized,total_lot,max_dd,partial,target_pull);
          if(realized>0 && m_buy!=NULL)
             m_buy.ReduceTargetBy(realized);
          TryReseedBasket(m_sell,DIR_SELL,true);

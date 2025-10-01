@@ -24,7 +24,7 @@ ARCHITECTURE_DEEP_DIVE
 
 II) Tham số (MVP)
 
-spacing_mode: PIPS | ATR | HYBRID (ATR*M + min_pips).
+spacing_mode: ATR | HYBRID (ATR*M với optional min_pips floor).
 
 grid_levels: số mức/chiều.
 
@@ -34,13 +34,15 @@ target_cycle_usd: lợi nhuận ròng mong muốn khi đóng rổ đang âm (= B
 
 tsl_start_points: chính là TSL START trên UI; tsl_step_points: bước trail.
 
-recovery_steps: [1000, 2000, 3000…]; recovery_lot: khối lượng cho mỗi lớp.
+recovery_steps: [1.0, 2.0, 3.0…] (bội số ATR); recovery_lot: khối lượng cho mỗi lớp.
 
 dd_open_usd: DD (âm) để mở rổ đối hướng nếu chưa mở.
 
 offset_ratio: mở hedge khi giá vượt last_grid ± offset_ratio × spacing.
 
 Giới hạn an toàn: max_cycles_per_side, exposure_cap_lots, session_sl_usd.
+
+cycle_csv_path: đường dẫn CSV để log mỗi cycle (hỗ trợ `%symbol%`, `%date%`).
 
 (Bộ quy tắc này bọc trong các lớp Controller/Rescue/Spacing/Executor như cấu trúc OOP bạn đã chuẩn hóa. 
 

@@ -28,6 +28,7 @@ private:
    bool           m_active;
    bool           m_closed_recently;
    int            m_cycles_done;
+   bool           m_closed_as_hedge;
 
    double         m_total_lot;
    double         m_avg_price;
@@ -45,6 +46,7 @@ private:
    bool           m_trailing_on;
    double         m_last_realized;
    double         m_trail_anchor;
+   double         m_trail_override;
 
    double         m_partial_realized;
    double         m_furthest_entry;
@@ -56,6 +58,17 @@ private:
    double         m_volume_min;
    double         m_volume_max;
    int            m_volume_digits;
+
+   int            m_max_levels;
+   int            m_levels_placed;
+   int            m_pending_count;
+   double         m_initial_spacing_pips;
+   double         m_seed_price;
+   double         m_last_limit_price;
+   bool           m_trading_allowed;
+   double         m_cycle_max_dd;
+   double         m_cycle_partial_volume;
+   double         m_last_cycle_total_lot;
 
    string         Tag() const
      {
@@ -125,17 +138,50 @@ private:
       return normalized;
      }
 
-   void           AppendLevel(const double price,const double lot)
+
+void           RecordLevel(const double price,const double lot,const ulong ticket,const bool filled)
+  {
+   int idx=ArraySize(m_levels);
+   ArrayResize(m_levels,idx+1);
+   m_levels[idx].price=price;
+   m_levels[idx].lot=NormalizeVolumeValue(lot);
+   m_levels[idx].ticket=ticket;
+   m_levels[idx].filled=filled;
+   m_levels_placed=idx+1;
+   if(idx==0 || (m_direction==DIR_BUY && price<m_last_grid_price) || (m_direction==DIR_SELL && price>m_last_grid_price))
+      m_last_grid_price=price;
+  }
+
+ulong          PlaceLimit(const double price,const double lot,const string comment)
+  {
+   if(m_executor==NULL || lot<=0.0)
+      return 0;
+   if(m_direction==DIR_BUY)
+      return m_executor.Limit(DIR_BUY,price,lot,comment);
+   return m_executor.Limit(DIR_SELL,price,lot,comment);
+  }
+
+   void           UpdateExtremePrice(const double price,bool &have_extreme,double &extreme) const
      {
-      int idx=ArraySize(m_levels);
-      ArrayResize(m_levels,idx+1);
-      m_levels[idx].price=price;
-      m_levels[idx].lot=NormalizeVolumeValue(lot);
-      m_levels[idx].ticket=0;
-      m_levels[idx].filled=false;
+      if(!have_extreme)
+        {
+         extreme=price;
+         have_extreme=true;
+         return;
+        }
+      if(m_direction==DIR_BUY)
+        {
+         if(price<extreme)
+            extreme=price;
+        }
+      else
+        {
+         if(price>extreme)
+            extreme=price;
+        }
      }
 
-   void           BuildGrid(const double anchor_price,const double spacing_px)
+   void           SyncDepthMetrics()
      {
       ClearLevels();
       m_max_levels=m_params.grid_levels;
@@ -274,6 +320,87 @@ private:
         }
      }
 
+double         ComputeSpacingPips() const
+  {
+   if(m_params.grid_refill_mode==GRID_REFILL_STATIC)
+      return m_initial_spacing_pips;
+   return m_spacing->SpacingPips();
+  }
+
+double         NextLimitPrice(const double current_price,const double spacing_px) const
+  {
+   double base=m_last_limit_price;
+   if(m_levels_placed<=1)
+      base=current_price;
+   if(m_direction==DIR_BUY)
+     {
+      double reference=MathMin(base,current_price);
+      return reference-spacing_px;
+     }
+   double reference=MathMax(base,current_price);
+   return reference+spacing_px;
+  }
+
+void           MaintainDynamicGrid()
+  {
+   if(!m_trading_allowed || !m_active)
+      return;
+   if(m_max_levels<=0 || m_levels_placed>=m_max_levels)
+      return;
+   int pending=m_pending_count;
+   int threshold=m_params.grid_refill_threshold;
+   if(threshold<0)
+      threshold=0;
+   if(m_params.grid_max_pendings>0 && pending>=m_params.grid_max_pendings)
+      return;
+   if(pending>threshold)
+      return;
+   int available=m_max_levels-m_levels_placed;
+   if(available<=0)
+      return;
+   int batch=m_params.grid_refill_batch;
+   if(batch<1)
+      batch=1;
+   if(batch>available)
+      batch=available;
+   if(m_params.grid_max_pendings>0)
+     {
+      int free_slots=m_params.grid_max_pendings-pending;
+      if(free_slots<=0)
+         return;
+      if(batch>free_slots)
+         batch=free_slots;
+     }
+   if(batch<=0)
+      return;
+   double price=(m_direction==DIR_BUY)?SymbolInfoDouble(m_symbol,SYMBOL_BID):SymbolInfoDouble(m_symbol,SYMBOL_ASK);
+   for(int i=0;i<batch;i++)
+     {
+      double spacing_pips=ComputeSpacingPips();
+      double spacing_px=m_spacing->ToPrice(spacing_pips);
+      if(spacing_px<=0.0)
+         break;
+      double target=NextLimitPrice(price,spacing_px);
+      double lot=LevelLot(m_levels_placed);
+      ulong ticket=PlaceLimit(target,lot,"RGDv2_Grid");
+      if(ticket>0)
+        {
+         RecordLevel(target,lot,ticket,false);
+         m_last_limit_price=target;
+         pending++;
+         m_pending_count=pending;
+         price=target;
+         if(m_log!=NULL)
+            m_log.Status(Tag(),StringFormat("Refill idx=%d price=%.5f lot=%.2f",m_levels_placed-1,target,lot));
+        }
+      else
+        {
+         break;
+        }
+     }
+   m_pending_count=pending;
+  }
+
    void           RefreshState()
      {
       m_total_lot=0.0;
@@ -319,7 +446,11 @@ private:
         }
 
       if(m_total_lot>0.0)
+        {
+         if(m_pnl_usd<m_cycle_max_dd)
+            m_cycle_max_dd=m_pnl_usd;
          CalculateGroupTP();
+        }
      }
 
    double         CalculateAtrFactor() const
@@ -427,6 +558,7 @@ private:
       if(!m_active)
          return;
       m_last_realized=m_pnl_usd;
+      m_last_cycle_total_lot=m_total_lot;
       if(m_executor!=NULL)
         {
          m_executor.SetMagic(m_magic);
@@ -436,8 +568,11 @@ private:
       m_active=false;
       m_closed_recently=true;
       m_cycles_done++;
+      m_closed_as_hedge=(m_kind==BASKET_HEDGE);
       if(m_log!=NULL)
-        m_log.Event(Tag(),StringFormat("Basket closed: %s",reason));
+         m_log.Event(Tag(),StringFormat("Basket closed: %s",reason));
+      SyncDepthMetrics();
+      m_trail_override=0.0;
      }
 
    void           ManageTrailing()
@@ -470,6 +605,8 @@ private:
         }
 
       double step=m_params.tsl_step_points*point;
+      if(m_trail_override>0.0 && (step<=0.0 || m_trail_override<step))
+         step=m_trail_override;
       if(step<=0.0)
          return;
 
@@ -724,7 +861,7 @@ public:
       if(m_executor==NULL)
          return;
       m_executor.SetMagic(m_magic);
-      int pendings=1+ArraySize(m_params.recovery_steps);
+      int pendings=1+ArraySize(m_params.recovery_steps_atr);
       if(pendings<1)
          pendings=1;
       m_executor.BypassNext(pendings);
@@ -732,33 +869,37 @@ public:
       if(rescue_lot<=0.0)
          return;
       m_executor.Market(m_direction,rescue_lot,"RGDv2_RescueSeed");
-      double point=SymbolInfoDouble(m_symbol,SYMBOL_POINT);
-      if(point<=0.0)
-         point=_Point;
       double updated_last=m_last_grid_price;
-      if(m_direction==DIR_BUY)
+      double atr_points=m_spacing->AtrPoints();
+      if(atr_points<=0.0)
         {
-         for(int i=0;i<ArraySize(m_params.recovery_steps);i++)
-           {
-            double level=price-m_params.recovery_steps[i]*point;
-            ulong ticket=m_executor.Limit(DIR_BUY,level,rescue_lot,"RGDv2_RescueGrid");
-            if(ticket>0 && (updated_last==0.0 || level<updated_last))
-               updated_last=level;
-           }
+         double fallback_pips=m_spacing->SpacingPips();
+         atr_points=m_spacing->ToPrice(MathMax(m_params.min_spacing_pips,fallback_pips));
         }
-      else
+      for(int i=0;i<ArraySize(m_params.recovery_steps_atr);i++)
         {
-         for(int i=0;i<ArraySize(m_params.recovery_steps);i++)
+         double mult=m_params.recovery_steps_atr[i];
+         if(mult<=0.0)
+            continue;
+         double distance=atr_points*mult;
+         if(distance<=0.0)
+            continue;
+         double level=(m_direction==DIR_BUY)?(price-distance):(price+distance);
+         ulong ticket=m_executor.Limit(m_direction,level,rescue_lot,"RGDv2_RescueGrid");
+         if(ticket>0)
            {
-            double level=price+m_params.recovery_steps[i]*point;
-            ulong ticket=m_executor.Limit(DIR_SELL,level,rescue_lot,"RGDv2_RescueGrid");
-            if(ticket>0 && (updated_last==0.0 || level>updated_last))
+            if(updated_last==0.0)
+               updated_last=level;
+            else if(m_direction==DIR_BUY && level<updated_last)
+               updated_last=level;
+            else if(m_direction==DIR_SELL && level>updated_last)
                updated_last=level;
            }
         }
       if(updated_last!=0.0)
          m_last_grid_price=updated_last;
       RefreshState();
+      SyncDepthMetrics();
       if(m_log!=NULL)
          m_log.Event(Tag(),"Rescue layer deployed");
      }
@@ -782,6 +923,7 @@ public:
                          m_active(false),
                          m_closed_recently(false),
                          m_cycles_done(0),
+                         m_closed_as_hedge(false),
                          m_total_lot(0.0),
                          m_avg_price(0.0),
                          m_pnl_usd(0.0),
@@ -802,7 +944,17 @@ public:
                          m_volume_step(0.0),
                          m_volume_min(0.0),
                          m_volume_max(0.0),
-                         m_volume_digits(0)
+                         m_volume_digits(0),
+                         m_max_levels(0),
+                         m_levels_placed(0),
+                         m_pending_count(0),
+                         m_initial_spacing_pips(0.0),
+                         m_seed_price(0.0),
+                         m_last_limit_price(0.0),
+                         m_trading_allowed(true),
+                         m_cycle_max_dd(0.0),
+                         m_cycle_partial_volume(0.0),
+                         m_last_cycle_total_lot(0.0)
      {
       m_volume_step=SymbolInfoDouble(m_symbol,SYMBOL_VOLUME_STEP);
       m_volume_min=SymbolInfoDouble(m_symbol,SYMBOL_VOLUME_MIN);
@@ -825,11 +977,38 @@ public:
 
    bool           Init(const double anchor_price)
      {
-      if(m_spacing==NULL)
+      ClearLevels();
+      m_active=false;
+      m_closed_recently=false;
+      m_cycles_done=0;
+      m_closed_as_hedge=false;
+      m_seed_price=anchor_price;
+      m_last_limit_price=anchor_price;
+      m_last_grid_price=anchor_price;
+      m_initial_spacing_pips=m_spacing->SpacingPips();
+      m_max_levels=MathMax(1,m_params.grid_levels);
+      m_levels_placed=0;
+      m_pending_count=0;
+      m_trading_allowed=true;
+
+      if(m_executor==NULL)
          return false;
-      double spacing_pips=m_spacing.SpacingPips();
-      double spacing_px=m_spacing.ToPrice(spacing_pips);
-      if(spacing_px<=0.0)
+
+      if(m_params.grid_refill_batch<1) m_params.grid_refill_batch=1;
+      if(m_params.grid_refill_threshold<0) m_params.grid_refill_threshold=0;
+      if(m_params.grid_warm_levels<0) m_params.grid_warm_levels=0;
+      if(m_params.grid_max_pendings<0) m_params.grid_max_pendings=0;
+
+      int warm=m_params.grid_warm_levels;
+      int available_limits=MathMax(0,m_max_levels-1);
+      if(warm>available_limits) warm=available_limits;
+      if(m_params.grid_max_pendings>0 && warm>m_params.grid_max_pendings) warm=m_params.grid_max_pendings;
+
+      m_executor.SetMagic(m_magic);
+      m_executor.BypassNext(1+warm);
+
+      double seed_lot=LevelLot(0);
+      if(seed_lot<=0.0)
          return false;
       m_initial_spacing_pips=spacing_pips;
       BuildGrid(anchor_price,spacing_px);
@@ -841,8 +1020,9 @@ public:
       m_entry_bar=Bars(m_symbol,PERIOD_CURRENT);
       PlaceInitialOrders();
       m_active=true;
-      m_closed_recently=false;
       RefreshState();
+      if(m_log!=NULL)
+        m_log.Event(Tag(),StringFormat("Grid seeded warm=%d/%d",warm,available_limits));
       return true;
      }
 
@@ -942,27 +1122,16 @@ public:
         {
          CloseBasket("GroupTP");
         }
+      SyncDepthMetrics();
+      if(m_trading_allowed)
+         MaintainDynamicGrid();
+
       if(m_active)
         {
          bool no_positions=(m_total_lot<=0.0);
-         bool no_pending=true;
-         int total=(int)OrdersTotal();
-         for(int i=0;i<total;i++)
-           {
-            ulong ticket=OrderGetTicket(i);
-            if(ticket==0)
-               continue;
-            if(!OrderSelect(ticket))
-               continue;
-            if(OrderGetString(ORDER_SYMBOL)!=m_symbol)
-               continue;
-            if(OrderGetInteger(ORDER_MAGIC)!=m_magic)
-               continue;
-            no_pending=false;
-            break;
-           }
+         bool no_pending=(m_pending_count==0);
          if(no_positions && no_pending)
-           m_active=false;
+            m_active=false;
         }
      }
 
@@ -986,6 +1155,12 @@ public:
 
    bool           IsActive() const { return m_active; }
    bool           ClosedRecently() const { return m_closed_recently; }
+   bool           ClosedAsHedge()
+     {
+      bool flag=m_closed_as_hedge;
+      m_closed_as_hedge=false;
+      return flag;
+     }
    double         TakeRealizedProfit()
      {
       double value=m_last_realized;
@@ -999,6 +1174,25 @@ public:
    double         AveragePrice() const { return m_avg_price; }
    double         TotalLot() const { return m_total_lot; }
    double         GroupTPPrice() const { return m_tp_price; }
+   double         TargetReduction() const { return m_target_reduction; }
+   double         TakeCycleMaxDrawdown()
+     {
+      double value=m_cycle_max_dd;
+      m_cycle_max_dd=0.0;
+      return value;
+     }
+   double         TakeCyclePartialVolume()
+     {
+      double value=m_cycle_partial_volume;
+      m_cycle_partial_volume=0.0;
+      return value;
+     }
+   double         TakeCycleTotalLot()
+     {
+      double value=m_last_cycle_total_lot;
+      m_last_cycle_total_lot=0.0;
+      return value;
+     }
    void           SetKind(const EBasketKind kind) { m_kind=kind; }
 
    EBasketKind    Kind() const { return m_kind; }
