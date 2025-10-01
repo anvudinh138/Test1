@@ -101,8 +101,10 @@
 **Features**:
 - ✅ Partial Close: Enabled (MinProfit=2.0)
 - ✅ DTS: Balanced settings
+- ❌ SSL: Disabled
 
 **Expected**: Best overall performance with DD reduction + profit optimization
+**Results**: Strong PF 5.64 but Max Equity DD 42.98% (needs reduction)
 ![alt text](image-6.png)
 ![alt text](image-7.png)
 Tóm tắt nhanh 7 preset (nhìn đồ thị)
@@ -186,6 +188,88 @@ Chạy lại đúng khung thời gian/symbol hiện tại → đối chiếu cá
 Nếu DD vẫn >30%: tiếp tục tăng DdThreshold lên 15, hoặc hạ AtrWeight 0.6.
 ---
 
+### 07_Combo_Safer_v1.set ⚖️ **NEW - Conservative DTS Tuning**
+**Description**: Set 7 với DTS settings giảm rủi ro
+**Use**: Reduce DD while keeping PC + DTS synergy
+**Features**:
+- ✅ Partial Close: MinProfit=2.5 (up from 2.0)
+- ✅ DTS: Conservative (AtrWeight=0.7, DecayRate=0.012, DdThreshold=12)
+- ❌ SSL: Disabled
+
+**Parameters Changed from Set 7**:
+- `InpPcMinProfit = 2.5` (was 2.0) - Close earlier
+- `InpDtsAtrWeight = 0.7` (was 0.8) - Less ATR influence
+- `InpDtsTimeDecayRate = 0.012` (was 0.01) - Faster cool-down
+- `InpDtsTimeDecayFloor = 0.7` (was 0.6) - Higher floor
+- `InpDtsDdThreshold = 12.0` (was 10.0) - Trigger scaling later
+- `InpDtsMaxMultiplier = 2.0` (was 2.5) - Lower ceiling
+
+**Target**: Max Equity DD < 30%, maintain PF > 3.0
+---
+
+### 07_Combo_Safer_v2.set 🛡️ **NEW - Ultra Conservative**
+**Description**: Most defensive variant of Set 7
+**Use**: Minimize DD for risk-averse testing
+**Features**:
+- ✅ Partial Close: MinProfit=3.0, CloseFraction=0.35
+- ✅ DTS: Ultra-conservative (AtrWeight=0.6, DdThreshold=15)
+- ❌ SSL: Disabled
+
+**Parameters vs v1**:
+- `InpPcMinProfit = 3.0` (v1: 2.5)
+- `InpPcCloseFraction = 0.35` (v1: 0.30)
+- `InpDtsAtrWeight = 0.6` (v1: 0.7)
+- `InpDtsTimeDecayRate = 0.015` (v1: 0.012)
+- `InpDtsDdThreshold = 15.0` (v1: 12.0)
+- `InpDtsMaxMultiplier = 1.8` (v1: 2.0)
+
+**Target**: Max Equity DD < 25%
+---
+
+### 08_Combo_SSL.set 🛡️ **NEW - Full Protection Suite**
+**Description**: PC + DTS + SSL all enabled
+**Use**: Test Smart Stop Loss with breakeven + trailing
+**Features**:
+- ✅ Partial Close: Enabled (MinProfit=2.5)
+- ✅ DTS: Conservative settings (from Safer_v1)
+- ✅ **SSL: Enabled** (NEW!)
+
+**SSL Parameters**:
+- `InpSslEnabled = true` - Master switch
+- `InpSslSlMultiplier = 3.0` - Initial SL at 3× spacing from avg
+- `InpSslBreakevenThreshold = 5.0` - Move to BE at +5 USD
+- `InpSslTrailByAverage = true` - Trail from basket average price
+- `InpSslTrailOffsetPoints = 100` - Trail 100 points above/below avg
+- `InpSslRespectMinStop = true` - Respect broker constraints
+
+**How SSL Works**:
+1. **Initial Protection**: Places SL at `avg_price ± (spacing × 3.0)` on basket activation
+2. **Breakeven Move**: When basket PnL ≥ $5, moves all SLs to breakeven (avg_price)
+3. **Trailing**: While PnL > 0, trails SL by average price + 100 points offset
+
+**Expected Logs** (when `InpLogEvents=true`):
+```
+[SSL] Initial SL placed at 1.08123 (spacing=25.0 × mult=3.0)
+[SSL] Breakeven triggered at PnL=5.23 USD, SL moved to avg=1.08450
+[SSL] Trail SL to 1.08550 (avg=1.08450 offset=100 pts)
+[SSL] Applied SL=1.08550 to 8 positions
+```
+
+**Use Cases**:
+- Flash crash protection (hard SL cap)
+- Lock in profits earlier (reduce givebacks)
+- Live trading with risk discipline
+- Test interaction with PC + DTS
+
+**Testing Notes**:
+- Compare vs Set 7 Safer_v1 (same DTS, no SSL) to isolate SSL impact
+- Check for premature SL hits in volatile periods
+- Monitor `[SSL]` log tags for all events
+- Verify SL respects broker `SYMBOL_TRADE_STOPS_LEVEL`
+
+**Target**: Max Equity DD < 30%, reduced realized DD, earlier profit lock
+---
+
 ## 🎯 Recommended Testing Order
 
 ### Phase 1: DTS Validation
@@ -199,7 +283,20 @@ Nếu DD vẫn >30%: tiếp tục tăng DdThreshold lên 15, hoặc hạ AtrWeig
 6. **04_DTS_Aggressive** → Find upper performance bound
 
 ### Phase 3: Feature Synergy
-7. **07_PC_DTS_Combo** → Test combined power
+7. **07_PC_DTS_Combo** (Done) → Test combined power (Result: PF 5.64, DD 42.98%)
+
+### Phase 4: DD Reduction & SSL Testing (NEW)
+8. **07_Combo_Safer_v1** → Conservative DTS tuning
+9. **07_Combo_Safer_v2** → Ultra-conservative variant
+10. **08_Combo_SSL** → Full protection with SSL enabled
+
+**Testing Matrix**:
+| Preset | PC | DTS | SSL | Target DD | Expected PF |
+|--------|-----|-----|-----|-----------|-------------|
+| 07 Original | ✅ | ✅ Balanced | ❌ | 42.98% | 5.64 |
+| 07 Safer_v1 | ✅ | ✅ Conservative | ❌ | < 30% | > 3.0 |
+| 07 Safer_v2 | ✅ | ✅ Ultra-Cons | ❌ | < 25% | > 2.5 |
+| 08 SSL | ✅ | ✅ Conservative | ✅ | < 30% | > 3.0 |
 
 ---
 
@@ -260,6 +357,16 @@ For each preset, record:
 → Increase time decay rate
 → Consider combining with PC
 
+### If SSL causes premature exits:
+→ Increase `InpSslSlMultiplier` from 3.0 to 4.0 (wider initial SL)
+→ Increase `InpSslBreakevenThreshold` from 5.0 to 7.0-10.0 (move BE later)
+→ Increase `InpSslTrailOffsetPoints` from 100 to 150-200 (looser trail)
+
+### If SSL shows strong DD reduction:
+→ Test with Set 7 original DTS settings (aggressive) + SSL
+→ Reduce `InpSslBreakevenThreshold` to 3.0 (lock profits earlier)
+→ Enable SSL on all future presets
+
 ---
 
 ## 🔍 Expected Results
@@ -272,7 +379,10 @@ For each preset, record:
 | Aggressive | Highest (risky) | Variable | Risk-takers |
 | ATR Only | Good in volatile | Moderate | Volatile markets |
 | DD Focus | Lower | Lowest | Safety-first |
-| PC+DTS Combo | Best overall? | Low | Optimal |
+| PC+DTS Combo | High (PF 5.64) | 42.98% | High performance |
+| Combo Safer_v1 | Good | < 30% | Balanced risk |
+| Combo Safer_v2 | Moderate | < 25% | Risk-averse |
+| Combo SSL | Good | < 30% + hard SL | Live trading |
 
 ---
 
@@ -281,9 +391,19 @@ For each preset, record:
 1. **Always test on demo first**
 2. **Compare against Baseline** to validate improvements
 3. **Record all metrics** for each test
-4. **Check logs** for DTS adjustments: `[DTS] base=X atr_f=X time_f=X dd_f=X adj=X`
+4. **Check logs** for feature tags:
+   - `[DTS] base=X atr_f=X time_f=X dd_f=X adj=X` - Dynamic Target Scaling
+   - `[SSL] Initial SL placed...` - SSL initialization
+   - `[SSL] Breakeven triggered...` - BE move
+   - `[SSL] Trail SL to...` - Trailing adjustments
+   - `[SSL] Applied SL=... to N positions` - SL modifications
 5. **Test period**: Minimum 3 months historical data
 6. **Recommended symbols**: Major pairs (EURUSD, GBPUSD, BTCUSD)
+7. **SSL Feature Notes**:
+   - Set `InpRespectStops=false` for backtest (MT5 doesn't enforce stops in tester)
+   - Set `InpRespectStops=true` for live (but use `InpSslRespectMinStop=true`)
+   - Monitor Experts tab for `[SSL]` events to verify behavior
+   - SSL works on both PRIMARY and HEDGE baskets
 
 ---
 

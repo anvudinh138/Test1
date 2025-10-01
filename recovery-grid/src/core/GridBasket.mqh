@@ -57,6 +57,10 @@ private:
    double         m_volume_max;
    int            m_volume_digits;
 
+   // SSL state
+   bool           m_ssl_be_moved;           // breakeven already triggered
+   double         m_ssl_current_trail_sl;   // current trailing SL level
+
    string         Tag() const
      {
       string side=(m_direction==DIR_BUY)?"BUY":"SELL";
@@ -511,6 +515,188 @@ private:
         }
      }
 
+   void           ManageSmartStopLoss()
+     {
+      if(!m_params.ssl_enabled)
+         return;
+      if(m_total_lot<=0.0)
+         return;
+
+      double point=SymbolInfoDouble(m_symbol,SYMBOL_POINT);
+      if(point<=0.0)
+         point=_Point;
+      int digits=(int)SymbolInfoInteger(m_symbol,SYMBOL_DIGITS);
+
+      // 1. Check if we should move to breakeven
+      if(!m_ssl_be_moved && m_pnl_usd>=m_params.ssl_breakeven_threshold)
+        {
+         if(MoveAllStopsToBreakeven())
+           {
+            m_ssl_be_moved=true;
+            if(m_log!=NULL)
+               m_log.Event(Tag(),StringFormat("[SSL] Breakeven triggered at PnL=%.2f USD, SL moved to avg=%."+IntegerToString(digits)+"f",
+                                            m_pnl_usd,m_avg_price));
+           }
+         return;
+        }
+
+      // 2. Trail by average if in profit and enabled
+      if(m_params.ssl_trail_by_average && m_pnl_usd>0.0)
+        {
+         double offset=m_params.ssl_trail_offset_points*point;
+         double new_sl=0.0;
+         if(m_direction==DIR_BUY)
+            new_sl=m_avg_price+offset;
+         else
+            new_sl=m_avg_price-offset;
+
+         new_sl=NormalizeDouble(new_sl,digits);
+
+         // Only update if better
+         if(IsBetterSL(new_sl,m_ssl_current_trail_sl))
+           {
+            if(ApplySmartStopLoss(new_sl))
+              {
+               m_ssl_current_trail_sl=new_sl;
+               if(m_log!=NULL)
+                  m_log.Event(Tag(),StringFormat("[SSL] Trail SL to %."+IntegerToString(digits)+"f (avg=%."+IntegerToString(digits)+"f offset=%d pts)",
+                                               new_sl,m_avg_price,m_params.ssl_trail_offset_points));
+              }
+           }
+        }
+     }
+
+   bool           IsBetterSL(const double new_sl,const double current_sl) const
+     {
+      if(current_sl==0.0)
+         return true;
+      if(m_direction==DIR_BUY)
+         return (new_sl>current_sl);
+      return (new_sl<current_sl);
+     }
+
+   bool           MoveAllStopsToBreakeven()
+     {
+      if(m_avg_price<=0.0)
+         return false;
+      int digits=(int)SymbolInfoInteger(m_symbol,SYMBOL_DIGITS);
+      double be_price=NormalizeDouble(m_avg_price,digits);
+      return ApplySmartStopLoss(be_price);
+     }
+
+   bool           ApplySmartStopLoss(const double sl_price)
+     {
+      if(sl_price<=0.0)
+         return false;
+
+      CTrade trade;
+      trade.SetExpertMagicNumber(m_magic);
+      int digits=(int)SymbolInfoInteger(m_symbol,SYMBOL_DIGITS);
+      double norm_sl=NormalizeDouble(sl_price,digits);
+
+      // Check broker min stop level if enabled
+      if(m_params.ssl_respect_min_stop)
+        {
+         long stops_level=SymbolInfoInteger(m_symbol,SYMBOL_TRADE_STOPS_LEVEL);
+         double point=SymbolInfoDouble(m_symbol,SYMBOL_POINT);
+         if(point<=0.0)
+            point=_Point;
+         double min_distance=stops_level*point;
+         double current_price=(m_direction==DIR_BUY)?SymbolInfoDouble(m_symbol,SYMBOL_BID)
+                                                    :SymbolInfoDouble(m_symbol,SYMBOL_ASK);
+         double distance=MathAbs(current_price-norm_sl);
+         if(distance<min_distance)
+           {
+            if(m_log!=NULL)
+               m_log.Event(Tag(),StringFormat("[SSL] SL %."+IntegerToString(digits)+"f too close (min=%d points), adjusting",
+                                            norm_sl,(int)stops_level));
+            if(m_direction==DIR_BUY)
+               norm_sl=current_price-min_distance;
+            else
+               norm_sl=current_price+min_distance;
+            norm_sl=NormalizeDouble(norm_sl,digits);
+           }
+        }
+
+      bool applied=false;
+      int modified_count=0;
+      int total=(int)PositionsTotal();
+
+      for(int i=0;i<total;i++)
+        {
+         ulong ticket=PositionGetTicket(i);
+         if(ticket==0)
+            continue;
+         if(!PositionSelectByTicket(ticket))
+            continue;
+         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
+            continue;
+         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
+            continue;
+         long type=PositionGetInteger(POSITION_TYPE);
+         if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
+            (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
+            continue;
+
+         double current_sl=PositionGetDouble(POSITION_SL);
+         double current_tp=PositionGetDouble(POSITION_TP);
+
+         // Only modify if new SL is better
+         if(!IsBetterSL(norm_sl,current_sl))
+            continue;
+
+         if(trade.PositionModify(ticket,norm_sl,current_tp))
+           {
+            applied=true;
+            modified_count++;
+           }
+         else
+           {
+            if(m_log!=NULL)
+               m_log.Event(Tag(),StringFormat("[SSL] Failed to modify ticket=%I64u err=%d",ticket,GetLastError()));
+           }
+        }
+
+      if(applied && m_log!=NULL)
+         m_log.Event(Tag(),StringFormat("[SSL] Applied SL=%."+IntegerToString(digits)+"f to %d positions",
+                                      norm_sl,modified_count));
+
+      return applied;
+     }
+
+   void           PlaceInitialStopLoss()
+     {
+      if(!m_params.ssl_enabled)
+         return;
+      if(m_params.ssl_sl_multiplier<=0.0)
+         return;
+      if(m_total_lot<=0.0)
+         return;
+
+      double spacing_px=m_spacing.ToPrice(m_initial_spacing_pips);
+      if(spacing_px<=0.0)
+         return;
+
+      double sl_distance=spacing_px*m_params.ssl_sl_multiplier;
+      double sl_price=0.0;
+
+      if(m_direction==DIR_BUY)
+         sl_price=m_avg_price-sl_distance;
+      else
+         sl_price=m_avg_price+sl_distance;
+
+      int digits=(int)SymbolInfoInteger(m_symbol,SYMBOL_DIGITS);
+      sl_price=NormalizeDouble(sl_price,digits);
+
+      if(ApplySmartStopLoss(sl_price))
+        {
+         m_ssl_current_trail_sl=sl_price;
+         if(m_log!=NULL)
+            m_log.Event(Tag(),StringFormat("[SSL] Initial SL placed at %."+IntegerToString(digits)+"f (spacing=%.1f × mult=%.1f)",
+                                         sl_price,m_initial_spacing_pips,m_params.ssl_sl_multiplier));
+        }
+     }
+
    bool           ApplyTrailingStop(const double new_sl)
      {
       bool applied=false;
@@ -797,6 +983,8 @@ public:
                          m_trail_anchor(0.0),
                          m_partial_realized(0.0),
                          m_furthest_entry(0.0),
+                         m_ssl_be_moved(false),
+                         m_ssl_current_trail_sl(0.0),
                          m_initial_atr(0.0),
                          m_entry_bar(0),
                          m_volume_step(0.0),
@@ -839,10 +1027,13 @@ public:
       m_trail_anchor=0.0;
       m_initial_atr=(m_spacing!=NULL)?m_spacing.AtrPoints():0.0;
       m_entry_bar=Bars(m_symbol,PERIOD_CURRENT);
+      m_ssl_be_moved=false;
+      m_ssl_current_trail_sl=0.0;
       PlaceInitialOrders();
       m_active=true;
       m_closed_recently=false;
       RefreshState();
+      PlaceInitialStopLoss();
       return true;
      }
 
@@ -938,6 +1129,7 @@ public:
         }
       
       ManageTrailing();
+      ManageSmartStopLoss();
       if((m_pnl_usd>=EffectiveTargetUsd()) || PriceReachedTP())
         {
          CloseBasket("GroupTP");

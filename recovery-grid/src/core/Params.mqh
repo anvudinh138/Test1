@@ -82,6 +82,14 @@ struct SParams
    double       dts_dd_max_factor;
    double       dts_min_multiplier;
    double       dts_max_multiplier;
+
+   // smart stop loss (SSL)
+   bool         ssl_enabled;              // master switch
+   double       ssl_sl_multiplier;        // SL distance = spacing × this
+   double       ssl_breakeven_threshold;  // USD profit to move to breakeven
+   bool         ssl_trail_by_average;     // trail from average price
+   int          ssl_trail_offset_points;  // trail offset in points
+   bool         ssl_respect_min_stop;     // respect broker min stop level
   };
 
 #endif // __RGD_V2_PARAMS_MQH__

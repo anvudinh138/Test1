@@ -1,4 +1,15 @@
+//+------------------------------------------------------------------+
+//| Recovery Grid Direction v2.2                                      |
+//| Two-sided recovery grid with PC + DTS + SSL                      |
+//+------------------------------------------------------------------+
+//| PRODUCTION DEFAULTS: Based on 08_Combo_SSL backtest results      |
+//| - Max Equity DD: 16.99% (vs 42.98% without SSL)                  |
+//| - Profit Factor: 5.76                                            |
+//| - Win Rate: 73.04%                                               |
+//| - Features: Partial Close + Conservative DTS + SSL Protection    |
+//+------------------------------------------------------------------+
 #property strict
+#property version "2.20"
 
 #include <Trade/Trade.mqh>
 
@@ -60,10 +71,10 @@ input double            InpCommissionPerLot = 0.0; // 7.0
 input long              InpMagic            = 990045;
 
 input group "=== Partial Close ==="
-input bool              InpPcEnabled           = false;
+input bool              InpPcEnabled           = true;   // ENABLED for production
 input double            InpPcRetestAtr         = 0.8;
 input double            InpPcSlopeHysteresis   = 0.0002;
-input double            InpPcMinProfitUsd      = 1.5;
+input double            InpPcMinProfitUsd      = 2.5;    // Optimized: Close earlier
 input double            InpPcCloseFraction     = 0.30;
 input int               InpPcMaxTickets        = 3;
 input int               InpPcCooldownBars      = 10;
@@ -73,18 +84,26 @@ input double            InpPcGuardExitAtr      = 0.6;
 input double            InpPcMinLotsRemain     = 0.20;
 
 input group "=== Dynamic Target Scaling ==="
-input bool              InpDtsEnabled           = false;
+input bool              InpDtsEnabled           = true;  // ENABLED for production
 input bool              InpDtsAtrEnabled        = true;
-input double            InpDtsAtrWeight         = 0.8;
+input double            InpDtsAtrWeight         = 0.7;   // Optimized: Conservative ATR
 input bool              InpDtsTimeDecayEnabled  = true;
-input double            InpDtsTimeDecayRate     = 0.01;
-input double            InpDtsTimeDecayFloor    = 0.5;
+input double            InpDtsTimeDecayRate     = 0.012; // Optimized: Faster cool-down
+input double            InpDtsTimeDecayFloor    = 0.7;   // Optimized: Higher floor
 input bool              InpDtsDdScalingEnabled  = true;
-input double            InpDtsDdThreshold       = 10.0;
+input double            InpDtsDdThreshold       = 12.0;  // Optimized: Trigger later
 input double            InpDtsDdScaleFactor     = 50.0;
 input double            InpDtsDdMaxFactor       = 2.0;
-input double            InpDtsMinMultiplier     = 0.5;
-input double            InpDtsMaxMultiplier     = 2.5;
+input double            InpDtsMinMultiplier     = 0.7;   // Optimized: Higher floor
+input double            InpDtsMaxMultiplier     = 2.0;   // Optimized: Lower ceiling
+
+input group "=== Smart Stop Loss (SSL) ==="
+input bool              InpSslEnabled              = true;   // ENABLED for production (DD: 42.98% -> 16.99%)
+input double            InpSslSlMultiplier         = 3.0;    // SL distance = spacing × this
+input double            InpSslBreakevenThreshold   = 5.0;    // USD profit to move to breakeven
+input bool              InpSslTrailByAverage       = true;   // Trail from average price
+input int               InpSslTrailOffsetPoints    = 100;    // Trail offset in points
+input bool              InpSslRespectMinStop       = true;   // Respect broker min stop level
 
 //--- Globals
 SParams              g_params;
@@ -192,6 +211,13 @@ void BuildParams()
    g_params.dts_dd_max_factor      =InpDtsDdMaxFactor;
    g_params.dts_min_multiplier     =InpDtsMinMultiplier;
    g_params.dts_max_multiplier     =InpDtsMaxMultiplier;
+
+   g_params.ssl_enabled            =InpSslEnabled;
+   g_params.ssl_sl_multiplier      =InpSslSlMultiplier;
+   g_params.ssl_breakeven_threshold=InpSslBreakevenThreshold;
+   g_params.ssl_trail_by_average   =InpSslTrailByAverage;
+   g_params.ssl_trail_offset_points=InpSslTrailOffsetPoints;
+   g_params.ssl_respect_min_stop   =InpSslRespectMinStop;
   }
 
 int OnInit()
