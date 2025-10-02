@@ -1,0 +1,5 @@
+; XAUUSD Production
+; Based on 10_ADC_Test with SSL disabled per user preference
+; All other settings use default (spacing works well for gold)
+InpMagic=990045
+InpSslEnabled=false

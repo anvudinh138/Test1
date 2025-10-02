@@ -112,6 +112,17 @@ private:
       if(basket==NULL || !basket.IsActive())
          return;
 
+      // Wait minimum 10 seconds after basket becomes active (let pendings settle)
+      static datetime last_check_buy=0;
+      static datetime last_check_sell=0;
+      datetime now=TimeCurrent();
+
+      datetime *last_check=(basket.Direction()==DIR_BUY)?&last_check_buy:&last_check_sell;
+
+      // Throttle: check max once per 5 seconds per basket
+      if(now-(*last_check)<5)
+         return;
+
       // Orphaned basket criteria:
       // 1. Has pending orders
       bool has_pendings=(basket.PendingCount()>0);
@@ -142,6 +153,19 @@ private:
             string dir=(basket.Direction()==DIR_BUY)?"BUY":"SELL";
             m_log.Event(Tag(),StringFormat("[ORPHAN] %s basket recovered: pendings cancelled, marked inactive, will reseed next cycle",dir));
            }
+
+         *last_check=now;  // Update last check time after recovery
+        }
+      else if(has_pendings && no_positions && !opposite_has_positions)
+        {
+         // Edge case: Both baskets in same state (both have pendings, no positions)
+         // This can happen during initial seeding - not orphaned yet, just wait
+         *last_check=now;
+        }
+      else if(!has_pendings || !no_positions)
+        {
+         // Normal state - has positions or no pendings
+         *last_check=now;
         }
      }
 

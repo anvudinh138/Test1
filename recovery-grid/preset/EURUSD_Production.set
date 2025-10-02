@@ -1,0 +1,8 @@
+; EURUSD Production
+; Tighter spacing for forex majors (lower volatility than gold)
+; Based on 10_ADC_Test with EURUSD-specific adjustments
+InpMagic=990046
+InpSpacingStepPips=8.0
+InpSpacingAtrMult=0.8
+InpMinSpacingPips=5.0
+InpSslEnabled=false
