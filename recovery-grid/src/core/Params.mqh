@@ -42,8 +42,7 @@ struct SParams
    bool         rescue_adaptive_lot;     // enable adaptive lot matching
    double       rescue_lot_multiplier;   // scale factor for adaptive lot (e.g., 1.0 = match exactly)
    double       rescue_max_lot;          // safety cap for adaptive lot
-   double       rescue_min_lot;          // minimum rescue lot (floor)
-   double       rescue_min_loser_lot;    // min loser lot to trigger adaptive (below this = use min_lot)
+   double       rescue_min_loser_lot;    // min loser lot to trigger rescue (below this = skip rescue)
    double       exposure_cap_lots;       // global lot exposure limit
    double       session_sl_usd;          // session stop loss (USD)
 

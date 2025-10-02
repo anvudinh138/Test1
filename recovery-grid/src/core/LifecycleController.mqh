@@ -761,43 +761,41 @@ public:
             double dd=-MathMin(0.0,loser.BasketPnL());
 
             // Adaptive rescue lot: match loser's total lot if enabled
+            double loser_lot = loser.TotalLot();
+
+            // Smart threshold: Only rescue if loser >= min threshold
+            if(loser_lot < m_params.rescue_min_loser_lot)
+              {
+               // Below threshold: SKIP rescue (wait for loser to accumulate)
+               if(m_log!=NULL)
+                  m_log.Event(Tag(),StringFormat("[RESCUE-SKIP] Loser=%.2f lot < threshold %.2f (waiting for accumulation)",
+                                                  loser_lot, m_params.rescue_min_loser_lot));
+               continue;  // Skip rescue, continue to next logic
+              }
+
+            // Calculate adaptive rescue lot
             double rescue_lot;
             if(m_params.rescue_adaptive_lot)
               {
-               double loser_lot = loser.TotalLot();
+               // Adaptive mode: Match loser's lot
+               rescue_lot = loser_lot * m_params.rescue_lot_multiplier;
 
-               // Smart threshold: Only adaptive if loser >= min threshold
-               if(loser_lot >= m_params.rescue_min_loser_lot)
-                 {
-                  // Adaptive mode: Match loser's lot
-                  rescue_lot = loser_lot * m_params.rescue_lot_multiplier;
+               // Apply max cap only
+               if(rescue_lot > m_params.rescue_max_lot)
+                  rescue_lot = m_params.rescue_max_lot;
 
-                  // Apply safety caps
-                  if(rescue_lot > m_params.rescue_max_lot)
-                     rescue_lot = m_params.rescue_max_lot;
-                  if(rescue_lot < m_params.rescue_min_lot)
-                     rescue_lot = m_params.rescue_min_lot;
+               rescue_lot = winner.NormalizeLot(rescue_lot);
 
-                  rescue_lot = winner.NormalizeLot(rescue_lot);
-
-                  if(m_log!=NULL)
-                     m_log.Event(Tag(),StringFormat("[RESCUE-ADAPTIVE] Loser=%.2f lot → Rescue=%.2f lot (mult=%.2f, cap=%.2f)",
-                                                     loser_lot, rescue_lot, m_params.rescue_lot_multiplier, m_params.rescue_max_lot));
-                 }
-               else
-                 {
-                  // Below threshold: Use fixed min lot
-                  rescue_lot = winner.NormalizeLot(m_params.rescue_min_lot);
-
-                  if(m_log!=NULL)
-                     m_log.Event(Tag(),StringFormat("[RESCUE-FIXED] Loser=%.2f lot < threshold %.2f → Rescue=%.2f lot (fixed)",
-                                                     loser_lot, m_params.rescue_min_loser_lot, rescue_lot));
-                 }
+               if(m_log!=NULL)
+                  m_log.Event(Tag(),StringFormat("[RESCUE-ADAPTIVE] Loser=%.2f lot → Rescue=%.2f lot (mult=%.2f, cap=%.2f)",
+                                                  loser_lot, rescue_lot, m_params.rescue_lot_multiplier, m_params.rescue_max_lot));
               }
             else
               {
-               // Disabled: Use fixed min lot
-               rescue_lot = winner.NormalizeLot(m_params.rescue_min_lot);
+               // Disabled: Match loser exactly (no multiplier)
+               rescue_lot = winner.NormalizeLot(loser_lot);
+               if(rescue_lot > m_params.rescue_max_lot)
+                  rescue_lot = m_params.rescue_max_lot;
               }
 
             // Check rescue trigger (price breach only)

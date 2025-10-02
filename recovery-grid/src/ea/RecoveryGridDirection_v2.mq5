@@ -64,8 +64,7 @@ input string            InpRecoverySteps       = "1000,2000,3000";  // Staged li
 input bool              InpRescueAdaptiveLot   = true;   // ✅ Match loser's lot size
 input double            InpRescueLotMultiplier = 1.0;    // 1.0 = exact match, 0.8 = 80%
 input double            InpRescueMaxLot        = 0.50;   // Max rescue lot (safety cap)
-input double            InpRescueMinLot        = 0.02;   // Min rescue lot (floor)
-input double            InpRescueMinLoserLot   = 0.05;   // Min loser lot to trigger adaptive
+input double            InpRescueMinLoserLot   = 0.05;   // Min loser lot to trigger rescue
 
 input group "=== Risk Management ==="
 input double            InpExposureCapLots  = 2.0;     // Max total lot exposure
@@ -205,7 +204,6 @@ void BuildParams()
    g_params.rescue_adaptive_lot    =InpRescueAdaptiveLot;
    g_params.rescue_lot_multiplier  =InpRescueLotMultiplier;
    g_params.rescue_max_lot         =InpRescueMaxLot;
-   g_params.rescue_min_lot         =InpRescueMinLot;
    g_params.rescue_min_loser_lot   =InpRescueMinLoserLot;
    g_params.exposure_cap_lots      =InpExposureCapLots;
    g_params.session_sl_usd         =InpSessionSL_USD;
