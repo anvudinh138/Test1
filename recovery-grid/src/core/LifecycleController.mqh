@@ -759,7 +759,31 @@ public:
            {
             double price_winner=CurrentPrice(winner.Direction());
             double dd=-MathMin(0.0,loser.BasketPnL());
-            double rescue_lot=winner.NormalizeLot(m_params.recovery_lot);
+
+            // Adaptive rescue lot: match loser's total lot if enabled
+            double rescue_lot;
+            if(m_params.rescue_adaptive_lot)
+              {
+               double loser_lot = loser.TotalLot();
+               rescue_lot = loser_lot * m_params.rescue_lot_multiplier;
+
+               // Apply safety caps
+               if(rescue_lot > m_params.rescue_max_lot)
+                  rescue_lot = m_params.rescue_max_lot;
+               if(rescue_lot < m_params.recovery_lot)
+                  rescue_lot = m_params.recovery_lot;  // Min = original recovery lot
+
+               rescue_lot = winner.NormalizeLot(rescue_lot);
+
+               if(m_log!=NULL)
+                  m_log.Event(Tag(),StringFormat("[RESCUE-ADAPTIVE] Loser=%.2f lot → Rescue=%.2f lot (mult=%.2f, cap=%.2f)",
+                                                  loser_lot, rescue_lot, m_params.rescue_lot_multiplier, m_params.rescue_max_lot));
+              }
+            else
+              {
+               rescue_lot = winner.NormalizeLot(m_params.recovery_lot);
+              }
+
             if(rescue_lot>0.0 && m_rescue.CooldownOk() && m_rescue.CyclesAvailable())
               {
                if(m_rescue.ShouldRescue(loser.Direction(),loser.LastGridPrice(),spacing_px,price_winner,dd))

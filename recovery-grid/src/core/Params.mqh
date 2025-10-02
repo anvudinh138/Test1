@@ -40,6 +40,9 @@ struct SParams
    // rescue
    int          recovery_steps[];   // points offsets for staged pending orders
    double       recovery_lot;
+   bool         rescue_adaptive_lot;     // enable adaptive lot matching
+   double       rescue_lot_multiplier;   // scale factor for adaptive lot (e.g., 1.0 = match exactly)
+   double       rescue_max_lot;          // safety cap for adaptive lot
    double       dd_open_usd;
    double       offset_ratio;
    double       exposure_cap_lots;

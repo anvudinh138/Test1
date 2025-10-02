@@ -61,6 +61,9 @@ input int               InpTSLStepPoints    = 200;
 
 input string            InpRecoverySteps    = "1000,2000,3000";
 input double            InpRecoveryLot      = 0.02;
+input bool              InpRescueAdaptiveLot = true;   // Match loser's lot size
+input double            InpRescueLotMultiplier = 1.0;  // 1.0 = exact match, 0.8 = 80% of loser
+input double            InpRescueMaxLot     = 0.50;    // Safety cap for adaptive lot
 input double            InpDDOpenUSD        = 10000;
 input double            InpOffsetRatio      = 0.5;
 
@@ -73,7 +76,7 @@ input int               InpOrderCooldownSec = 5;
 input int               InpSlippagePips     = 1;
 input bool              InpRespectStops     = false;  // Set false for backtest
 
-input double            InpCommissionPerLot = 0.0; // 7.0
+input double            InpCommissionPerLot = 0.0;
 
 input group "=== Partial Close ==="
 input bool              InpPcEnabled           = true;   // ENABLED for production
@@ -201,6 +204,9 @@ void BuildParams()
 
    ParseRecoverySteps(InpRecoverySteps,g_params.recovery_steps);
    g_params.recovery_lot       =InpRecoveryLot;
+   g_params.rescue_adaptive_lot=InpRescueAdaptiveLot;
+   g_params.rescue_lot_multiplier=InpRescueLotMultiplier;
+   g_params.rescue_max_lot     =InpRescueMaxLot;
    g_params.dd_open_usd        =InpDDOpenUSD;
    g_params.offset_ratio       =InpOffsetRatio;
    g_params.exposure_cap_lots  =InpExposureCapLots;
