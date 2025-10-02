@@ -121,6 +121,9 @@ input double            InpAdcEquityDdThreshold    = 10.0;   // Equity DD % thre
 input bool              InpAdcPauseNewGrids        = true;   // Pause grid reseeding during cushion
 input bool              InpAdcPauseRescue          = true;   // Pause rescue hedge deployment during cushion
 
+input group "=== Timeframe Preservation ==="
+input bool              InpPreserveOnTfSwitch      = true;   // Preserve positions on timeframe switch
+
 //--- Globals
 SParams              g_params;
 CLogger             *g_logger        = NULL;
@@ -246,6 +249,8 @@ void BuildParams()
    g_params.adc_equity_dd_threshold=InpAdcEquityDdThreshold;
    g_params.adc_pause_new_grids    =InpAdcPauseNewGrids;
    g_params.adc_pause_rescue       =InpAdcPauseRescue;
+
+   g_params.preserve_on_tf_switch  =InpPreserveOnTfSwitch;
   }
 
 int OnInit()

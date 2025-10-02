@@ -1178,6 +1178,7 @@ public:
      }
 
    bool           IsActive() const { return m_active; }
+   void           SetActive(bool active) { m_active=active; }
    bool           ClosedRecently() const { return m_closed_recently; }
    double         TakeRealizedProfit()
      {
@@ -1190,6 +1191,7 @@ public:
    double         BasketPnL() const { return m_pnl_usd; }
    double         LastGridPrice() const { return m_last_grid_price; }
    double         AveragePrice() const { return m_avg_price; }
+   double         AvgPrice() const { return m_avg_price; }
    double         TotalLot() const { return m_total_lot; }
    double         GroupTPPrice() const { return m_tp_price; }
    void           SetKind(const EBasketKind kind) { m_kind=kind; }

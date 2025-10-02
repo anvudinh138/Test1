@@ -104,6 +104,9 @@ struct SParams
    double       adc_equity_dd_threshold;  // % equity DD to activate cushion (e.g. 10.0)
    bool         adc_pause_new_grids;      // pause grid reseeding during cushion
    bool         adc_pause_rescue;         // pause rescue hedge deployment during cushion
+
+   // timeframe preservation
+   bool         preserve_on_tf_switch;    // preserve positions on timeframe switch
   };
 
 #endif // __RGD_V2_PARAMS_MQH__

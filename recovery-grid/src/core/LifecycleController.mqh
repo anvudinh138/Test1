@@ -107,6 +107,23 @@ private:
          m_rescue.ResetCycleCounter();
      }
 
+   bool              HasExistingPositions() const
+     {
+      int total=PositionsTotal();
+      for(int i=0;i<total;i++)
+        {
+         ulong ticket=PositionGetTicket(i);
+         if(ticket==0)
+            continue;
+         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
+            continue;
+         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
+            continue;
+         return true;
+        }
+      return false;
+     }
+
    bool              TryReseedBasket(CGridBasket *basket,const EDirection dir,const bool allow_new_orders)
      {
       if(!allow_new_orders)
@@ -460,6 +477,38 @@ public:
       if(ask<=0 || bid<=0)
         return false;
 
+      // Check if we should preserve existing positions
+      bool has_positions=m_params.preserve_on_tf_switch && HasExistingPositions();
+
+      if(has_positions)
+        {
+         // Reconstruct mode: baskets will discover their positions
+         if(m_log!=NULL)
+            m_log.Event(Tag(),"[TF-Preserve] Existing positions detected, reconstructing baskets");
+
+         m_buy=new CGridBasket(m_symbol,DIR_BUY,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic);
+         m_sell=new CGridBasket(m_symbol,DIR_SELL,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic);
+
+         // Mark baskets active without seeding
+         m_buy.SetActive(true);
+         m_sell.SetActive(true);
+
+         // Force immediate refresh to discover positions
+         m_buy.Update();
+         m_sell.Update();
+
+         if(m_log!=NULL)
+           {
+            m_log.Event(Tag(),StringFormat("[TF-Preserve] BUY reconstructed: avg=%.5f lot=%.2f pnl=%.2f",
+                                          m_buy.AvgPrice(),m_buy.TotalLot(),m_buy.BasketPnL()));
+            m_log.Event(Tag(),StringFormat("[TF-Preserve] SELL reconstructed: avg=%.5f lot=%.2f pnl=%.2f",
+                                          m_sell.AvgPrice(),m_sell.TotalLot(),m_sell.BasketPnL()));
+           }
+
+         return true;
+        }
+
+      // Fresh start: seed new baskets
       double seed_lot=NormalizeVolume(m_params.lot_base);
       if(m_ledger!=NULL && !m_ledger.ExposureAllowed(seed_lot,m_magic,m_symbol))
         {
