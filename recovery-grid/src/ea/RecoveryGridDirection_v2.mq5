@@ -27,6 +27,9 @@
 #include <RECOVERY-GRID-DIRECTION_v2/core/LifecycleController.mqh>
 
 //--- Inputs
+input group "=== IMPORTANT: Set Unique Magic Number ==="
+input long              InpMagic            = 990045;  // ⚠️ CHANGE THIS for each symbol/chart!
+
 input int               InpStatusInterval   = 60;
 input bool              InpLogEvents        = true;
 
@@ -70,7 +73,6 @@ input int               InpSlippagePips     = 1;
 input bool              InpRespectStops     = false;  // Set false for backtest
 
 input double            InpCommissionPerLot = 0.0; // 7.0
-input long              InpMagic            = 990045;
 
 input group "=== Partial Close ==="
 input bool              InpPcEnabled           = true;   // ENABLED for production
@@ -108,7 +110,7 @@ input int               InpSslTrailOffsetPoints    = 100;    // Trail offset in 
 input bool              InpSslRespectMinStop       = true;   // Respect broker min stop level
 
 input group "=== Time-based Risk Management (TRM) ==="
-input bool              InpTrmEnabled              = false;  // Master switch (DEFAULT OFF)
+input bool              InpTrmEnabled              = true;  // Master switch (DEFAULT OFF)
 input string            InpTrmNewsWindows          = "08:30-09:00,14:00-14:30";  // CSV format HH:MM-HH:MM (UTC)
 input bool              InpTrmPauseOrders          = true;   // Pause new orders during news
 input bool              InpTrmTightenSL            = false;  // Tighten SSL during news (requires SSL)
@@ -116,7 +118,7 @@ input double            InpTrmSLMultiplier         = 0.5;    // SL tightening fa
 input bool              InpTrmCloseOnNews          = false;  // Close all positions before news window
 
 input group "=== Anti-Drawdown Cushion (ADC) ==="
-input bool              InpAdcEnabled              = false;  // Master switch (DEFAULT OFF)
+input bool              InpAdcEnabled              = true;  // Master switch (DEFAULT OFF)
 input double            InpAdcEquityDdThreshold    = 10.0;   // Equity DD % threshold to activate cushion
 input bool              InpAdcPauseNewGrids        = true;   // Pause grid reseeding during cushion
 input bool              InpAdcPauseRescue          = true;   // Pause rescue hedge deployment during cushion
