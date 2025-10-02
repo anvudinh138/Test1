@@ -107,6 +107,9 @@ struct SParams
 
    // timeframe preservation
    bool         preserve_on_tf_switch;    // preserve positions on timeframe switch
+
+   // manual close detection
+   bool         mcd_enabled;              // enable manual close detection & profit transfer
   };
 
 #endif // __RGD_V2_PARAMS_MQH__
