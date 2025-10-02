@@ -20,7 +20,7 @@ struct SParams
    // grid
    int          grid_levels;        // number of levels including market seed
    double       lot_base;
-   double       lot_scale;
+   double       lot_offset;         // linear lot increment (e.g., 0.01)
    
    // dynamic grid
    bool         grid_dynamic_enabled;

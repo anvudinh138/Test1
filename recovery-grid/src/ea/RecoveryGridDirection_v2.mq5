@@ -45,7 +45,7 @@ input double            InpMinSpacingPips   = 5.0;   // Default for Forex majors
 
 input int               InpGridLevels       = 1000;
 input double            InpLotBase          = 0.01;
-input double            InpLotScale         = 1.5;
+input double            InpLotOffset        = 0.01;  // Linear lot increment
 
 input bool              InpDynamicGrid      = true;
 input int               InpWarmLevels       = 5;
@@ -185,7 +185,7 @@ void BuildParams()
 
    g_params.grid_levels        =InpGridLevels;
    g_params.lot_base           =InpLotBase;
-   g_params.lot_scale          =InpLotScale;
+   g_params.lot_offset         =InpLotOffset;
    
    g_params.grid_dynamic_enabled=InpDynamicGrid;
    g_params.grid_warm_levels   =InpWarmLevels;

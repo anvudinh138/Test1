@@ -101,9 +101,9 @@ private:
 
    double         LevelLot(const int idx) const
      {
-      double result=m_params.lot_base;
-      for(int i=1;i<=idx;i++)
-         result*=m_params.lot_scale;
+      // Linear lot scaling: lot = base + (offset × level)
+      // Example: base=0.01, offset=0.01 → level 0: 0.01, level 1: 0.02, level 2: 0.03
+      double result = m_params.lot_base + (m_params.lot_offset * idx);
       return NormalizeVolumeValue(result);
      }
 
