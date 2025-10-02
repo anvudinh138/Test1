@@ -112,15 +112,17 @@ private:
       if(basket==NULL || !basket.IsActive())
          return;
 
-      // Wait minimum 10 seconds after basket becomes active (let pendings settle)
+      // Throttle: check max once per 5 seconds per basket
       static datetime last_check_buy=0;
       static datetime last_check_sell=0;
       datetime now=TimeCurrent();
 
-      datetime *last_check=(basket.Direction()==DIR_BUY)?&last_check_buy:&last_check_sell;
+      bool is_buy=(basket.Direction()==DIR_BUY);
 
-      // Throttle: check max once per 5 seconds per basket
-      if(now-(*last_check)<5)
+      // Check throttle for the correct basket
+      if(is_buy && (now-last_check_buy<5))
+         return;
+      if(!is_buy && (now-last_check_sell<5))
          return;
 
       // Orphaned basket criteria:
@@ -138,7 +140,7 @@ private:
          // ORPHANED BASKET DETECTED
          if(m_log!=NULL)
            {
-            string dir=(basket.Direction()==DIR_BUY)?"BUY":"SELL";
+            string dir=is_buy?"BUY":"SELL";
             string opp_dir=(opposite.Direction()==DIR_BUY)?"BUY":"SELL";
             m_log.Event(Tag(),StringFormat("[ORPHAN] %s basket detected: %d pendings, 0 positions, %s has %.2f lots - RECOVERING",
                                          dir,basket.PendingCount(),opp_dir,opposite.TotalLot()));
@@ -150,22 +152,23 @@ private:
 
          if(m_log!=NULL)
            {
-            string dir=(basket.Direction()==DIR_BUY)?"BUY":"SELL";
+            string dir=is_buy?"BUY":"SELL";
             m_log.Event(Tag(),StringFormat("[ORPHAN] %s basket recovered: pendings cancelled, marked inactive, will reseed next cycle",dir));
            }
 
-         *last_check=now;  // Update last check time after recovery
+         // Update last check time after recovery
+         if(is_buy)
+            last_check_buy=now;
+         else
+            last_check_sell=now;
         }
-      else if(has_pendings && no_positions && !opposite_has_positions)
+      else
         {
-         // Edge case: Both baskets in same state (both have pendings, no positions)
-         // This can happen during initial seeding - not orphaned yet, just wait
-         *last_check=now;
-        }
-      else if(!has_pendings || !no_positions)
-        {
-         // Normal state - has positions or no pendings
-         *last_check=now;
+         // Normal state or edge case - update timer
+         if(is_buy)
+            last_check_buy=now;
+         else
+            last_check_sell=now;
         }
      }
 
