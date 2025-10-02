@@ -59,18 +59,17 @@ input bool              InpTSLEnabled       = true;
 input int               InpTSLStartPoints   = 1000;
 input int               InpTSLStepPoints    = 200;
 
-input string            InpRecoverySteps    = "1000,2000,3000";
-input double            InpRecoveryLot      = 0.02;
-input bool              InpRescueAdaptiveLot = true;   // Match loser's lot size
-input double            InpRescueLotMultiplier = 1.0;  // 1.0 = exact match, 0.8 = 80% of loser
-input double            InpRescueMaxLot     = 0.50;    // Safety cap for adaptive lot
-input double            InpDDOpenUSD        = 10000;
-input double            InpOffsetRatio      = 0.5;
+input group "=== Rescue/Hedge System ==="
+input string            InpRecoverySteps       = "1000,2000,3000";  // Staged limit offsets (points)
+input bool              InpRescueAdaptiveLot   = true;   // ✅ Match loser's lot size
+input double            InpRescueLotMultiplier = 1.0;    // 1.0 = exact match, 0.8 = 80%
+input double            InpRescueMaxLot        = 0.50;   // Max rescue lot (safety cap)
+input double            InpRescueMinLot        = 0.02;   // Min rescue lot (floor)
+input double            InpRescueMinLoserLot   = 0.05;   // Min loser lot to trigger adaptive
 
-input double            InpExposureCapLots  = 2.0;
-input int               InpMaxCyclesPerSide = 3;
-input double            InpSessionSL_USD    = 100000;
-input int               InpCooldownBars     = 5;
+input group "=== Risk Management ==="
+input double            InpExposureCapLots  = 2.0;     // Max total lot exposure
+input double            InpSessionSL_USD    = 100000;  // Session stop loss (USD)
 
 input int               InpOrderCooldownSec = 5;
 input int               InpSlippagePips     = 1;
@@ -203,16 +202,13 @@ void BuildParams()
    g_params.tsl_step_points    =InpTSLStepPoints;
 
    ParseRecoverySteps(InpRecoverySteps,g_params.recovery_steps);
-   g_params.recovery_lot       =InpRecoveryLot;
-   g_params.rescue_adaptive_lot=InpRescueAdaptiveLot;
-   g_params.rescue_lot_multiplier=InpRescueLotMultiplier;
-   g_params.rescue_max_lot     =InpRescueMaxLot;
-   g_params.dd_open_usd        =InpDDOpenUSD;
-   g_params.offset_ratio       =InpOffsetRatio;
-   g_params.exposure_cap_lots  =InpExposureCapLots;
-   g_params.max_cycles_per_side=InpMaxCyclesPerSide;
-   g_params.session_sl_usd     =InpSessionSL_USD;
-   g_params.cooldown_bars      =InpCooldownBars;
+   g_params.rescue_adaptive_lot    =InpRescueAdaptiveLot;
+   g_params.rescue_lot_multiplier  =InpRescueLotMultiplier;
+   g_params.rescue_max_lot         =InpRescueMaxLot;
+   g_params.rescue_min_lot         =InpRescueMinLot;
+   g_params.rescue_min_loser_lot   =InpRescueMinLoserLot;
+   g_params.exposure_cap_lots      =InpExposureCapLots;
+   g_params.session_sl_usd         =InpSessionSL_USD;
 
    g_params.slippage_pips      =InpSlippagePips;
    g_params.order_cooldown_sec =InpOrderCooldownSec;

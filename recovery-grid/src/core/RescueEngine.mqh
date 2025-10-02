@@ -23,10 +23,10 @@ private:
      {
       if(spacing_px<=0.0)
          return false;
-      double offset=spacing_px*m_params.offset_ratio;
+      // Price breach beyond last grid level (trigger rescue)
       if(loser_dir==DIR_BUY)
-         return price<=(last_grid_price-offset);
-      return price>=(last_grid_price+offset);
+         return price<=(last_grid_price-spacing_px);
+      return price>=(last_grid_price+spacing_px);
      }
 
 public:
@@ -63,9 +63,9 @@ public:
                          const double current_price,
                          const double loser_dd_usd) const
      {
+      // Trigger rescue only on price breach (removed DD condition)
       bool breach=BreachLastGrid(loser_dir,last_grid_price,spacing_px,current_price);
-      bool dd=(loser_dd_usd>=m_params.dd_open_usd);
-      return breach || dd;
+      return breach;
      }
 
    void     RecordRescue()

@@ -38,17 +38,14 @@ struct SParams
    int          tsl_step_points;
 
    // rescue
-   int          recovery_steps[];   // points offsets for staged pending orders
-   double       recovery_lot;
+   int          recovery_steps[];        // points offsets for staged pending orders
    bool         rescue_adaptive_lot;     // enable adaptive lot matching
    double       rescue_lot_multiplier;   // scale factor for adaptive lot (e.g., 1.0 = match exactly)
    double       rescue_max_lot;          // safety cap for adaptive lot
-   double       dd_open_usd;
-   double       offset_ratio;
-   double       exposure_cap_lots;
-   int          max_cycles_per_side;
-   double       session_sl_usd;
-   int          cooldown_bars;
+   double       rescue_min_lot;          // minimum rescue lot (floor)
+   double       rescue_min_loser_lot;    // min loser lot to trigger adaptive (below this = use min_lot)
+   double       exposure_cap_lots;       // global lot exposure limit
+   double       session_sl_usd;          // session stop loss (USD)
 
    // execution
    int          slippage_pips;
