@@ -107,6 +107,13 @@ struct SParams
 
    // timeframe preservation
    bool         preserve_on_tf_switch;    // preserve positions on timeframe switch
+
+   // dynamic lot scaling (DLS)
+   bool         dls_enabled;              // enable dynamic lot scaling
+   double       dls_vol_weight;           // volatility influence (0-1)
+   double       dls_dd_weight;            // drawdown influence (0-1)
+   double       dls_min_scale;            // minimum scale factor
+   double       dls_max_scale;            // maximum scale factor
   };
 
 #endif // __RGD_V2_PARAMS_MQH__
