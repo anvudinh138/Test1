@@ -18,6 +18,7 @@
 #include <RECOVERY-GRID-DIRECTION_v2/core/Types.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/Params.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/Logger.mqh>
+#include <RECOVERY-GRID-DIRECTION_v2/core/NewsCalendar.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/SpacingEngine.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/OrderValidator.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/OrderExecutor.mqh>
@@ -102,7 +103,7 @@ input double            InpDtsMinMultiplier     = 0.7;   // Optimized: Higher fl
 input double            InpDtsMaxMultiplier     = 2.0;   // Optimized: Lower ceiling
 
 input group "=== Smart Stop Loss (SSL) ==="
-input bool              InpSslEnabled              = true;   // ENABLED for production (DD: 42.98% -> 16.99%)
+input bool              InpSslEnabled              = false;   // ENABLED for production (DD: 42.98% -> 16.99%)
 input double            InpSslSlMultiplier         = 3.0;    // SL distance = spacing × this
 input double            InpSslBreakevenThreshold   = 5.0;    // USD profit to move to breakeven
 input bool              InpSslTrailByAverage       = true;   // Trail from average price
@@ -111,7 +112,10 @@ input bool              InpSslRespectMinStop       = true;   // Respect broker m
 
 input group "=== Time-based Risk Management (TRM) ==="
 input bool              InpTrmEnabled              = true;  // Master switch (DEFAULT OFF)
-input string            InpTrmNewsWindows          = "08:30-09:00,14:00-14:30";  // CSV format HH:MM-HH:MM (UTC)
+input bool              InpTrmUseApiNews           = true;   // Use ForexFactory API (if false, use static windows)
+input string            InpTrmImpactFilter         = "High"; // API filter: High, Medium+, All
+input int               InpTrmBufferMinutes        = 30;     // Minutes before/after news event
+input string            InpTrmNewsWindows          = "08:30-09:00,14:00-14:30";  // CSV format HH:MM-HH:MM (UTC) - FALLBACK ONLY
 input bool              InpTrmPauseOrders          = true;   // Pause new orders during news
 input bool              InpTrmTightenSL            = false;  // Tighten SSL during news (requires SSL)
 input double            InpTrmSLMultiplier         = 0.5;    // SL tightening factor (0.5 = half distance)
@@ -244,6 +248,9 @@ void BuildParams()
    g_params.ssl_respect_min_stop   =InpSslRespectMinStop;
 
    g_params.trm_enabled            =InpTrmEnabled;
+   g_params.trm_use_api_news       =InpTrmUseApiNews;
+   g_params.trm_impact_filter      =InpTrmImpactFilter;
+   g_params.trm_buffer_minutes     =InpTrmBufferMinutes;
    g_params.trm_pause_orders       =InpTrmPauseOrders;
    g_params.trm_tighten_sl         =InpTrmTightenSL;
    g_params.trm_sl_multiplier      =InpTrmSLMultiplier;

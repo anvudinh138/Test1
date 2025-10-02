@@ -3,3 +3,10 @@
 ; Only need to set unique magic number
 InpMagic=990046
 InpSslEnabled=false
+
+; TRM with ForexFactory API
+InpTrmEnabled=true
+InpTrmUseApiNews=true
+InpTrmImpactFilter=High
+InpTrmBufferMinutes=30
+InpTrmPauseOrders=true

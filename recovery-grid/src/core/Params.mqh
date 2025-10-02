@@ -93,11 +93,14 @@ struct SParams
 
    // time-based risk management (TRM)
    bool         trm_enabled;              // master switch
+   bool         trm_use_api_news;         // use ForexFactory API (if false, use static windows)
+   string       trm_impact_filter;        // API filter: High, Medium+, All
+   int          trm_buffer_minutes;       // minutes before/after news event
    bool         trm_pause_orders;         // pause new orders during news
    bool         trm_tighten_sl;           // tighten SSL during news (requires ssl_enabled)
    double       trm_sl_multiplier;        // SL tightening factor (e.g. 0.5 = half distance)
    bool         trm_close_on_news;        // close all positions before news window
-   string       trm_news_windows;         // CSV format: "HH:MM-HH:MM,HH:MM-HH:MM" (UTC)
+   string       trm_news_windows;         // CSV format: "HH:MM-HH:MM,HH:MM-HH:MM" (UTC) - FALLBACK ONLY
 
    // anti-drawdown cushion (ADC)
    bool         adc_enabled;              // master switch
