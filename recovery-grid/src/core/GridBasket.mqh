@@ -1195,6 +1195,7 @@ public:
    double         TotalLot() const { return m_total_lot; }
    double         GroupTPPrice() const { return m_tp_price; }
    void           SetKind(const EBasketKind kind) { m_kind=kind; }
+   int            PendingCount() const { return m_pending_count; }
 
    EBasketKind    Kind() const { return m_kind; }
    EDirection     Direction() const { return m_direction; }
@@ -1223,6 +1224,17 @@ public:
    void           MarkInactive()
      {
       m_active=false;
+     }
+
+   void           CancelAllPendings()
+     {
+      if(m_executor==NULL)
+         return;
+      m_executor.SetMagic(m_magic);
+      m_executor.CancelPendingByDirection(m_direction,m_magic);
+      m_pending_count=0;
+      if(m_log!=NULL)
+         m_log.Event(Tag(),"All pending orders cancelled");
      }
   };
 
