@@ -1,52 +1,52 @@
 # Symbol-Specific Spacing Guide
 
-## Problem
-Different symbols have different volatility characteristics:
-- **XAUUSD (Gold)**: High volatility, large pip movements
-- **EURUSD (Forex majors)**: Lower volatility, smaller pip movements
-- **Default settings** work well for XAUUSD but create **too wide spacing** for EURUSD
+## Default Settings Philosophy
 
-## Root Cause
-Current default settings:
-```cpp
-InpSpacingMode = SPACING_HYBRID;  // max(25, ATR × 0.6)
-InpSpacingStepPips = 25.0;        // Fixed floor
-InpSpacingAtrMult = 0.6;          // ATR multiplier
-InpMinSpacingPips = 12.0;         // Absolute minimum
-```
-
-**For XAUUSD**:
-- ATR ~30-50 pips → spacing = max(25, 30×0.6) = **25 pips** ✅ Good density
-- Grid levels fill at reasonable rate
-
-**For EURUSD**:
-- ATR ~8-15 pips → spacing = max(25, 10×0.6) = **25 pips** ❌ Too wide!
-- Grid levels rarely fill (price doesn't move enough)
-- Missing profitable bounces
+**NEW**: Default settings now optimized for **Forex majors** (most common use case)
+- EURUSD, GBPUSD, USDJPY, etc. → Use default (no preset needed)
+- XAUUSD (Gold) → Use XAUUSD_Production.set preset (wider spacing)
 
 ---
 
-## Recommended Settings by Symbol Type
+## Default Settings (Forex Majors)
 
-### 🥇 **XAUUSD (Gold) - Current Default**
 ```cpp
-InpSpacingMode = 2;              // HYBRID
-InpSpacingStepPips = 25.0;       // Floor: 25 pips
-InpSpacingAtrMult = 0.6;         // ATR multiplier
-InpMinSpacingPips = 12.0;        // Min: 12 pips
+InpSpacingMode = SPACING_HYBRID;  // max(8, ATR × 0.8)
+InpSpacingStepPips = 8.0;         // Fixed floor (Forex-optimized)
+InpSpacingAtrMult = 0.8;          // ATR multiplier (Forex-optimized)
+InpMinSpacingPips = 5.0;          // Absolute minimum (Forex-optimized)
+```
+
+**For EURUSD (default)**:
+- ATR ~10 pips → spacing = max(8, 10×0.8) = **8-10 pips** ✅ Perfect density
+- Grid levels fill at good rate
+- Catches bounces effectively
+
+**For XAUUSD (needs override)**:
+- ATR ~40 pips → spacing = max(8, 40×0.8) = **32 pips** ❌ Too tight for gold!
+- Need to override with preset: 25 pips floor, 0.6 multiplier
+
+---
+
+## Symbol-Specific Overrides
+
+### 🥇 **XAUUSD (Gold) - Use Preset**
+**Preset**: `XAUUSD_Production.set`
+```ini
+InpSpacingStepPips = 25.0        # Override: wider floor
+InpSpacingAtrMult = 0.6          # Override: lower multiplier
+InpMinSpacingPips = 12.0         # Override: wider minimum
 ```
 **Result**: ~25-30 pips spacing ✅
 
 ---
 
-### 💶 **EURUSD, GBPUSD (Forex Majors) - TIGHTER**
-```cpp
-InpSpacingMode = 2;              // HYBRID
-InpSpacingStepPips = 8.0;        // Floor: 8 pips (lower than gold!)
-InpSpacingAtrMult = 0.8;         // Higher multiplier (catch more moves)
-InpMinSpacingPips = 5.0;         // Min: 5 pips
+### 💶 **EURUSD, GBPUSD (Forex Majors) - Use Default**
+**Preset**: `EURUSD_Production.set` (only sets magic, uses default spacing)
+```ini
+InpMagic = 990046                # Only need unique magic
 ```
-**Result**: ~8-12 pips spacing ✅
+**Result**: ~8-12 pips spacing ✅ (from default)
 
 **Why tighter?**:
 - EURUSD ATR ~10 pips → 10×0.8 = 8 pips

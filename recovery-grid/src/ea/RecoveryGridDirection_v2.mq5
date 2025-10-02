@@ -38,9 +38,9 @@ input int             InpAtrPeriod          = 14;
 
 enum InpSpacingModeEnum { InpSpacingPips=0, InpSpacingATR=1, InpSpacingHybrid=2 };
 input InpSpacingModeEnum InpSpacingMode     = InpSpacingHybrid;
-input double            InpSpacingStepPips  = 25.0;
-input double            InpSpacingAtrMult   = 0.6;
-input double            InpMinSpacingPips   = 12.0;
+input double            InpSpacingStepPips  = 8.0;   // Default for Forex majors (EURUSD, GBPUSD, etc.)
+input double            InpSpacingAtrMult   = 0.8;   // Default for Forex majors
+input double            InpMinSpacingPips   = 5.0;   // Default for Forex majors
 
 input int               InpGridLevels       = 1000;
 input double            InpLotBase          = 0.01;
