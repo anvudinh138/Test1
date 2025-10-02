@@ -126,6 +126,9 @@ input bool              InpAdcPauseRescue          = true;   // Pause rescue hed
 input group "=== Timeframe Preservation ==="
 input bool              InpPreserveOnTfSwitch      = true;   // Preserve positions on timeframe switch
 
+input group "=== Manual Close Detection ==="
+input bool              InpMcdEnabled              = true;   // Enable manual close detection & profit transfer
+
 //--- Globals
 SParams              g_params;
 CLogger             *g_logger        = NULL;
@@ -253,6 +256,7 @@ void BuildParams()
    g_params.adc_pause_rescue       =InpAdcPauseRescue;
 
    g_params.preserve_on_tf_switch  =InpPreserveOnTfSwitch;
+   g_params.mcd_enabled            =InpMcdEnabled;
   }
 
 int OnInit()

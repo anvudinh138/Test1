@@ -761,15 +761,23 @@ public:
       if(m_buy!=NULL && m_buy.ClosedRecently())
         {
          double realized=m_buy.TakeRealizedProfit();
-         if(realized>0 && m_sell!=NULL)
+         if(realized>0 && m_sell!=NULL && m_sell.IsActive())
+           {
             m_sell.ReduceTargetBy(realized);
+            if(m_log!=NULL && m_params.mcd_enabled)
+               m_log.Event(Tag(),StringFormat("[MCD] BUY profit $%.2f → SELL target reduced",realized));
+           }
          TryReseedBasket(m_buy,DIR_BUY,true);
         }
       if(m_sell!=NULL && m_sell.ClosedRecently())
         {
          double realized=m_sell.TakeRealizedProfit();
-         if(realized>0 && m_buy!=NULL)
+         if(realized>0 && m_buy!=NULL && m_buy.IsActive())
+           {
             m_buy.ReduceTargetBy(realized);
+            if(m_log!=NULL && m_params.mcd_enabled)
+               m_log.Event(Tag(),StringFormat("[MCD] SELL profit $%.2f → BUY target reduced",realized));
+           }
          TryReseedBasket(m_sell,DIR_SELL,true);
         }
 

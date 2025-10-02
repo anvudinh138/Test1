@@ -61,6 +61,11 @@ private:
    bool           m_ssl_be_moved;           // breakeven already triggered
    double         m_ssl_current_trail_sl;   // current trailing SL level
 
+   // MCD (manual close detection) state
+   double         m_mcd_last_total_lot;     // lot size before RefreshState()
+   double         m_mcd_last_pnl;           // PnL before RefreshState()
+   bool           m_mcd_manual_close_detected; // flag for manual close event
+
    string         Tag() const
      {
       string side=(m_direction==DIR_BUY)?"BUY":"SELL";
@@ -988,6 +993,9 @@ public:
                          m_ssl_current_trail_sl(0.0),
                          m_initial_atr(0.0),
                          m_entry_bar(0),
+                         m_mcd_last_total_lot(0.0),
+                         m_mcd_last_pnl(0.0),
+                         m_mcd_manual_close_detected(false),
                          m_volume_step(0.0),
                          m_volume_min(0.0),
                          m_volume_max(0.0),
@@ -1102,7 +1110,35 @@ public:
       if(!m_active)
          return;
       m_closed_recently=false;
+
+      // MCD: Save state BEFORE RefreshState()
+      if(m_params.mcd_enabled)
+        {
+         m_mcd_last_total_lot=m_total_lot;
+         m_mcd_last_pnl=m_pnl_usd;
+         m_mcd_manual_close_detected=false;
+        }
+
       RefreshState();
+
+      // MCD: Detect manual close after RefreshState()
+      if(m_params.mcd_enabled)
+        {
+         bool had_positions=(m_mcd_last_total_lot>0.0);
+         bool now_no_positions=(m_total_lot<=0.0);
+
+         if(had_positions && now_no_positions)
+           {
+            // Positions disappeared → manual close detected
+            m_mcd_manual_close_detected=true;
+            m_last_realized=m_mcd_last_pnl;
+            m_closed_recently=true;
+
+            if(m_log!=NULL)
+               m_log.Event(Tag(),StringFormat("[MCD] Manual close detected, lot=%.2f pnl=%.2f",
+                                             m_mcd_last_total_lot,m_mcd_last_pnl));
+           }
+        }
       
       // Dynamic grid refill
       if(m_params.grid_dynamic_enabled)
