@@ -102,7 +102,7 @@ input double            InpDtsMinMultiplier     = 0.7;   // Optimized: Higher fl
 input double            InpDtsMaxMultiplier     = 2.0;   // Optimized: Lower ceiling
 
 input group "=== Smart Stop Loss (SSL) ==="
-input bool              InpSslEnabled              = true;   // ENABLED for production (DD: 42.98% -> 16.99%)
+input bool              InpSslEnabled              = false;   // ENABLED for production (DD: 42.98% -> 16.99%)
 input double            InpSslSlMultiplier         = 3.0;    // SL distance = spacing × this
 input double            InpSslBreakevenThreshold   = 5.0;    // USD profit to move to breakeven
 input bool              InpSslTrailByAverage       = true;   // Trail from average price
