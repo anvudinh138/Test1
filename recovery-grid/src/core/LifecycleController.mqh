@@ -7,6 +7,7 @@
 #include <Indicators/Trend.mqh>
 #include "Types.mqh"
 #include "Params.mqh"
+#include "NewsCalendar.mqh"
 #include "SpacingEngine.mqh"
 #include "OrderExecutor.mqh"
 #include "RescueEngine.mqh"
@@ -36,7 +37,8 @@ private:
    int               m_pc_guard_start_bar;
 
    // TRM (time-based risk management)
-   SNewsWindow       m_news_windows[];
+   CNewsCalendar    *m_news_calendar;       // ForexFactory API integration
+   SNewsWindow       m_news_windows[];      // Static fallback windows
    bool              m_trm_initialized;
    bool              m_trm_in_news_window;  // State tracking to reduce log spam
 
@@ -453,6 +455,24 @@ private:
      {
       if(!m_params.trm_enabled)
          return false;
+
+      // TRY: ForexFactory API (if enabled)
+      if(m_params.trm_use_api_news && m_news_calendar!=NULL)
+        {
+         string active_event;
+         bool is_news=m_news_calendar.IsNewsTime(active_event);
+
+         // Log state transitions
+         if(is_news && !m_trm_in_news_window && m_log!=NULL)
+            m_log.Event(Tag(),StringFormat("[TRM-API] News window ENTERED: %s",active_event));
+         else if(!is_news && m_trm_in_news_window && m_log!=NULL)
+            m_log.Event(Tag(),"[TRM-API] News window EXITED - trading resumed");
+
+         m_trm_in_news_window=is_news;
+         return is_news;
+        }
+
+      // FALLBACK: Static time windows
       if(!m_trm_initialized)
          ParseNewsWindows();
       if(ArraySize(m_news_windows)==0)
@@ -468,7 +488,7 @@ private:
            {
             // Log only on ENTRY to news window (state transition)
             if(!m_trm_in_news_window && m_log!=NULL)
-               m_log.Event(Tag(),StringFormat("[TRM] News window ENTERED: %02d:%02d-%02d:%02d (UTC)",
+               m_log.Event(Tag(),StringFormat("[TRM-Static] News window ENTERED: %02d:%02d-%02d:%02d (UTC)",
                                             m_news_windows[i].start_hour,m_news_windows[i].start_minute,
                                             m_news_windows[i].end_hour,m_news_windows[i].end_minute));
             m_trm_in_news_window=true;
@@ -477,7 +497,7 @@ private:
         }
       // Log only on EXIT from news window (state transition)
       if(m_trm_in_news_window && m_log!=NULL)
-         m_log.Event(Tag(),"[TRM] News window EXITED - trading resumed");
+         m_log.Event(Tag(),"[TRM-Static] News window EXITED - trading resumed");
       m_trm_in_news_window=false;
       return false;
      }
@@ -528,11 +548,21 @@ public:
                          m_pc_guard_active(false),
                          m_pc_guard_price(0.0),
                          m_pc_guard_start_bar(0),
+                         m_news_calendar(NULL),
                          m_trm_initialized(false),
                          m_trm_in_news_window(false),
                          m_adc_cushion_active(false)
      {
       ArrayResize(m_news_windows,0);
+
+      // Initialize ForexFactory API if enabled
+      if(m_params.trm_enabled && m_params.trm_use_api_news)
+        {
+         m_news_calendar=new CNewsCalendar(true,
+                                         m_params.trm_impact_filter,
+                                         m_params.trm_buffer_minutes,
+                                         m_log);
+        }
      }
 
    bool              Init()
@@ -798,6 +828,11 @@ public:
         {
          delete m_sell;
          m_sell=NULL;
+        }
+      if(m_news_calendar!=NULL)
+        {
+         delete m_news_calendar;
+         m_news_calendar=NULL;
         }
      }
   };
