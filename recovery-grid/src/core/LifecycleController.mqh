@@ -107,6 +107,44 @@ private:
          m_rescue.ResetCycleCounter();
      }
 
+   void              CheckOrphanedBasket(CGridBasket *basket,CGridBasket *opposite)
+     {
+      if(basket==NULL || !basket.IsActive())
+         return;
+
+      // Orphaned basket criteria:
+      // 1. Has pending orders
+      bool has_pendings=(basket.PendingCount()>0);
+
+      // 2. But NO open positions
+      bool no_positions=(basket.TotalLot()<=0.0);
+
+      // 3. Opposite basket HAS positions (means this basket should be rescuing but can't)
+      bool opposite_has_positions=(opposite!=NULL && opposite.TotalLot()>0.0);
+
+      if(has_pendings && no_positions && opposite_has_positions)
+        {
+         // ORPHANED BASKET DETECTED
+         if(m_log!=NULL)
+           {
+            string dir=(basket.Direction()==DIR_BUY)?"BUY":"SELL";
+            string opp_dir=(opposite.Direction()==DIR_BUY)?"BUY":"SELL";
+            m_log.Event(Tag(),StringFormat("[ORPHAN] %s basket detected: %d pendings, 0 positions, %s has %.2f lots - RECOVERING",
+                                         dir,basket.PendingCount(),opp_dir,opposite.TotalLot()));
+           }
+
+         // Recovery: Cancel all pendings and mark inactive
+         basket.CancelAllPendings();
+         basket.MarkInactive();
+
+         if(m_log!=NULL)
+           {
+            string dir=(basket.Direction()==DIR_BUY)?"BUY":"SELL";
+            m_log.Event(Tag(),StringFormat("[ORPHAN] %s basket recovered: pendings cancelled, marked inactive, will reseed next cycle",dir));
+           }
+        }
+     }
+
    bool              HasExistingPositions() const
      {
       int total=PositionsTotal();
@@ -604,6 +642,10 @@ public:
          m_buy.Update();
       if(m_sell!=NULL)
          m_sell.Update();
+
+      // Check for orphaned baskets (pendings only, no positions)
+      CheckOrphanedBasket(m_buy,m_sell);
+      CheckOrphanedBasket(m_sell,m_buy);
 
       double spacing_pips=m_spacing.SpacingPips();
       double spacing_px=m_spacing.ToPrice(spacing_pips);
