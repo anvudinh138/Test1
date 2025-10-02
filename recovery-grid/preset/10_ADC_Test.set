@@ -67,7 +67,7 @@ InpSslTrailByAverage=true
 InpSslTrailOffsetPoints=100
 InpSslRespectMinStop=true
 ; Time-based Risk Management - DISABLED for this test
-InpTrmEnabled=false
+InpTrmEnabled=true
 InpTrmNewsWindows=08:30-09:00,14:00-14:30
 InpTrmPauseOrders=true
 InpTrmTightenSL=false
