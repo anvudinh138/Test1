@@ -94,11 +94,73 @@ private:
                                      DoubleToString(m_last_grid_price,digits)));
      }
 
+   double         CalculateDynamicLotScale() const
+     {
+      if(!m_params.dls_enabled)
+         return m_params.lot_scale;
+
+      double base_scale=m_params.lot_scale;
+
+      // === Factor 1: Volatility Adaptation ===
+      double atr_current=(m_spacing!=NULL)?m_spacing.AtrPoints():0.0;
+      double atr_ratio=(m_initial_atr>0.0)?(atr_current/m_initial_atr):1.0;
+
+      // Inverse: high ATR → lower multiplier
+      double vol_factor=1.0/MathMax(atr_ratio,0.5);
+      vol_factor=MathPow(vol_factor,m_params.dls_vol_weight);
+
+      // === Factor 2: DD Adaptation ===
+      double dd_pct=0.0;
+      // Note: m_ledger is in LifecycleController, not accessible here
+      // Use basket's own PnL as proxy
+      double basket_dd=MathAbs(MathMin(m_pnl_usd,0.0));
+      dd_pct=basket_dd*0.1;  // Rough approximation
+
+      double dd_factor=1.0-(dd_pct/100.0)*0.7;
+      dd_factor=MathMax(dd_factor,0.3);
+      dd_factor=MathPow(dd_factor,m_params.dls_dd_weight);
+
+      // === Combine ===
+      double dynamic_scale=base_scale*vol_factor*dd_factor;
+
+      // === Bounds ===
+      dynamic_scale=MathMax(dynamic_scale,m_params.dls_min_scale);
+      dynamic_scale=MathMin(dynamic_scale,m_params.dls_max_scale);
+
+      // === Logging ===
+      if(m_log!=NULL && m_params.dls_enabled)
+        {
+         static datetime last_log=0;
+         datetime now=TimeCurrent();
+         if(now-last_log>=300)  // Log every 5 minutes
+           {
+            m_log.Event(Tag(),StringFormat("[DLS] base=%.2f atr_r=%.2f vol_f=%.2f dd=%.1f dd_f=%.2f final=%.2f",
+                                          base_scale,atr_ratio,vol_factor,dd_pct,dd_factor,dynamic_scale));
+            last_log=now;
+           }
+        }
+
+      return dynamic_scale;
+     }
+
    double         LevelLot(const int idx) const
      {
       double result=m_params.lot_base;
-      for(int i=1;i<=idx;i++)
-         result*=m_params.lot_scale;
+
+      if(m_params.dls_enabled)
+        {
+         // Dynamic scaling
+         double dynamic_scale=CalculateDynamicLotScale();
+         for(int i=1;i<=idx;i++)
+            result*=dynamic_scale;
+        }
+      else
+        {
+         // Fixed scaling (original)
+         for(int i=1;i<=idx;i++)
+            result*=m_params.lot_scale;
+        }
+
       return NormalizeVolumeValue(result);
      }
 

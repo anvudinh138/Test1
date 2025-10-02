@@ -124,6 +124,13 @@ input bool              InpAdcPauseRescue          = true;   // Pause rescue hed
 input group "=== Timeframe Preservation ==="
 input bool              InpPreserveOnTfSwitch      = true;   // Preserve positions on timeframe switch
 
+input group "=== Dynamic Lot Scaling (DLS) ==="
+input bool              InpDlsEnabled              = true;   // Enable dynamic lot scaling
+input double            InpDlsVolWeight            = 0.5;    // Volatility influence (0-1)
+input double            InpDlsDdWeight             = 0.5;    // Drawdown influence (0-1)
+input double            InpDlsMinScale             = 1.1;    // Min scale factor
+input double            InpDlsMaxScale             = 2.0;    // Max scale factor
+
 //--- Globals
 SParams              g_params;
 CLogger             *g_logger        = NULL;
@@ -251,6 +258,12 @@ void BuildParams()
    g_params.adc_pause_rescue       =InpAdcPauseRescue;
 
    g_params.preserve_on_tf_switch  =InpPreserveOnTfSwitch;
+
+   g_params.dls_enabled            =InpDlsEnabled;
+   g_params.dls_vol_weight         =InpDlsVolWeight;
+   g_params.dls_dd_weight          =InpDlsDdWeight;
+   g_params.dls_min_scale          =InpDlsMinScale;
+   g_params.dls_max_scale          =InpDlsMaxScale;
   }
 
 int OnInit()
