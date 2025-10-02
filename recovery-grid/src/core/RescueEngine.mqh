@@ -39,8 +39,16 @@ public:
      {
      }
 
-   // REMOVED: CooldownOk() - no longer needed (rescue rate-limited by price movement)
-   // REMOVED: CyclesAvailable() - no longer needed (rescue effectiveness based on lot size)
+   bool     CooldownOk() const
+     {
+      if(m_params.rescue_cooldown_bars<=0)
+         return true;  // Cooldown disabled
+      int seconds=PeriodSeconds();
+      if(seconds<=0)
+         seconds=60;
+      datetime window=m_params.rescue_cooldown_bars*seconds;
+      return (TimeCurrent()-m_last_rescue_time)>=window;
+     }
 
    bool     ShouldRescue(const EDirection loser_dir,
                          const double last_grid_price,

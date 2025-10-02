@@ -760,60 +760,75 @@ public:
             double price_winner=CurrentPrice(winner.Direction());
             double dd=-MathMin(0.0,loser.BasketPnL());
 
-            // Adaptive rescue lot: match loser's total lot if enabled
+            // v3: Delta-based continuous rebalancing
             double loser_lot = loser.TotalLot();
+            double rescue_lot_current = winner.TotalLot();  // Current rescue size
+            double delta = loser_lot - rescue_lot_current;
 
-            // Smart threshold: Only rescue if loser >= min threshold
-            if(loser_lot < m_params.rescue_min_loser_lot)
+            // Check delta threshold: Only rescue if imbalance >= trigger
+            if(delta >= m_params.min_delta_trigger)
               {
-               // Below threshold: SKIP rescue (wait for loser to accumulate)
-               if(m_log!=NULL)
-                  m_log.Event(Tag(),StringFormat("[RESCUE-SKIP] Loser=%.2f lot < threshold %.2f (waiting for accumulation)",
-                                                  loser_lot, m_params.rescue_min_loser_lot));
-               continue;  // Skip rescue, continue to next logic
-              }
-
-            // Calculate adaptive rescue lot
-            double rescue_lot;
-            if(m_params.rescue_adaptive_lot)
-              {
-               // Adaptive mode: Match loser's lot
-               rescue_lot = loser_lot * m_params.rescue_lot_multiplier;
-
-               // Apply max cap only
-               if(rescue_lot > m_params.rescue_max_lot)
-                  rescue_lot = m_params.rescue_max_lot;
-
-               rescue_lot = winner.NormalizeLot(rescue_lot);
-
-               if(m_log!=NULL)
-                  m_log.Event(Tag(),StringFormat("[RESCUE-ADAPTIVE] Loser=%.2f lot → Rescue=%.2f lot (mult=%.2f, cap=%.2f)",
-                                                  loser_lot, rescue_lot, m_params.rescue_lot_multiplier, m_params.rescue_max_lot));
-              }
-            else
-              {
-               // Disabled: Match loser exactly (no multiplier)
-               rescue_lot = winner.NormalizeLot(loser_lot);
-               if(rescue_lot > m_params.rescue_max_lot)
-                  rescue_lot = m_params.rescue_max_lot;
-              }
-
-            // Check rescue trigger (price breach only)
-            if(rescue_lot>0.0 && m_rescue.ShouldRescue(loser.Direction(),loser.LastGridPrice(),spacing_px,price_winner,dd))
-              {
-               bool exposure_ok=(m_ledger==NULL) || m_ledger.ExposureAllowed(rescue_lot,m_magic,m_symbol);
-               if(exposure_ok)
+               // Calculate delta-based rescue lot
+               double rescue_lot;
+               if(m_params.rescue_adaptive_lot)
                  {
-                  winner.DeployRecovery(price_winner,rescue_lot);
-                  m_rescue.RecordRescue();
-                  if(m_log!=NULL)
-                     m_log.Event(Tag(),StringFormat("Rescue deployed: %.2f lot",rescue_lot));
+                  // Adaptive mode: Rescue delta amount
+                  rescue_lot = delta * m_params.rescue_lot_multiplier;
+
+                  // Apply max cap
+                  if(rescue_lot > m_params.rescue_max_lot)
+                    {
+                     if(m_log!=NULL)
+                        m_log.Event(Tag(),StringFormat("[RESCUE-DELTA] Loser=%.2f Rescue=%.2f Delta=%.2f → Deploy %.2f lot (capped from %.2f)",
+                                                        loser_lot, rescue_lot_current, delta, m_params.rescue_max_lot, rescue_lot));
+                     rescue_lot = m_params.rescue_max_lot;
+                    }
+                  else
+                    {
+                     if(m_log!=NULL)
+                        m_log.Event(Tag(),StringFormat("[RESCUE-DELTA] Loser=%.2f Rescue=%.2f Delta=%.2f → Deploy %.2f lot (mult=%.2f)",
+                                                        loser_lot, rescue_lot_current, delta, rescue_lot, m_params.rescue_lot_multiplier));
+                    }
+
+                  rescue_lot = winner.NormalizeLot(rescue_lot);
                  }
                else
                  {
-                  if(m_log!=NULL)
-                     m_log.Event(Tag(),StringFormat("Rescue blocked: Exposure cap (%.2f lot exceeds limit)",rescue_lot));
+                  // Disabled: Match delta exactly (no multiplier)
+                  rescue_lot = winner.NormalizeLot(delta);
+                  if(rescue_lot > m_params.rescue_max_lot)
+                     rescue_lot = m_params.rescue_max_lot;
                  }
+
+               // Deploy rescue (delta trigger + cooldown anti-spam)
+               if(rescue_lot>0.0 && m_rescue.CooldownOk())
+                 {
+                  bool exposure_ok=(m_ledger==NULL) || m_ledger.ExposureAllowed(rescue_lot,m_magic,m_symbol);
+                  if(exposure_ok)
+                    {
+                     winner.DeployRecovery(price_winner,rescue_lot);
+                     m_rescue.RecordRescue();
+                     if(m_log!=NULL)
+                        m_log.Event(Tag(),StringFormat("Rescue deployed: %.2f lot (cooldown: %d bars)",rescue_lot,m_params.rescue_cooldown_bars));
+                    }
+                  else
+                    {
+                     if(m_log!=NULL)
+                        m_log.Event(Tag(),StringFormat("Rescue blocked: Exposure cap (%.2f lot exceeds limit)",rescue_lot));
+                    }
+                 }
+              else if(rescue_lot>0.0 && !m_rescue.CooldownOk())
+                 {
+                  if(m_log!=NULL)
+                     m_log.Event(Tag(),StringFormat("[RESCUE-COOLDOWN] Delta=%.2f ready but cooldown active (%d bars)",delta,m_params.rescue_cooldown_bars));
+                 }
+              }
+            else
+              {
+               // Balanced: delta too small, skip rescue
+               if(m_log!=NULL)
+                  m_log.Event(Tag(),StringFormat("[RESCUE-BALANCED] Loser=%.2f Rescue=%.2f Delta=%.2f < %.2f (skip, balanced)",
+                                                  loser_lot, rescue_lot_current, delta, m_params.min_delta_trigger));
               }
            }
         }

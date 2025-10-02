@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
-//| Recovery Grid Direction v2.4                                     |
-//| Two-sided recovery grid with PC + DTS + SSL + TRM + ADC         |
+//| Recovery Grid Direction v2.6                                     |
+//| Two-sided recovery grid with PC + DTS + SSL + TRM + ADC + Rescue v3 |
 //+------------------------------------------------------------------+
 //| PRODUCTION DEFAULTS: Based on 08_Combo_SSL backtest results      |
 //| - Max Equity DD: 16.99% (vs 42.98% without SSL)                  |
@@ -9,9 +9,10 @@
 //| - Features: Partial Close + Conservative DTS + SSL Protection    |
 //| - TRM: Time-based Risk Management (DEFAULT OFF, enable for NFP)  |
 //| - ADC: Anti-Drawdown Cushion (DEFAULT OFF, target sub-10% DD)   |
+//| - Rescue v3: Delta-based continuous rebalancing (NEW)            |
 //+------------------------------------------------------------------+
 #property strict
-#property version "2.40"
+#property version "2.60"
 
 #include <Trade/Trade.mqh>
 
@@ -59,12 +60,13 @@ input bool              InpTSLEnabled       = true;
 input int               InpTSLStartPoints   = 1000;
 input int               InpTSLStepPoints    = 200;
 
-input group "=== Rescue/Hedge System ==="
+input group "=== Rescue/Hedge System v3 (Delta + Cooldown) ==="
 input string            InpRecoverySteps       = "1000,2000,3000";  // Staged limit offsets (points)
-input bool              InpRescueAdaptiveLot   = true;   // ✅ Match loser's lot size
-input double            InpRescueLotMultiplier = 1.0;    // 1.0 = exact match, 0.8 = 80%
-input double            InpRescueMaxLot        = 0.50;   // Max rescue lot (safety cap)
-input double            InpRescueMinLoserLot   = 0.05;   // Min loser lot to trigger rescue
+input bool              InpRescueAdaptiveLot   = true;   // ✅ Enable delta-based rescue
+input double            InpMinDeltaTrigger     = 0.05;   // Min imbalance to trigger (lot)
+input double            InpRescueLotMultiplier = 1.0;    // Delta multiplier (1.0 = 100%)
+input double            InpRescueMaxLot        = 0.50;   // Max per rescue deployment
+input int               InpRescueCooldownBars  = 3;      // Bars between rescues (anti-spam)
 
 input group "=== Risk Management ==="
 input double            InpExposureCapLots  = 2.0;     // Max total lot exposure
@@ -202,9 +204,10 @@ void BuildParams()
 
    ParseRecoverySteps(InpRecoverySteps,g_params.recovery_steps);
    g_params.rescue_adaptive_lot    =InpRescueAdaptiveLot;
+   g_params.min_delta_trigger      =InpMinDeltaTrigger;
    g_params.rescue_lot_multiplier  =InpRescueLotMultiplier;
    g_params.rescue_max_lot         =InpRescueMaxLot;
-   g_params.rescue_min_loser_lot   =InpRescueMinLoserLot;
+   g_params.rescue_cooldown_bars   =InpRescueCooldownBars;
    g_params.exposure_cap_lots      =InpExposureCapLots;
    g_params.session_sl_usd         =InpSessionSL_USD;
 
