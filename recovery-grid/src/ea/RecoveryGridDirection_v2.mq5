@@ -126,6 +126,18 @@ input bool              InpAdcPauseRescue          = true;   // Pause rescue hed
 input group "=== Timeframe Preservation ==="
 input bool              InpPreserveOnTfSwitch      = true;   // Preserve positions on timeframe switch
 
+input group "=== Smart Grid Spacing (SGS) ==="
+input bool              InpSgsEnabled              = true;   // Enable smart grid spacing
+input int               InpSgsRecentBars           = 20;     // Recent range bars
+input int               InpSgsLongBars             = 100;    // Long-term range bars
+input double            InpSgsRangingThreshold     = 0.3;    // Range ratio < this = RANGING
+input double            InpSgsTrendingThreshold    = 0.6;    // Range ratio > this = TRENDING
+input double            InpSgsRangingMult          = 0.75;   // Spacing mult in RANGING (tighter)
+input double            InpSgsTrendingMult         = 1.4;    // Spacing mult in TRENDING (wider)
+input int               InpSgsAtrMaPeriod          = 20;     // ATR MA period for acceleration
+input double            InpSgsMinMult              = 0.4;    // Min spacing multiplier
+input double            InpSgsMaxMult              = 1.2;    // Max spacing multiplier
+
 //--- Globals
 SParams              g_params;
 CLogger             *g_logger        = NULL;
@@ -253,6 +265,17 @@ void BuildParams()
    g_params.adc_pause_rescue       =InpAdcPauseRescue;
 
    g_params.preserve_on_tf_switch  =InpPreserveOnTfSwitch;
+
+   g_params.sgs_enabled            =InpSgsEnabled;
+   g_params.sgs_recent_bars        =InpSgsRecentBars;
+   g_params.sgs_long_bars          =InpSgsLongBars;
+   g_params.sgs_ranging_threshold  =InpSgsRangingThreshold;
+   g_params.sgs_trending_threshold =InpSgsTrendingThreshold;
+   g_params.sgs_ranging_mult       =InpSgsRangingMult;
+   g_params.sgs_trending_mult      =InpSgsTrendingMult;
+   g_params.sgs_atr_ma_period      =InpSgsAtrMaPeriod;
+   g_params.sgs_min_mult           =InpSgsMinMult;
+   g_params.sgs_max_mult           =InpSgsMaxMult;
   }
 
 int OnInit()
@@ -260,7 +283,7 @@ int OnInit()
    BuildParams();
 
    g_logger   = new CLogger(InpStatusInterval,InpLogEvents);
-   g_spacing  = new CSpacingEngine(_Symbol,g_params.spacing_mode,g_params.atr_period,g_params.atr_timeframe,g_params.spacing_atr_mult,g_params.spacing_pips,g_params.min_spacing_pips);
+   g_spacing  = new CSpacingEngine(_Symbol,g_params.spacing_mode,g_params.atr_period,g_params.atr_timeframe,g_params.spacing_atr_mult,g_params.spacing_pips,g_params.min_spacing_pips,g_params);
    g_validator= new COrderValidator(_Symbol,g_params.respect_stops_level);
    g_executor = new COrderExecutor(_Symbol,g_validator,g_params.slippage_pips,g_params.order_cooldown_sec);
    if(g_executor!=NULL)
