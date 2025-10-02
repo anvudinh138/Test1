@@ -39,23 +39,8 @@ public:
      {
      }
 
-   bool     CooldownOk() const
-     {
-      if(m_params.cooldown_bars<=0)
-         return true;
-      int seconds=PeriodSeconds();
-      if(seconds<=0)
-         seconds=60;
-      datetime window=m_params.cooldown_bars*seconds;
-      return (TimeCurrent()-m_last_rescue_time)>=window;
-     }
-
-   bool     CyclesAvailable() const
-     {
-      if(m_params.max_cycles_per_side<=0)
-         return true;
-      return m_cycles<m_params.max_cycles_per_side;
-     }
+   // REMOVED: CooldownOk() - no longer needed (rescue rate-limited by price movement)
+   // REMOVED: CyclesAvailable() - no longer needed (rescue effectiveness based on lot size)
 
    bool     ShouldRescue(const EDirection loser_dir,
                          const double last_grid_price,

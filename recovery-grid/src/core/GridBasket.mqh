@@ -909,9 +909,9 @@ public:
      }
 
 
-   void           DeployRecovery(const double price)
+   void           DeployRecovery(const double price, const double rescue_lot)
      {
-      if(m_params.recovery_lot<=0.0)
+      if(rescue_lot<=0.0)
          return;
       if(m_executor==NULL)
          return;
@@ -920,10 +920,10 @@ public:
       if(pendings<1)
          pendings=1;
       m_executor.BypassNext(pendings);
-      double rescue_lot=NormalizeVolumeValue(m_params.recovery_lot);
-      if(rescue_lot<=0.0)
+      double normalized_lot=NormalizeVolumeValue(rescue_lot);
+      if(normalized_lot<=0.0)
          return;
-      m_executor.Market(m_direction,rescue_lot,"RGDv2_RescueSeed");
+      m_executor.Market(m_direction,normalized_lot,"RGDv2_RescueSeed");
       double point=SymbolInfoDouble(m_symbol,SYMBOL_POINT);
       if(point<=0.0)
          point=_Point;
@@ -933,7 +933,7 @@ public:
          for(int i=0;i<ArraySize(m_params.recovery_steps);i++)
            {
             double level=price-m_params.recovery_steps[i]*point;
-            ulong ticket=m_executor.Limit(DIR_BUY,level,rescue_lot,"RGDv2_RescueGrid");
+            ulong ticket=m_executor.Limit(DIR_BUY,level,normalized_lot,"RGDv2_RescueGrid");
             if(ticket>0 && (updated_last==0.0 || level<updated_last))
                updated_last=level;
            }
@@ -943,7 +943,7 @@ public:
          for(int i=0;i<ArraySize(m_params.recovery_steps);i++)
            {
             double level=price+m_params.recovery_steps[i]*point;
-            ulong ticket=m_executor.Limit(DIR_SELL,level,rescue_lot,"RGDv2_RescueGrid");
+            ulong ticket=m_executor.Limit(DIR_SELL,level,normalized_lot,"RGDv2_RescueGrid");
             if(ticket>0 && (updated_last==0.0 || level>updated_last))
                updated_last=level;
            }

@@ -806,7 +806,7 @@ public:
                bool exposure_ok=(m_ledger==NULL) || m_ledger.ExposureAllowed(rescue_lot,m_magic,m_symbol);
                if(exposure_ok)
                  {
-                  winner.DeployRecovery(price_winner);
+                  winner.DeployRecovery(price_winner,rescue_lot);
                   m_rescue.RecordRescue();
                   if(m_log!=NULL)
                      m_log.Event(Tag(),StringFormat("Rescue deployed: %.2f lot",rescue_lot));
