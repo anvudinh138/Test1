@@ -107,6 +107,18 @@ struct SParams
 
    // timeframe preservation
    bool         preserve_on_tf_switch;    // preserve positions on timeframe switch
+
+   // smart grid spacing (SGS)
+   bool         sgs_enabled;              // enable smart grid spacing
+   int          sgs_recent_bars;          // recent range lookback
+   int          sgs_long_bars;            // long-term range lookback
+   double       sgs_ranging_threshold;    // range ratio threshold for RANGING
+   double       sgs_trending_threshold;   // range ratio threshold for TRENDING
+   double       sgs_ranging_mult;         // spacing multiplier in RANGING
+   double       sgs_trending_mult;        // spacing multiplier in TRENDING
+   int          sgs_atr_ma_period;        // ATR MA period
+   double       sgs_min_mult;             // minimum multiplier
+   double       sgs_max_mult;             // maximum multiplier
   };
 
 #endif // __RGD_V2_PARAMS_MQH__
