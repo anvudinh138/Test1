@@ -70,7 +70,7 @@ input int               InpMaxPendings      = 15;    // Max pending orders per b
 
 input group "=== Lot Sizing ==="
 input double            InpLotBase          = 0.01;  // First grid level lot
-input double            InpLotOffset        = 0.02;  // Linear increment per level
+input double            InpLotOffset        = 0.01;  // Linear increment per level
 
 input group "=== Take Profit & TSL ==="
 input double            InpTargetCycleUSD   = 5.0;   // Group TP target (USD)
@@ -82,7 +82,7 @@ input group "=== Rescue/Hedge System v3 (Delta + Cooldown) ==="
 input string            InpRecoverySteps       = "1000,2000,3000";  // Staged limit offsets (points)
 input bool              InpRescueAdaptiveLot   = true;   // ✅ Enable delta-based rescue
 input double            InpMinDeltaTrigger     = 0.02;   // Min imbalance to trigger (lot)
-input double            InpRescueLotMultiplier = 1.0;    // Delta multiplier (1.0 = 100%)
+input double            InpRescueLotMultiplier = 0.6;    // Delta multiplier (1.0 = 100%)
 input double            InpRescueMaxLot        = 0.1;   // Max per rescue deployment
 input int               InpRescueCooldownBars  = 3;      // Bars between rescues (anti-spam)
 
@@ -97,7 +97,7 @@ input bool              InpRespectStops     = false;  // Set false for backtest
 input double            InpCommissionPerLot = 0.0;
 
 input group "=== Dynamic Target Scaling ==="
-input bool              InpDtsEnabled           = true;  // ENABLED for production
+input bool              InpDtsEnabled           = false;  // ENABLED for production
 input bool              InpDtsAtrEnabled        = true;
 input double            InpDtsAtrWeight         = 0.7;   // Optimized: Conservative ATR
 input bool              InpDtsTimeDecayEnabled  = true;
