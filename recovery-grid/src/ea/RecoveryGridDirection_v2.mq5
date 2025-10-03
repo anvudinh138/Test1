@@ -1,18 +1,17 @@
 //+------------------------------------------------------------------+
-//| Recovery Grid Direction v2.6                                     |
-//| Two-sided recovery grid with PC + DTS + SSL + TRM + ADC + Rescue v3 |
+//| Recovery Grid Direction v2.7                                     |
+//| Two-sided recovery grid with DTS + SSL + TRM + ADC + Rescue v3  |
 //+------------------------------------------------------------------+
-//| PRODUCTION DEFAULTS: Based on 08_Combo_SSL backtest results      |
-//| - Max Equity DD: 16.99% (vs 42.98% without SSL)                  |
-//| - Profit Factor: 5.76                                            |
-//| - Win Rate: 73.04%                                               |
-//| - Features: Partial Close + Conservative DTS + SSL Protection    |
+//| PRODUCTION DEFAULTS: Rescue v3 Delta-Based (PC removed)          |
+//| - Rescue v3: Delta-based continuous rebalancing                  |
+//| - Symbol Presets: 10 presets for easy optimization (NEW)         |
+//| - Features: Conservative DTS + SSL Protection                    |
 //| - TRM: Time-based Risk Management (DEFAULT OFF, enable for NFP)  |
 //| - ADC: Anti-Drawdown Cushion (DEFAULT OFF, target sub-10% DD)   |
-//| - Rescue v3: Delta-based continuous rebalancing (NEW)            |
+//| - PC: Partial Close REMOVED (incompatible with Grid DCA)         |
 //+------------------------------------------------------------------+
 #property strict
-#property version "2.60"
+#property version "2.70"
 
 #include <Trade/Trade.mqh>
 
@@ -31,6 +30,23 @@
 //--- Inputs
 input group "=== IMPORTANT: Set Unique Magic Number ==="
 input long              InpMagic            = 990045;  // ⚠️ CHANGE THIS for each symbol/chart!
+
+input group "=== Symbol Preset (For Optimization) ==="
+enum SymbolPresetEnum
+  {
+   PRESET_CUSTOM      = 0,  // Custom (use manual params below)
+   PRESET_EURUSD      = 1,  // EURUSD - Medium Volatility
+   PRESET_GBPUSD      = 2,  // GBPUSD - Medium Volatility
+   PRESET_USDJPY      = 3,  // USDJPY - Medium Volatility
+   PRESET_USDCHF      = 4,  // USDCHF - Low Volatility
+   PRESET_EURCHF      = 5,  // EURCHF - Low Volatility
+   PRESET_GBPJPY      = 6,  // GBPJPY - High Volatility
+   PRESET_XAUUSD      = 7,  // XAUUSD (Gold) - High Volatility
+   PRESET_AUDUSD      = 8,  // AUDUSD - Medium Volatility
+   PRESET_NZDUSD      = 9,  // NZDUSD - Medium Volatility
+   PRESET_USDCAD      = 10  // USDCAD - Medium Volatility
+  };
+input SymbolPresetEnum  InpSymbolPreset     = PRESET_CUSTOM;  // Symbol Preset (0=Custom, 1-10=Auto)
 
 input int               InpStatusInterval   = 60;
 input bool              InpLogEvents        = true;
@@ -54,7 +70,7 @@ input int               InpMaxPendings      = 15;    // Max pending orders per b
 
 input group "=== Lot Sizing ==="
 input double            InpLotBase          = 0.01;  // First grid level lot
-input double            InpLotOffset        = 0.01;  // Linear increment per level
+input double            InpLotOffset        = 0.02;  // Linear increment per level
 
 input group "=== Take Profit & TSL ==="
 input double            InpTargetCycleUSD   = 5.0;   // Group TP target (USD)
@@ -65,9 +81,9 @@ input int               InpTSLStepPoints    = 200;   // TSL step size
 input group "=== Rescue/Hedge System v3 (Delta + Cooldown) ==="
 input string            InpRecoverySteps       = "1000,2000,3000";  // Staged limit offsets (points)
 input bool              InpRescueAdaptiveLot   = true;   // ✅ Enable delta-based rescue
-input double            InpMinDeltaTrigger     = 0.05;   // Min imbalance to trigger (lot)
+input double            InpMinDeltaTrigger     = 0.02;   // Min imbalance to trigger (lot)
 input double            InpRescueLotMultiplier = 1.0;    // Delta multiplier (1.0 = 100%)
-input double            InpRescueMaxLot        = 0.50;   // Max per rescue deployment
+input double            InpRescueMaxLot        = 0.1;   // Max per rescue deployment
 input int               InpRescueCooldownBars  = 3;      // Bars between rescues (anti-spam)
 
 input group "=== Risk Management ==="
@@ -79,19 +95,6 @@ input int               InpSlippagePips     = 1;
 input bool              InpRespectStops     = false;  // Set false for backtest
 
 input double            InpCommissionPerLot = 0.0;
-
-input group "=== Partial Close ==="
-input bool              InpPcEnabled           = true;   // ENABLED for production
-input double            InpPcRetestAtr         = 0.8;
-input double            InpPcSlopeHysteresis   = 0.0002;
-input double            InpPcMinProfitUsd      = 2.5;    // Optimized: Close earlier
-input double            InpPcCloseFraction     = 0.30;
-input int               InpPcMaxTickets        = 3;
-input int               InpPcCooldownBars      = 10;
-input int               InpPcGuardBars         = 6;
-input double            InpPcPendingGuardMult  = 0.5;
-input double            InpPcGuardExitAtr      = 0.6;
-input double            InpPcMinLotsRemain     = 0.20;
 
 input group "=== Dynamic Target Scaling ==="
 input bool              InpDtsEnabled           = true;  // ENABLED for production
@@ -148,6 +151,19 @@ CPortfolioLedger    *g_ledger        = NULL;
 CRescueEngine       *g_rescue        = NULL;
 CLifecycleController*g_controller    = NULL;
 
+//--- Preset override variables (non-const)
+InpSpacingModeEnum   g_spacing_mode;
+double               g_spacing_pips;
+double               g_spacing_atr_mult;
+double               g_min_spacing_pips;
+double               g_lot_base;
+double               g_lot_offset;
+double               g_target_cycle_usd;
+double               g_min_delta_trigger;
+double               g_rescue_lot_multiplier;
+double               g_rescue_max_lot;
+int                  g_rescue_cooldown_bars;
+
 string TrimAll(const string value)
   {
    string tmp=value;
@@ -179,26 +195,108 @@ int ParseRecoverySteps(const string csv,int &buffer[])
    return count;
   }
 
+void ApplySymbolPreset()
+  {
+   // First, copy inputs to globals
+   g_spacing_mode = InpSpacingMode;
+   g_spacing_pips = InpSpacingStepPips;
+   g_spacing_atr_mult = InpSpacingAtrMult;
+   g_min_spacing_pips = InpMinSpacingPips;
+   g_lot_base = InpLotBase;
+   g_lot_offset = InpLotOffset;
+   g_target_cycle_usd = InpTargetCycleUSD;
+   g_min_delta_trigger = InpMinDeltaTrigger;
+   g_rescue_lot_multiplier = InpRescueLotMultiplier;
+   g_rescue_max_lot = InpRescueMaxLot;
+   g_rescue_cooldown_bars = InpRescueCooldownBars;
+
+   if(InpSymbolPreset==PRESET_CUSTOM)
+      return; // Use manual params
+
+   // Apply preset-specific parameters
+   switch(InpSymbolPreset)
+     {
+      case PRESET_EURUSD:
+      case PRESET_GBPUSD:
+      case PRESET_USDJPY:
+      case PRESET_AUDUSD:
+      case PRESET_NZDUSD:
+      case PRESET_USDCAD:
+         // Medium Volatility Preset
+         Print("[Preset] Loading MEDIUM volatility preset");
+         g_spacing_mode = InpSpacingHybrid;
+         g_spacing_pips = 8.0;
+         g_spacing_atr_mult = 0.8;
+         g_min_spacing_pips = 5.0;
+         g_lot_base = 0.01;
+         g_lot_offset = 0.0;
+         g_target_cycle_usd = 10.0;
+         g_min_delta_trigger = 0.03;
+         g_rescue_lot_multiplier = 0.5;
+         g_rescue_max_lot = 0.10;
+         g_rescue_cooldown_bars = 30;
+         break;
+
+      case PRESET_USDCHF:
+      case PRESET_EURCHF:
+         // Low Volatility Preset
+         Print("[Preset] Loading LOW volatility preset");
+         g_spacing_mode = InpSpacingHybrid;
+         g_spacing_pips = 6.0;
+         g_spacing_atr_mult = 0.7;
+         g_min_spacing_pips = 3.0;
+         g_lot_base = 0.01;
+         g_lot_offset = 0.0;
+         g_target_cycle_usd = 5.0;
+         g_min_delta_trigger = 0.02;
+         g_rescue_lot_multiplier = 0.5;
+         g_rescue_max_lot = 0.08;
+         g_rescue_cooldown_bars = 20;
+         break;
+
+      case PRESET_GBPJPY:
+      case PRESET_XAUUSD:
+         // High Volatility Preset
+         Print("[Preset] Loading HIGH volatility preset");
+         g_spacing_mode = InpSpacingATR;
+         g_spacing_pips = 10.0;
+         g_spacing_atr_mult = 1.0;
+         g_min_spacing_pips = 8.0;
+         g_lot_base = 0.01;
+         g_lot_offset = 0.0;
+         g_target_cycle_usd = 15.0;
+         g_min_delta_trigger = 0.05;
+         g_rescue_lot_multiplier = 0.4;
+         g_rescue_max_lot = 0.15;
+         g_rescue_cooldown_bars = 50;
+         break;
+     }
+  }
+
 void BuildParams()
   {
-   g_params.spacing_mode       =(ESpacingMode)InpSpacingMode;
-   g_params.spacing_pips       =InpSpacingStepPips;
-   g_params.spacing_atr_mult   =InpSpacingAtrMult;
-   g_params.min_spacing_pips   =InpMinSpacingPips;
+   // Apply preset BEFORE building params (fills global vars)
+   ApplySymbolPreset();
+
+   // Use global vars instead of input constants
+   g_params.spacing_mode       =(ESpacingMode)g_spacing_mode;
+   g_params.spacing_pips       =g_spacing_pips;
+   g_params.spacing_atr_mult   =g_spacing_atr_mult;
+   g_params.min_spacing_pips   =g_min_spacing_pips;
    g_params.atr_period         =InpAtrPeriod;
    g_params.atr_timeframe      =InpAtrTimeframe;
 
    g_params.grid_levels        =InpGridLevels;
-   g_params.lot_base           =InpLotBase;
-   g_params.lot_offset         =InpLotOffset;
-   
+   g_params.lot_base           =g_lot_base;
+   g_params.lot_offset         =g_lot_offset;
+
    g_params.grid_dynamic_enabled=InpDynamicGrid;
    g_params.grid_warm_levels   =InpWarmLevels;
    g_params.grid_refill_threshold=InpRefillThreshold;
    g_params.grid_refill_batch  =InpRefillBatch;
    g_params.grid_max_pendings  =InpMaxPendings;
-   
-   g_params.target_cycle_usd   =InpTargetCycleUSD;
+
+   g_params.target_cycle_usd   =g_target_cycle_usd;
 
    g_params.tsl_enabled        =InpTSLEnabled;
    g_params.tsl_start_points   =InpTSLStartPoints;
@@ -206,10 +304,10 @@ void BuildParams()
 
    ParseRecoverySteps(InpRecoverySteps,g_params.recovery_steps);
    g_params.rescue_adaptive_lot    =InpRescueAdaptiveLot;
-   g_params.min_delta_trigger      =InpMinDeltaTrigger;
-   g_params.rescue_lot_multiplier  =InpRescueLotMultiplier;
-   g_params.rescue_max_lot         =InpRescueMaxLot;
-   g_params.rescue_cooldown_bars   =InpRescueCooldownBars;
+   g_params.min_delta_trigger      =g_min_delta_trigger;
+   g_params.rescue_lot_multiplier  =g_rescue_lot_multiplier;
+   g_params.rescue_max_lot         =g_rescue_max_lot;
+   g_params.rescue_cooldown_bars   =g_rescue_cooldown_bars;
    g_params.exposure_cap_lots      =InpExposureCapLots;
    g_params.session_sl_usd         =InpSessionSL_USD;
 
@@ -219,18 +317,6 @@ void BuildParams()
    g_params.commission_per_lot =InpCommissionPerLot;
 
    g_params.magic              =InpMagic;
-
-   g_params.pc_enabled           =InpPcEnabled;
-   g_params.pc_retest_atr        =InpPcRetestAtr;
-   g_params.pc_slope_hysteresis  =InpPcSlopeHysteresis;
-   g_params.pc_min_profit_usd    =InpPcMinProfitUsd;
-   g_params.pc_close_fraction    =InpPcCloseFraction;
-   g_params.pc_max_tickets       =InpPcMaxTickets;
-   g_params.pc_cooldown_bars     =InpPcCooldownBars;
-   g_params.pc_guard_bars        =InpPcGuardBars;
-   g_params.pc_pending_guard_mult=InpPcPendingGuardMult;
-   g_params.pc_guard_exit_atr    =InpPcGuardExitAtr;
-   g_params.pc_min_lots_remain   =InpPcMinLotsRemain;
 
    g_params.dts_enabled            =InpDtsEnabled;
    g_params.dts_atr_enabled        =InpDtsAtrEnabled;

@@ -46,9 +46,6 @@ private:
    double         m_last_realized;
    double         m_trail_anchor;
 
-   double         m_partial_realized;
-   double         m_furthest_entry;
-
    double         m_initial_atr;
    int            m_entry_bar;
 
@@ -725,16 +722,7 @@ private:
       return applied;
      }
 
-   struct SPcTicket
-     {
-      ulong  ticket;
-      double volume;
-      double entry;
-      double pnl;
-      double distance;
-     };
-
-  void           AdjustTarget(const double delta,const string reason)
+   void           AdjustTarget(const double delta,const string reason)
      {
       if(delta<=0.0)
          return;
@@ -766,148 +754,6 @@ public:
          if(m_log!=NULL)
          m_log.Event(Tag(),StringFormat("Basket closed: %s",reason));
       }
-
-
-   double         GetFurthestEntryPrice() const
-     {
-      if(m_total_lot<=0.0)
-         return 0.0;
-      double furthest=0.0;
-      int total=(int)PositionsTotal();
-      for(int i=0;i<total;i++)
-        {
-         ulong ticket=PositionGetTicket(i);
-         if(ticket==0)
-            continue;
-         if(!PositionSelectByTicket(ticket))
-            continue;
-         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
-            continue;
-         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
-            continue;
-         long type=PositionGetInteger(POSITION_TYPE);
-         if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
-            (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
-            continue;
-         double entry=PositionGetDouble(POSITION_PRICE_OPEN);
-         if(m_direction==DIR_SELL)
-            furthest=(furthest==0.0)?entry:MathMax(furthest,entry);
-         else
-            furthest=(furthest==0.0)?entry:MathMin(furthest,entry);
-        }
-      return furthest;
-     }
-
-   bool           HasProfitableTickets(double min_profit_usd,int max_tickets,double ref_price)
-     {
-      SPcTicket tickets[];
-      int count=0;
-      int total=(int)PositionsTotal();
-      for(int i=0;i<total;i++)
-        {
-         ulong ticket=PositionGetTicket(i);
-         if(ticket==0)
-            continue;
-         if(!PositionSelectByTicket(ticket))
-            continue;
-         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
-            continue;
-         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
-            continue;
-         long type=PositionGetInteger(POSITION_TYPE);
-         if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
-            (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
-            continue;
-         count++;
-         ArrayResize(tickets,count);
-         tickets[count-1].ticket=ticket;
-         tickets[count-1].volume=PositionGetDouble(POSITION_VOLUME);
-         tickets[count-1].entry=PositionGetDouble(POSITION_PRICE_OPEN);
-         tickets[count-1].pnl=PositionGetDouble(POSITION_PROFIT);
-         tickets[count-1].distance=MathAbs(tickets[count-1].entry-ref_price);
-        }
-      if(count==0)
-         return false;
-      for(int i=0;i<count-1;i++)
-         for(int j=i+1;j<count;j++)
-            if(tickets[i].distance>tickets[j].distance)
-              {
-               SPcTicket tmp=tickets[i];
-               tickets[i]=tickets[j];
-               tickets[j]=tmp;
-              }
-      double total_pnl=0.0;
-      int check_count=MathMin(max_tickets,count);
-      for(int i=0;i<check_count;i++)
-         total_pnl+=tickets[i].pnl;
-      return(total_pnl>=min_profit_usd);
-     }
-
-   int            CloseNearestTickets(double target_volume,int max_tickets,double min_profit_usd,double ref_price)
-     {
-      SPcTicket tickets[];
-      int count=0;
-      int total=(int)PositionsTotal();
-      for(int i=0;i<total;i++)
-        {
-         ulong ticket=PositionGetTicket(i);
-         if(ticket==0)
-            continue;
-         if(!PositionSelectByTicket(ticket))
-            continue;
-         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
-            continue;
-         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
-            continue;
-         long type=PositionGetInteger(POSITION_TYPE);
-         if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
-            (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
-            continue;
-         count++;
-         ArrayResize(tickets,count);
-         tickets[count-1].ticket=ticket;
-         tickets[count-1].volume=PositionGetDouble(POSITION_VOLUME);
-         tickets[count-1].entry=PositionGetDouble(POSITION_PRICE_OPEN);
-         tickets[count-1].pnl=PositionGetDouble(POSITION_PROFIT);
-         tickets[count-1].distance=MathAbs(tickets[count-1].entry-ref_price);
-        }
-      if(count==0)
-         return 0;
-      for(int i=0;i<count-1;i++)
-         for(int j=i+1;j<count;j++)
-            if(tickets[i].distance>tickets[j].distance)
-              {
-               SPcTicket tmp=tickets[i];
-               tickets[i]=tickets[j];
-               tickets[j]=tmp;
-              }
-      double closed_volume=0.0;
-      int closed_count=0;
-      CTrade trade;
-      trade.SetExpertMagicNumber(m_magic);
-      for(int i=0;i<count && closed_count<max_tickets;i++)
-        {
-         if(closed_volume>=target_volume)
-            break;
-         if(tickets[i].pnl<-min_profit_usd*0.5)
-            continue;
-         if(trade.PositionClose(tickets[i].ticket))
-           {
-            m_partial_realized+=tickets[i].pnl;
-            closed_volume+=tickets[i].volume;
-            closed_count++;
-           }
-        }
-      return closed_count;
-     }
-
-   double         TakePartialCloseProfit()
-     {
-      double val=m_partial_realized;
-      m_partial_realized=0.0;
-      return val;
-     }
-
 
    void           DeployRecovery(const double price, const double rescue_lot)
      {
@@ -987,8 +833,6 @@ public:
                          m_trailing_on(false),
                          m_last_realized(0.0),
                          m_trail_anchor(0.0),
-                         m_partial_realized(0.0),
-                         m_furthest_entry(0.0),
                          m_ssl_be_moved(false),
                          m_ssl_current_trail_sl(0.0),
                          m_initial_atr(0.0),

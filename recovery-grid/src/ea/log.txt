@@ -1,5 +1,50 @@
-2025.10.02 13:12:41.012	Trades	'269875318': failed modify #353026233 buy 0.01 EURUSD sl: 1.16661, tp: 0.00000 -> sl: 1.17511, tp: 0.00000 [Invalid stops]
-2025.10.02 13:12:41.070	Trades	'269875318': failed modify #353026233 buy 0.01 EURUSD sl: 1.16661, tp: 0.00000 -> sl: 1.17511, tp: 0.00000 [Invalid stops]
-2025.10.02 13:12:42.789	Trades	'269875318': failed modify #353026233 buy 0.01 EURUSD sl: 1.16661, tp: 0.00000 -> sl: 1.17511, tp: 0.00000 [Invalid stops]
-2025.10.02 13:12:49.530	Trades	'269875318': failed modify #353026233 buy 0.01 EURUSD sl: 1.16661, tp: 0.00000 -> sl: 1.17511, tp: 0.00000 [Invalid stops]
-2025.10.02 13:12:53.821	Trades	'269875318': failed modify #353026233 buy 0.01 EURUSD sl: 1.16661, tp: 0.00000 -> sl: 1.17511, tp: 0.00000 [Invalid stops]
+2025.10.03 15:57:02.451	2025.07.01 00:00:00   [NewsCalendar] Initialized: filter=High, buffer=30 min
+2025.10.03 15:57:02.457	2025.07.01 00:00:00   market buy 0.01 XAUUSD (3312.465 / 3312.577)
+2025.10.03 15:57:02.458	2025.07.01 00:00:00   deal #2 buy 0.01 XAUUSD at 3312.577 done (based on order #2)
+2025.10.03 15:57:02.458	2025.07.01 00:00:00   deal performed [#2 buy 0.01 XAUUSD at 3312.577]
+2025.10.03 15:57:02.458	2025.07.01 00:00:00   order performed buy 0.01 at 3312.577 [#2 buy 0.01 XAUUSD at 3312.577]
+2025.10.03 15:57:02.461	2025.07.01 00:00:00   CTrade::OrderSend: market buy 0.01 XAUUSD [done at 3312.577]
+2025.10.03 15:57:02.462	2025.07.01 00:00:00   [RGDv2][XAUUSD][BUY][PRI] DG/SEED dir=BUY level=0 price=3312.577 pendings=0 last=3312.577
+2025.10.03 15:57:02.462	2025.07.01 00:00:00   buy limit 0.03 XAUUSD at 3312.497 (3312.465 / 3312.577)
+2025.10.03 15:57:02.464	2025.07.01 00:00:00   CTrade::OrderSend: buy limit 0.03 XAUUSD at 3312.497 [done]
+2025.10.03 15:57:02.464	2025.07.01 00:00:00   [RGDv2][XAUUSD][BUY][PRI] DG/SEED dir=BUY level=1 price=3312.497 pendings=1 last=3312.497
+2025.10.03 15:57:02.464	2025.07.01 00:00:00   buy limit 0.05 XAUUSD at 3312.417 (3312.465 / 3312.577)
+2025.10.03 15:57:02.465	2025.07.01 00:00:00   CTrade::OrderSend: buy limit 0.05 XAUUSD at 3312.417 [done]
+2025.10.03 15:57:02.465	2025.07.01 00:00:00   [RGDv2][XAUUSD][BUY][PRI] DG/SEED dir=BUY level=2 price=3312.417 pendings=2 last=3312.417
+2025.10.03 15:57:02.465	2025.07.01 00:00:00   buy limit 0.07 XAUUSD at 3312.337 (3312.465 / 3312.577)
+2025.10.03 15:57:02.467	2025.07.01 00:00:00   CTrade::OrderSend: buy limit 0.07 XAUUSD at 3312.337 [done]
+2025.10.03 15:57:02.467	2025.07.01 00:00:00   [RGDv2][XAUUSD][BUY][PRI] DG/SEED dir=BUY level=3 price=3312.337 pendings=3 last=3312.337
+2025.10.03 15:57:02.467	2025.07.01 00:00:00   buy limit 0.09 XAUUSD at 3312.257 (3312.465 / 3312.577)
+2025.10.03 15:57:02.468	2025.07.01 00:00:00   CTrade::OrderSend: buy limit 0.09 XAUUSD at 3312.257 [done]
+2025.10.03 15:57:02.468	2025.07.01 00:00:00   [RGDv2][XAUUSD][BUY][PRI] DG/SEED dir=BUY level=4 price=3312.257 pendings=4 last=3312.257
+2025.10.03 15:57:02.468	2025.07.01 00:00:00   buy limit 0.11 XAUUSD at 3312.177 (3312.465 / 3312.577)
+2025.10.03 15:57:02.469	2025.07.01 00:00:00   CTrade::OrderSend: buy limit 0.11 XAUUSD at 3312.177 [done]
+2025.10.03 15:57:02.469	2025.07.01 00:00:00   [RGDv2][XAUUSD][BUY][PRI] DG/SEED dir=BUY level=5 price=3312.177 pendings=5 last=3312.177
+2025.10.03 15:57:02.469	2025.07.01 00:00:00   [RGDv2][XAUUSD][BUY][PRI] Dynamic grid warm=6/1000
+2025.10.03 15:57:02.470	2025.07.01 00:00:00   market sell 0.01 XAUUSD (3312.465 / 3312.577)
+2025.10.03 15:57:02.470	2025.07.01 00:00:00   deal #3 sell 0.01 XAUUSD at 3312.465 done (based on order #8)
+2025.10.03 15:57:02.470	2025.07.01 00:00:00   deal performed [#3 sell 0.01 XAUUSD at 3312.465]
+2025.10.03 15:57:02.470	2025.07.01 00:00:00   order performed sell 0.01 at 3312.465 [#8 sell 0.01 XAUUSD at 3312.465]
+2025.10.03 15:57:02.472	2025.07.01 00:00:00   CTrade::OrderSend: market sell 0.01 XAUUSD [done at 3312.465]
+2025.10.03 15:57:02.472	2025.07.01 00:00:00   [RGDv2][XAUUSD][SELL][PRI] DG/SEED dir=SELL level=0 price=3312.465 pendings=0 last=3312.465
+2025.10.03 15:57:02.472	2025.07.01 00:00:00   sell limit 0.03 XAUUSD at 3312.545 (3312.465 / 3312.577)
+2025.10.03 15:57:02.473	2025.07.01 00:00:00   CTrade::OrderSend: sell limit 0.03 XAUUSD at 3312.545 [done]
+2025.10.03 15:57:02.473	2025.07.01 00:00:00   [RGDv2][XAUUSD][SELL][PRI] DG/SEED dir=SELL level=1 price=3312.545 pendings=1 last=3312.545
+2025.10.03 15:57:02.473	2025.07.01 00:00:00   sell limit 0.05 XAUUSD at 3312.625 (3312.465 / 3312.577)
+2025.10.03 15:57:02.474	2025.07.01 00:00:00   CTrade::OrderSend: sell limit 0.05 XAUUSD at 3312.625 [done]
+2025.10.03 15:57:02.474	2025.07.01 00:00:00   [RGDv2][XAUUSD][SELL][PRI] DG/SEED dir=SELL level=2 price=3312.625 pendings=2 last=3312.625
+2025.10.03 15:57:02.474	2025.07.01 00:00:00   sell limit 0.07 XAUUSD at 3312.705 (3312.465 / 3312.577)
+2025.10.03 15:57:02.476	2025.07.01 00:00:00   CTrade::OrderSend: sell limit 0.07 XAUUSD at 3312.705 [done]
+2025.10.03 15:57:02.476	2025.07.01 00:00:00   [RGDv2][XAUUSD][SELL][PRI] DG/SEED dir=SELL level=3 price=3312.705 pendings=3 last=3312.705
+2025.10.03 15:57:02.476	2025.07.01 00:00:00   sell limit 0.09 XAUUSD at 3312.785 (3312.465 / 3312.577)
+2025.10.03 15:57:02.477	2025.07.01 00:00:00   CTrade::OrderSend: sell limit 0.09 XAUUSD at 3312.785 [done]
+2025.10.03 15:57:02.477	2025.07.01 00:00:00   [RGDv2][XAUUSD][SELL][PRI] DG/SEED dir=SELL level=4 price=3312.785 pendings=4 last=3312.785
+2025.10.03 15:57:02.477	2025.07.01 00:00:00   sell limit 0.11 XAUUSD at 3312.865 (3312.465 / 3312.577)
+2025.10.03 15:57:02.479	2025.07.01 00:00:00   CTrade::OrderSend: sell limit 0.11 XAUUSD at 3312.865 [done]
+2025.10.03 15:57:02.479	2025.07.01 00:00:00   [RGDv2][XAUUSD][SELL][PRI] DG/SEED dir=SELL level=5 price=3312.865 pendings=5 last=3312.865
+2025.10.03 15:57:02.479	2025.07.01 00:00:00   [RGDv2][XAUUSD][SELL][PRI] Dynamic grid warm=6/1000
+2025.10.03 15:57:02.479	2025.07.01 00:00:00   [RGDv2][XAUUSD][LC] Lifecycle bootstrapped
+2025.10.03 15:57:02.479	2025.07.01 00:00:00   [RGDv2] Init OK - Ask=3312.57700 Bid=3312.46500 LotBase=0.01 GridLevels=1000 Dynamic=ON
+2025.10.03 15:57:03.075	2025.07.01 00:00:00   [NewsCalendar] WebRequest failed: error 4014 - Check Tools->Options->Expert Advisors->Allow WebRequest for URL: https://nfs.faireconomy.media/ff_calendar_thisweek.json
+2025.10.03 15:57:03.076	2025.07.01 00:00:00   [NewsCalendar] WebRequest failed: error 4014 - Check Tools->Options->Expert Advisors->Allow WebRequest for URL: https://nfs.faireconomy.media/ff_calendar_thisweek.json
+2025.10.03 15:57:03.076	2025.07.01 00:00:00   [RGDv2][XAUUSD][LC] [RESCUE-BALANCED] Loser=0.01 Rescue=0.01 Delta=0.00 < 0.02 (skip, balanced)

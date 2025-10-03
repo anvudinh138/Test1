@@ -1,5 +1,7 @@
 //+------------------------------------------------------------------+
 //| NewsCalendar.mqh - Real-time economic calendar integration       |
+//| ForexFactory calendar JSON API                                   |
+//| Format: https://nfs.faireconomy.media/ff_calendar_thisweek.json  |
 //+------------------------------------------------------------------+
 #ifndef __RGD_V2_NEWS_CALENDAR_MQH__
 #define __RGD_V2_NEWS_CALENDAR_MQH__
@@ -32,6 +34,76 @@ private:
    string         m_impact_filter;         // High, Medium, Low
    bool           m_enabled;               // API enabled
    CLogger       *m_log;
+
+   //+------------------------------------------------------------------+
+   //| Load historical news from CSV string (resource or file)           |
+   //+------------------------------------------------------------------+
+   bool           LoadHistoricalNewsFromString(const string csv_content)
+     {
+      ArrayResize(m_events,0);
+      int event_count=0;
+
+      // Split CSV by lines
+      string lines[];
+      int line_count=StringSplit(csv_content,'\n',lines);
+
+      // Skip header (first line)
+      for(int i=1;i<line_count;i++)
+        {
+         string line=lines[i];
+         StringTrimLeft(line);
+         StringTrimRight(line);
+
+         if(StringLen(line)==0)
+            continue;
+
+         // Parse CSV line: DateTime,Currency,Event,Impact
+         string fields[];
+         if(StringSplit(line,',',fields)!=4)
+            continue;
+
+         string date_time=fields[0];
+         string currency=fields[1];
+         string event_name=fields[2];
+         string impact=fields[3];
+
+         // Trim fields
+         StringTrimLeft(date_time);
+         StringTrimRight(date_time);
+         StringTrimLeft(currency);
+         StringTrimRight(currency);
+         StringTrimLeft(event_name);
+         StringTrimRight(event_name);
+         StringTrimLeft(impact);
+         StringTrimRight(impact);
+
+         if(date_time=="" || currency=="" || event_name=="")
+            continue;
+
+         // Parse datetime (format: 2025-07-02 12:30)
+         datetime event_dt=StringToTime(date_time);
+         if(event_dt==0)
+            continue;
+
+         // Add event
+         ArrayResize(m_events,event_count+1);
+         m_events[event_count].event_time=event_dt;
+         m_events[event_count].currency=currency;
+         m_events[event_count].title=event_name;
+         m_events[event_count].impact=impact;
+         m_events[event_count].is_active=false;
+
+         event_count++;
+        }
+
+      if(m_log!=NULL)
+        {
+         string msg=StringFormat("Loaded %d historical news events from CSV",event_count);
+         m_log.Event("[NewsCalendar]",msg);
+        }
+
+      return event_count>0;
+     }
 
    //+------------------------------------------------------------------+
    //| Fetch calendar from ForexFactory                                  |
@@ -257,6 +329,27 @@ public:
      }
 
    //+------------------------------------------------------------------+
+   //| Initialize with historical CSV resource (for backtesting)         |
+   //+------------------------------------------------------------------+
+   bool           InitHistoricalFromResource(const string csv_content)
+     {
+      if(!m_enabled)
+         return false;
+
+      bool loaded=LoadHistoricalNewsFromString(csv_content);
+      if(loaded)
+        {
+         m_last_fetch=TimeGMT();  // Mark as fetched
+         if(m_log!=NULL)
+           {
+            string msg="Historical news loaded from resource for backtesting";
+            m_log.Event("[NewsCalendar]",msg);
+           }
+        }
+      return loaded;
+     }
+
+   //+------------------------------------------------------------------+
    //| Check if currently within news window                             |
    //+------------------------------------------------------------------+
    bool           IsNewsTime(string &active_event)
@@ -264,14 +357,13 @@ public:
       if(!m_enabled)
          return false;
 
-      // Fetch calendar if needed
+      // For backtesting: If events already loaded from CSV, skip API fetch
       datetime now=TimeGMT();
-      if(now-m_last_fetch>m_fetch_interval_sec || ArraySize(m_events)==0)
+      if(ArraySize(m_events)==0 || (now-m_last_fetch>m_fetch_interval_sec))
         {
+         // Try API fetch (will fail in backtest, that's OK - we have CSV data)
          if(FetchCalendar())
             m_last_fetch=now;
-         else if(m_log!=NULL)
-            m_log.Event("[NewsCalendar]","Failed to fetch calendar - using cached events");
         }
 
       // Check if within buffer window of any event
