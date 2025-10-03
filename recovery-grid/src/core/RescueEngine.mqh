@@ -23,10 +23,10 @@ private:
      {
       if(spacing_px<=0.0)
          return false;
-      double offset=spacing_px*m_params.offset_ratio;
+      // Price breach beyond last grid level (trigger rescue)
       if(loser_dir==DIR_BUY)
-         return price<=(last_grid_price-offset);
-      return price>=(last_grid_price+offset);
+         return price<=(last_grid_price-spacing_px);
+      return price>=(last_grid_price+spacing_px);
      }
 
 public:
@@ -41,20 +41,13 @@ public:
 
    bool     CooldownOk() const
      {
-      if(m_params.cooldown_bars<=0)
-         return true;
+      if(m_params.rescue_cooldown_bars<=0)
+         return true;  // Cooldown disabled
       int seconds=PeriodSeconds();
       if(seconds<=0)
          seconds=60;
-      datetime window=m_params.cooldown_bars*seconds;
+      datetime window=m_params.rescue_cooldown_bars*seconds;
       return (TimeCurrent()-m_last_rescue_time)>=window;
-     }
-
-   bool     CyclesAvailable() const
-     {
-      if(m_params.max_cycles_per_side<=0)
-         return true;
-      return m_cycles<m_params.max_cycles_per_side;
      }
 
    bool     ShouldRescue(const EDirection loser_dir,
@@ -63,9 +56,9 @@ public:
                          const double current_price,
                          const double loser_dd_usd) const
      {
+      // Trigger rescue only on price breach (removed DD condition)
       bool breach=BreachLastGrid(loser_dir,last_grid_price,spacing_px,current_price);
-      bool dd=(loser_dd_usd>=m_params.dd_open_usd);
-      return breach || dd;
+      return breach;
      }
 
    void     RecordRescue()

@@ -37,15 +37,15 @@ struct SParams
    int          tsl_start_points;
    int          tsl_step_points;
 
-   // rescue
-   int          recovery_steps[];   // points offsets for staged pending orders
-   double       recovery_lot;
-   double       dd_open_usd;
-   double       offset_ratio;
-   double       exposure_cap_lots;
-   int          max_cycles_per_side;
-   double       session_sl_usd;
-   int          cooldown_bars;
+   // rescue (v3: delta-based continuous rebalancing with cooldown)
+   int          recovery_steps[];        // points offsets for staged pending orders
+   bool         rescue_adaptive_lot;     // enable delta-based rescue
+   double       min_delta_trigger;       // min imbalance to trigger rescue (lot)
+   double       rescue_lot_multiplier;   // delta multiplier (1.0 = 100% of delta)
+   double       rescue_max_lot;          // max lot per rescue deployment
+   int          rescue_cooldown_bars;    // bars between rescue deployments (anti-spam)
+   double       exposure_cap_lots;       // global lot exposure limit
+   double       session_sl_usd;          // session stop loss (USD)
 
    // execution
    int          slippage_pips;
@@ -55,19 +55,6 @@ struct SParams
 
    // misc
    long         magic;
-
-   // partial close
-   bool         pc_enabled;
-   double       pc_retest_atr;
-   double       pc_slope_hysteresis;
-   double       pc_min_profit_usd;
-   double       pc_close_fraction;
-   int          pc_max_tickets;
-   int          pc_cooldown_bars;
-   int          pc_guard_bars;
-   double       pc_pending_guard_mult;
-   double       pc_guard_exit_atr;
-   double       pc_min_lots_remain;
 
    // dynamic target scaling
    bool         dts_enabled;
