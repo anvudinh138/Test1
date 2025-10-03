@@ -1,23 +1,56 @@
 DateTime,Currency,Event,Impact
-2025-07-02 12:30,USD,Non-Farm Payrolls,High
-2025-07-02 12:30,USD,Unemployment Rate,High
-2025-07-10 12:30,USD,CPI m/m,High
-2025-07-10 12:30,USD,Core CPI m/m,High
-2025-07-18 18:00,USD,FOMC Statement,High
-2025-07-18 18:30,USD,FOMC Press Conference,High
-2025-07-24 12:30,USD,GDP q/q,Medium
-2025-07-31 18:00,USD,Federal Funds Rate,High
-2025-08-01 12:30,USD,Non-Farm Payrolls,High
+2025-07-01 13:30,USD,Fed Chair Powell Speaks,High
+2025-07-01 14:00,USD,ISM Manufacturing PMI,High
+2025-07-01 14:00,USD,JOLTS Job Openings,High
+2025-07-02 12:15,USD,ADP Non-Farm Employment Change,High
+2025-07-03 12:30,USD,Average Hourly Earnings m/m,High
+2025-07-03 12:30,USD,Non-Farm Employment Change,High
+2025-07-03 12:30,USD,Unemployment Rate,High
+2025-07-03 14:00,USD,ISM Services PMI,High
+2025-07-09 18:00,USD,FOMC Meeting Minutes,High
+2025-07-10 12:30,USD,Unemployment Claims,High
+2025-07-15 12:30,USD,Core CPI m/m,High
+2025-07-15 12:30,USD,CPI m/m,High
+2025-07-15 12:30,USD,CPI y/y,High
+2025-07-16 12:30,USD,Core PPI m/m,High
+2025-07-16 12:30,USD,PPI m/m,High
+2025-07-17 12:30,USD,Core Retail Sales m/m,High
+2025-07-17 12:30,USD,Retail Sales m/m,High
+2025-07-17 12:30,USD,Unemployment Claims,High
+2025-07-24 12:30,USD,Unemployment Claims,High
+2025-07-24 13:45,USD,Flash Manufacturing PMI,High
+2025-07-24 13:45,USD,Flash Services PMI,High
+2025-07-29 14:00,USD,JOLTS Job Openings,High
+2025-07-30 12:15,USD,ADP Non-Farm Employment Change,High
+2025-07-30 12:30,USD,Advance GDP q/q,High
+2025-07-30 18:00,USD,Federal Funds Rate,High
+2025-07-30 18:00,USD,FOMC Statement,High
+2025-07-30 18:30,USD,FOMC Press Conference,High
+2025-07-31 12:30,USD,Core PCE Price Index m/m,High
+2025-07-31 12:30,USD,Employment Cost Index q/q,High
+2025-07-31 12:30,USD,Unemployment Claims,High
+2025-08-01 12:30,USD,Average Hourly Earnings m/m,High
+2025-08-01 12:30,USD,Non-Farm Employment Change,High
 2025-08-01 12:30,USD,Unemployment Rate,High
-2025-08-13 12:30,USD,CPI m/m,High
-2025-08-13 12:30,USD,Core CPI m/m,High
-2025-08-21 18:00,USD,FOMC Meeting Minutes,High
-2025-08-29 12:30,USD,PCE Price Index,High
-2025-09-05 12:30,USD,Non-Farm Payrolls,High
-2025-09-05 12:30,USD,Unemployment Rate,High
-2025-09-11 12:30,USD,CPI m/m,High
-2025-09-11 12:30,USD,Core CPI m/m,High
-2025-09-18 18:00,USD,FOMC Statement,High
-2025-09-18 18:30,USD,FOMC Press Conference,High
-2025-09-18 18:00,USD,Federal Funds Rate,High
-
+2025-08-01 14:00,USD,ISM Manufacturing PMI,High
+2025-08-05 14:00,USD,ISM Services PMI,High
+2025-08-07 12:30,USD,Unemployment Claims,High
+2025-08-12 12:30,USD,Core CPI m/m,High
+2025-08-12 12:30,USD,CPI m/m,High
+2025-08-12 12:30,USD,CPI y/y,High
+2025-08-14 12:30,USD,Core PPI m/m,High
+2025-08-14 12:30,USD,PPI m/m,High
+2025-08-14 12:30,USD,Unemployment Claims,High
+2025-08-15 12:30,USD,Core Retail Sales m/m,High
+2025-08-15 12:30,USD,Retail Sales m/m,High
+2025-08-15 14:00,USD,Prelim UoM Consumer Sentiment,High
+2025-08-15 14:00,USD,Prelim UoM Inflation Expectations,High
+2025-08-15 22:55,USD,President Trump Speaks,High
+2025-08-20 18:00,USD,FOMC Meeting Minutes,High
+2025-08-21 12:30,USD,Unemployment Claims,High
+2025-08-21 13:45,USD,Flash Manufacturing PMI,High
+2025-08-21 13:45,USD,Flash Services PMI,High
+2025-08-22 14:00,USD,Fed Chair Powell Speaks,High
+2025-08-28 12:30,USD,Prelim GDP q/q,High
+2025-08-28 12:30,USD,Unemployment Claims,High
+2025-08-29 12:30,USD,Core PCE Price Index m/m,High
