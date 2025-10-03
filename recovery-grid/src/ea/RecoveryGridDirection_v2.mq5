@@ -34,19 +34,19 @@ input long              InpMagic            = 990045;  // ⚠️ CHANGE THIS for
 input group "=== Symbol Preset (For Optimization) ==="
 enum SymbolPresetEnum
   {
-   PRESET_CUSTOM      = 0,  // Custom (use manual params below)
-   PRESET_EURUSD      = 1,  // EURUSD - Medium Volatility
-   PRESET_GBPUSD      = 2,  // GBPUSD - Medium Volatility
-   PRESET_USDJPY      = 3,  // USDJPY - Medium Volatility
-   PRESET_USDCHF      = 4,  // USDCHF - Low Volatility
-   PRESET_EURCHF      = 5,  // EURCHF - Low Volatility
-   PRESET_GBPJPY      = 6,  // GBPJPY - High Volatility
-   PRESET_XAUUSD      = 7,  // XAUUSD (Gold) - High Volatility
-   PRESET_AUDUSD      = 8,  // AUDUSD - Medium Volatility
-   PRESET_NZDUSD      = 9,  // NZDUSD - Medium Volatility
-   PRESET_USDCAD      = 10  // USDCAD - Medium Volatility
+   PRESET_CUSTOM      = 0,  // Auto-detect OR use manual params
+   PRESET_EURUSD      = 1,  // Force EURUSD params (Med Vol)
+   PRESET_GBPUSD      = 2,  // Force GBPUSD params (Med Vol)
+   PRESET_USDJPY      = 3,  // Force USDJPY params (Med Vol)
+   PRESET_USDCHF      = 4,  // Force USDCHF params (Low Vol)
+   PRESET_EURCHF      = 5,  // Force EURCHF params (Low Vol)
+   PRESET_GBPJPY      = 6,  // Force GBPJPY params (High Vol)
+   PRESET_XAUUSD      = 7,  // Force XAUUSD params (High Vol)
+   PRESET_AUDUSD      = 8,  // Force AUDUSD params (Med Vol)
+   PRESET_NZDUSD      = 9,  // Force NZDUSD params (Med Vol)
+   PRESET_USDCAD      = 10  // Force USDCAD params (Med Vol)
   };
-input SymbolPresetEnum  InpSymbolPreset     = PRESET_CUSTOM;  // Symbol Preset (0=Custom, 1-10=Auto)
+input SymbolPresetEnum  InpSymbolPreset     = PRESET_CUSTOM;  // Preset Mode (0=Auto, 1-10=Force)
 
 input int               InpStatusInterval   = 60;
 input bool              InpLogEvents        = true;
@@ -163,6 +163,7 @@ double               g_min_delta_trigger;
 double               g_rescue_lot_multiplier;
 double               g_rescue_max_lot;
 int                  g_rescue_cooldown_bars;
+string               g_symbol_override = "";  // Override symbol if preset selected
 
 string TrimAll(const string value)
   {
@@ -195,6 +196,33 @@ int ParseRecoverySteps(const string csv,int &buffer[])
    return count;
   }
 
+SymbolPresetEnum DetectSymbolPreset(const string symbol)
+  {
+   // Auto-detect preset based on current chart symbol
+   if(symbol=="EURUSD" || symbol=="EURUSDm" || symbol=="EURUSD.m")
+      return PRESET_EURUSD;
+   if(symbol=="GBPUSD" || symbol=="GBPUSDm" || symbol=="GBPUSD.m")
+      return PRESET_GBPUSD;
+   if(symbol=="USDJPY" || symbol=="USDJPYm" || symbol=="USDJPY.m")
+      return PRESET_USDJPY;
+   if(symbol=="USDCHF" || symbol=="USDCHFm" || symbol=="USDCHF.m")
+      return PRESET_USDCHF;
+   if(symbol=="EURCHF" || symbol=="EURCHFm" || symbol=="EURCHF.m")
+      return PRESET_EURCHF;
+   if(symbol=="GBPJPY" || symbol=="GBPJPYm" || symbol=="GBPJPY.m")
+      return PRESET_GBPJPY;
+   if(symbol=="XAUUSD" || symbol=="XAUUSDm" || symbol=="XAUUSD.m" || symbol=="GOLD")
+      return PRESET_XAUUSD;
+   if(symbol=="AUDUSD" || symbol=="AUDUSDm" || symbol=="AUDUSD.m")
+      return PRESET_AUDUSD;
+   if(symbol=="NZDUSD" || symbol=="NZDUSDm" || symbol=="NZDUSD.m")
+      return PRESET_NZDUSD;
+   if(symbol=="USDCAD" || symbol=="USDCADm" || symbol=="USDCAD.m")
+      return PRESET_USDCAD;
+
+   return PRESET_CUSTOM; // Unknown symbol
+  }
+
 void ApplySymbolPreset()
   {
    // First, copy inputs to globals
@@ -210,65 +238,185 @@ void ApplySymbolPreset()
    g_rescue_max_lot = InpRescueMaxLot;
    g_rescue_cooldown_bars = InpRescueCooldownBars;
 
-   if(InpSymbolPreset==PRESET_CUSTOM)
-      return; // Use manual params
+   // Determine which preset to use
+   SymbolPresetEnum active_preset = InpSymbolPreset;
 
-   // Apply preset-specific parameters
-   switch(InpSymbolPreset)
+   // If CUSTOM, try auto-detect based on chart symbol
+   if(active_preset == PRESET_CUSTOM)
+     {
+      active_preset = DetectSymbolPreset(_Symbol);
+      if(active_preset != PRESET_CUSTOM)
+        {
+         Print("[Preset] Auto-detected symbol: ",_Symbol," → Using preset ",active_preset);
+        }
+      else
+        {
+         Print("[Preset] Unknown symbol: ",_Symbol," → Using manual params");
+         return; // Use manual params
+        }
+     }
+
+   // Apply preset-specific parameters and set symbol override
+   switch(active_preset)
      {
       case PRESET_EURUSD:
+         g_symbol_override = "EURUSD";
+         Print("[Preset] Loading EURUSD");
+         // g_spacing_mode = InpSpacingHybrid;
+         // g_spacing_pips = 8.0;
+         // g_spacing_atr_mult = 0.8;
+         // g_min_spacing_pips = 5.0;
+         // g_lot_base = 0.01;
+         // g_lot_offset = 0.0;
+         // g_target_cycle_usd = 10.0;
+         // g_min_delta_trigger = 0.03;
+         // g_rescue_lot_multiplier = 0.5;
+         // g_rescue_max_lot = 0.10;
+         // g_rescue_cooldown_bars = 30;
+         break;
+
       case PRESET_GBPUSD:
+         g_symbol_override = "GBPUSD";
+         Print("[Preset] Loading GBPUSD");
+         // g_spacing_mode = InpSpacingHybrid;
+         // g_spacing_pips = 8.0;
+         // g_spacing_atr_mult = 0.8;
+         // g_min_spacing_pips = 5.0;
+         // g_lot_base = 0.01;
+         // g_lot_offset = 0.0;
+         // g_target_cycle_usd = 10.0;
+         // g_min_delta_trigger = 0.03;
+         // g_rescue_lot_multiplier = 0.5;
+         // g_rescue_max_lot = 0.10;
+         // g_rescue_cooldown_bars = 30;
+         break;
+
       case PRESET_USDJPY:
+         g_symbol_override = "USDJPY";
+         Print("[Preset] Loading USDJPY");
+         // g_spacing_mode = InpSpacingHybrid;
+         // g_spacing_pips = 8.0;
+         // g_spacing_atr_mult = 0.8;
+         // g_min_spacing_pips = 5.0;
+         // g_lot_base = 0.01;
+         // g_lot_offset = 0.0;
+         // g_target_cycle_usd = 10.0;
+         // g_min_delta_trigger = 0.03;
+         // g_rescue_lot_multiplier = 0.5;
+         // g_rescue_max_lot = 0.10;
+         // g_rescue_cooldown_bars = 30;
+         break;
+
       case PRESET_AUDUSD:
+         g_symbol_override = "AUDUSD";
+         Print("[Preset] Loading AUDUSD");
+         // g_spacing_mode = InpSpacingHybrid;
+         // g_spacing_pips = 8.0;
+         // g_spacing_atr_mult = 0.8;
+         // g_min_spacing_pips = 5.0;
+         // g_lot_base = 0.01;
+         // g_lot_offset = 0.0;
+         // g_target_cycle_usd = 10.0;
+         // g_min_delta_trigger = 0.03;
+         // g_rescue_lot_multiplier = 0.5;
+         // g_rescue_max_lot = 0.10;
+         // g_rescue_cooldown_bars = 30;
+         break;
+
       case PRESET_NZDUSD:
+         g_symbol_override = "NZDUSD";
+         Print("[Preset] Loading NZDUSD");
+         // g_spacing_mode = InpSpacingHybrid;
+         // g_spacing_pips = 8.0;
+         // g_spacing_atr_mult = 0.8;
+         // g_min_spacing_pips = 5.0;
+         // g_lot_base = 0.01;
+         // g_lot_offset = 0.0;
+         // g_target_cycle_usd = 10.0;
+         // g_min_delta_trigger = 0.03;
+         // g_rescue_lot_multiplier = 0.5;
+         // g_rescue_max_lot = 0.10;
+         // g_rescue_cooldown_bars = 30;
+         break;
+
       case PRESET_USDCAD:
-         // Medium Volatility Preset
-         Print("[Preset] Loading MEDIUM volatility preset");
-         g_spacing_mode = InpSpacingHybrid;
-         g_spacing_pips = 8.0;
-         g_spacing_atr_mult = 0.8;
-         g_min_spacing_pips = 5.0;
-         g_lot_base = 0.01;
-         g_lot_offset = 0.0;
-         g_target_cycle_usd = 10.0;
-         g_min_delta_trigger = 0.03;
-         g_rescue_lot_multiplier = 0.5;
-         g_rescue_max_lot = 0.10;
-         g_rescue_cooldown_bars = 30;
+         g_symbol_override = "USDCAD";
+         Print("[Preset] Loading USDCAD");
+         // g_spacing_mode = InpSpacingHybrid;
+         // g_spacing_pips = 8.0;
+         // g_spacing_atr_mult = 0.8;
+         // g_min_spacing_pips = 5.0;
+         // g_lot_base = 0.01;
+         // g_lot_offset = 0.0;
+         // g_target_cycle_usd = 10.0;
+         // g_min_delta_trigger = 0.03;
+         // g_rescue_lot_multiplier = 0.5;
+         // g_rescue_max_lot = 0.10;
+         // g_rescue_cooldown_bars = 30;
          break;
 
       case PRESET_USDCHF:
+         g_symbol_override = "USDCHF";
+         Print("[Preset] Loading USDCHF");
+         // g_spacing_mode = InpSpacingHybrid;
+         // g_spacing_pips = 6.0;
+         // g_spacing_atr_mult = 0.7;
+         // g_min_spacing_pips = 3.0;
+         // g_lot_base = 0.01;
+         // g_lot_offset = 0.0;
+         // g_target_cycle_usd = 5.0;
+         // g_min_delta_trigger = 0.02;
+         // g_rescue_lot_multiplier = 0.5;
+         // g_rescue_max_lot = 0.08;
+         // g_rescue_cooldown_bars = 20;
+         break;
+
       case PRESET_EURCHF:
-         // Low Volatility Preset
-         Print("[Preset] Loading LOW volatility preset");
-         g_spacing_mode = InpSpacingHybrid;
-         g_spacing_pips = 6.0;
-         g_spacing_atr_mult = 0.7;
-         g_min_spacing_pips = 3.0;
-         g_lot_base = 0.01;
-         g_lot_offset = 0.0;
-         g_target_cycle_usd = 5.0;
-         g_min_delta_trigger = 0.02;
-         g_rescue_lot_multiplier = 0.5;
-         g_rescue_max_lot = 0.08;
-         g_rescue_cooldown_bars = 20;
+         g_symbol_override = "EURCHF";
+         Print("[Preset] Loading EURCHF");
+         // g_spacing_mode = InpSpacingHybrid;
+         // g_spacing_pips = 6.0;
+         // g_spacing_atr_mult = 0.7;
+         // g_min_spacing_pips = 3.0;
+         // g_lot_base = 0.01;
+         // g_lot_offset = 0.0;
+         // g_target_cycle_usd = 5.0;
+         // g_min_delta_trigger = 0.02;
+         // g_rescue_lot_multiplier = 0.5;
+         // g_rescue_max_lot = 0.08;
+         // g_rescue_cooldown_bars = 20;
          break;
 
       case PRESET_GBPJPY:
+         g_symbol_override = "GBPJPY";
+         Print("[Preset] Loading GBPJPY");
+         // g_spacing_mode = InpSpacingATR;
+         // g_spacing_pips = 10.0;
+         // g_spacing_atr_mult = 1.0;
+         // g_min_spacing_pips = 8.0;
+         // g_lot_base = 0.01;
+         // g_lot_offset = 0.0;
+         // g_target_cycle_usd = 15.0;
+         // g_min_delta_trigger = 0.05;
+         // g_rescue_lot_multiplier = 0.4;
+         // g_rescue_max_lot = 0.15;
+         // g_rescue_cooldown_bars = 50;
+         break;
+
       case PRESET_XAUUSD:
-         // High Volatility Preset
-         Print("[Preset] Loading HIGH volatility preset");
-         g_spacing_mode = InpSpacingATR;
-         g_spacing_pips = 10.0;
-         g_spacing_atr_mult = 1.0;
-         g_min_spacing_pips = 8.0;
-         g_lot_base = 0.01;
-         g_lot_offset = 0.0;
-         g_target_cycle_usd = 15.0;
-         g_min_delta_trigger = 0.05;
-         g_rescue_lot_multiplier = 0.4;
-         g_rescue_max_lot = 0.15;
-         g_rescue_cooldown_bars = 50;
+         g_symbol_override = "XAUUSD";
+         Print("[Preset] Loading XAUUSD");
+         // g_spacing_mode = InpSpacingATR;
+         // g_spacing_pips = 10.0;
+         // g_spacing_atr_mult = 1.0;
+         // g_min_spacing_pips = 8.0;
+         // g_lot_base = 0.01;
+         // g_lot_offset = 0.0;
+         // g_target_cycle_usd = 15.0;
+         // g_min_delta_trigger = 0.05;
+         // g_rescue_lot_multiplier = 0.4;
+         // g_rescue_max_lot = 0.15;
+         // g_rescue_cooldown_bars = 50;
          break;
      }
   }
@@ -361,15 +509,23 @@ int OnInit()
   {
    BuildParams();
 
+   // Determine trading symbol: use override if preset selected, otherwise use chart symbol
+   string trading_symbol = (g_symbol_override != "") ? g_symbol_override : _Symbol;
+
+   if(g_symbol_override != "")
+     {
+      Print("[RGDv2] Using symbol override: ",g_symbol_override," (chart symbol: ",_Symbol,")");
+     }
+
    g_logger   = new CLogger(InpStatusInterval,InpLogEvents);
-   g_spacing  = new CSpacingEngine(_Symbol,g_params.spacing_mode,g_params.atr_period,g_params.atr_timeframe,g_params.spacing_atr_mult,g_params.spacing_pips,g_params.min_spacing_pips);
-   g_validator= new COrderValidator(_Symbol,g_params.respect_stops_level);
-   g_executor = new COrderExecutor(_Symbol,g_validator,g_params.slippage_pips,g_params.order_cooldown_sec);
+   g_spacing  = new CSpacingEngine(trading_symbol,g_params.spacing_mode,g_params.atr_period,g_params.atr_timeframe,g_params.spacing_atr_mult,g_params.spacing_pips,g_params.min_spacing_pips);
+   g_validator= new COrderValidator(trading_symbol,g_params.respect_stops_level);
+   g_executor = new COrderExecutor(trading_symbol,g_validator,g_params.slippage_pips,g_params.order_cooldown_sec);
    if(g_executor!=NULL)
       g_executor.SetMagic(g_params.magic);
    g_ledger   = new CPortfolioLedger(g_params.exposure_cap_lots,g_params.session_sl_usd);
-   g_rescue   = new CRescueEngine(_Symbol,g_params,g_logger);
-   g_controller = new CLifecycleController(_Symbol,g_params,g_spacing,g_executor,g_rescue,g_ledger,g_logger,g_params.magic);
+   g_rescue   = new CRescueEngine(trading_symbol,g_params,g_logger);
+   g_controller = new CLifecycleController(trading_symbol,g_params,g_spacing,g_executor,g_rescue,g_ledger,g_logger,g_params.magic);
 
    if(g_controller==NULL || !g_controller.Init())
      {
@@ -377,14 +533,14 @@ int OnInit()
          g_logger.Event("[RGDv2]","Controller init failed");
       return(INIT_FAILED);
      }
-   
+
    // Debug info
    if(g_logger!=NULL)
      {
-      double ask=SymbolInfoDouble(_Symbol,SYMBOL_ASK);
-      double bid=SymbolInfoDouble(_Symbol,SYMBOL_BID);
-      g_logger.Event("[RGDv2]",StringFormat("Init OK - Ask=%.5f Bid=%.5f LotBase=%.2f GridLevels=%d Dynamic=%s",
-                                            ask,bid,g_params.lot_base,g_params.grid_levels,
+      double ask=SymbolInfoDouble(trading_symbol,SYMBOL_ASK);
+      double bid=SymbolInfoDouble(trading_symbol,SYMBOL_BID);
+      g_logger.Event("[RGDv2]",StringFormat("Init OK - Symbol=%s Ask=%.5f Bid=%.5f LotBase=%.2f GridLevels=%d Dynamic=%s",
+                                            trading_symbol,ask,bid,g_params.lot_base,g_params.grid_levels,
                                             g_params.grid_dynamic_enabled?"ON":"OFF"));
      }
 
@@ -396,15 +552,18 @@ void OnTick()
    // Check if market is open
    MqlDateTime dt;
    TimeToStruct(TimeCurrent(),dt);
-   
+
    // Skip weekend
    if(dt.day_of_week==0 || dt.day_of_week==6)
       return;
-   
+
+   // Use trading symbol (override or chart symbol)
+   string trading_symbol = (g_symbol_override != "") ? g_symbol_override : _Symbol;
+
    // Check symbol trading allowed
-   if(!SymbolInfoInteger(_Symbol,SYMBOL_TRADE_MODE))
+   if(!SymbolInfoInteger(trading_symbol,SYMBOL_TRADE_MODE))
       return;
-      
+
    if(g_controller!=NULL)
       g_controller.Update();
   }
