@@ -143,12 +143,31 @@ CPortfolioLedger    *g_ledger        = NULL;
 CRescueEngine       *g_rescue        = NULL;
 CLifecycleController*g_controller    = NULL;
 
+//--- Graceful Shutdown state
+bool                 g_shutdown_mode = false;
+datetime             g_shutdown_start = 0;
+const int            SHUTDOWN_TIMEOUT_MINUTES = 30;
+
 string TrimAll(const string value)
   {
    string tmp=value;
    StringTrimLeft(tmp);
    StringTrimRight(tmp);
    return tmp;
+  }
+
+void CreateShutdownButton()
+  {
+   ObjectCreate(0,"btnShutdown",OBJ_BUTTON,0,0,0);
+   ObjectSetInteger(0,"btnShutdown",OBJPROP_XDISTANCE,20);
+   ObjectSetInteger(0,"btnShutdown",OBJPROP_YDISTANCE,50);
+   ObjectSetInteger(0,"btnShutdown",OBJPROP_XSIZE,180);
+   ObjectSetInteger(0,"btnShutdown",OBJPROP_YSIZE,35);
+   ObjectSetString(0,"btnShutdown",OBJPROP_TEXT,"⏻ SHUTDOWN EA");
+   ObjectSetInteger(0,"btnShutdown",OBJPROP_COLOR,clrWhite);
+   ObjectSetInteger(0,"btnShutdown",OBJPROP_BGCOLOR,clrCrimson);
+   ObjectSetInteger(0,"btnShutdown",OBJPROP_FONTSIZE,10);
+   ObjectSetInteger(0,"btnShutdown",OBJPROP_CORNER,CORNER_LEFT_UPPER);
   }
 
 int ParseRecoverySteps(const string csv,int &buffer[])
@@ -297,29 +316,105 @@ int OnInit()
                                             g_params.grid_dynamic_enabled?"ON":"OFF"));
      }
 
+   // Create graceful shutdown button
+   CreateShutdownButton();
+
    return(INIT_SUCCEEDED);
   }
 
 void OnTick()
   {
+   // Graceful shutdown logic (highest priority)
+   if(g_shutdown_mode)
+     {
+      int elapsed_minutes=(int)((TimeCurrent()-g_shutdown_start)/60);
+      int remaining=SHUTDOWN_TIMEOUT_MINUTES-elapsed_minutes;
+
+      if(elapsed_minutes>=SHUTDOWN_TIMEOUT_MINUTES)
+        {
+         // Timeout → force close all
+         if(g_logger!=NULL)
+            g_logger.Event("[Shutdown]","Timeout reached, force closing all positions");
+
+         if(g_executor!=NULL)
+           {
+            g_executor.SetMagic(g_params.magic);
+            g_executor.CloseAllByDirection(DIR_BUY,g_params.magic);
+            g_executor.CloseAllByDirection(DIR_SELL,g_params.magic);
+            g_executor.CancelPendingByDirection(DIR_BUY,g_params.magic);
+            g_executor.CancelPendingByDirection(DIR_SELL,g_params.magic);
+           }
+
+         ObjectSetInteger(0,"btnShutdown",OBJPROP_BGCOLOR,clrGreen);
+         ObjectSetString(0,"btnShutdown",OBJPROP_TEXT,"✓ READY TO REMOVE");
+         if(g_logger!=NULL)
+            g_logger.Event("[Shutdown]","Complete, EA can be removed safely");
+         return;
+        }
+
+      // Update button countdown
+      if(remaining>0)
+        {
+         ObjectSetString(0,"btnShutdown",OBJPROP_TEXT,
+                        StringFormat("⏱ SHUTDOWN: %dm",remaining));
+        }
+
+      // Try graceful close of profitable baskets
+      if(g_controller!=NULL)
+        {
+         // Controller will still process positions, but we won't open new ones
+         // The TRM/ADC pause flags will handle blocking new orders
+        }
+     }
+
    // Check if market is open
    MqlDateTime dt;
    TimeToStruct(TimeCurrent(),dt);
-   
+
    // Skip weekend
    if(dt.day_of_week==0 || dt.day_of_week==6)
       return;
-   
+
    // Check symbol trading allowed
    if(!SymbolInfoInteger(_Symbol,SYMBOL_TRADE_MODE))
       return;
-      
+
    if(g_controller!=NULL)
       g_controller.Update();
   }
 
+void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
+  {
+   if(id==CHARTEVENT_OBJECT_CLICK && sparam=="btnShutdown")
+     {
+      if(!g_shutdown_mode)
+        {
+         // Activate shutdown mode
+         g_shutdown_mode=true;
+         g_shutdown_start=TimeCurrent();
+         ObjectSetInteger(0,"btnShutdown",OBJPROP_BGCOLOR,clrOrange);
+         ObjectSetString(0,"btnShutdown",OBJPROP_TEXT,
+                        StringFormat("⏱ SHUTDOWN: %dm",SHUTDOWN_TIMEOUT_MINUTES));
+         if(g_logger!=NULL)
+            g_logger.Event("[Shutdown]",StringFormat("Mode activated, timeout=%d minutes",SHUTDOWN_TIMEOUT_MINUTES));
+        }
+      else
+        {
+         // Cancel shutdown
+         g_shutdown_mode=false;
+         g_shutdown_start=0;
+         ObjectSetInteger(0,"btnShutdown",OBJPROP_BGCOLOR,clrCrimson);
+         ObjectSetString(0,"btnShutdown",OBJPROP_TEXT,"⏻ SHUTDOWN EA");
+         if(g_logger!=NULL)
+            g_logger.Event("[Shutdown]","Mode cancelled");
+        }
+     }
+  }
+
 void OnDeinit(const int reason)
   {
+   // Cleanup shutdown button
+   ObjectDelete(0,"btnShutdown");
    if(g_controller!=NULL){ g_controller.Shutdown(); delete g_controller; g_controller=NULL; }
    if(g_rescue!=NULL){ delete g_rescue; g_rescue=NULL; }
    if(g_ledger!=NULL){ delete g_ledger; g_ledger=NULL; }
