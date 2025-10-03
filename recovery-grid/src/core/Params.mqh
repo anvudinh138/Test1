@@ -90,9 +90,15 @@ struct SParams
    int          trm_buffer_minutes;       // minutes before/after news event
    bool         trm_pause_orders;         // pause new orders during news
    bool         trm_tighten_sl;           // tighten SSL during news (requires ssl_enabled)
+   int          trm_tighten_sl_buffer;    // tighten SL only N minutes before news (not full buffer)
    double       trm_sl_multiplier;        // SL tightening factor (e.g. 0.5 = half distance)
-   bool         trm_close_on_news;        // close all positions before news window
+   bool         trm_close_on_news;        // close all positions before news window (legacy)
    string       trm_news_windows;         // CSV format: "HH:MM-HH:MM,HH:MM-HH:MM" (UTC) - FALLBACK ONLY
+
+   // TRM partial close
+   bool         trm_partial_close_enabled; // enable partial close (per-order logic)
+   double       trm_close_threshold;       // close if |PnL| > this (USD)
+   double       trm_keep_sl_distance;      // SL distance for kept losing orders (USD)
 
    // anti-drawdown cushion (ADC)
    bool         adc_enabled;              // master switch

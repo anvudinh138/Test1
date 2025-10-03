@@ -395,24 +395,148 @@ private:
 
    void              HandleNewsWindow()
      {
-      if(!IsNewsTime())
+      bool in_news_window = IsNewsTime();
+
+      // Resume trading when news window exits
+      if(!in_news_window && m_halted)
+        {
+         m_halted = false;
+         if(m_log != NULL)
+            m_log.Event(Tag(), "[TRM] News window ended - EA resumed");
          return;
+        }
+
+      if(!in_news_window)
+         return;
+
+      // === Partial Close (Simple Strategy) ===
+      if(m_params.trm_partial_close_enabled)
+        {
+         TrmPartialClose();
+         // Note: Don't halt EA, let remaining positions run
+         return;
+        }
+
+      // === Legacy: Close on news ===
       if(m_params.trm_close_on_news)
         {
-         if(m_log!=NULL)
-            m_log.Event(Tag(),"[TRM] Closing all positions (close_on_news=true)");
-         if(m_buy!=NULL && m_buy.IsActive())
+         if(m_log != NULL)
+            m_log.Event(Tag(), "[TRM] Closing all positions (legacy close_on_news=true)");
+
+         if(m_buy != NULL && m_buy.IsActive())
             m_buy.CloseBasket("TRM close_on_news");
-         if(m_sell!=NULL && m_sell.IsActive())
+         if(m_sell != NULL && m_sell.IsActive())
             m_sell.CloseBasket("TRM close_on_news");
-         m_halted=true;
+
+         m_halted = true;
          return;
         }
+
+      // === Tighten SL ===
       if(m_params.trm_tighten_sl && m_params.ssl_enabled)
         {
-         if(m_log!=NULL)
-            m_log.Event(Tag(),"[TRM] Tightening SL during news");
+         if(m_log != NULL)
+            m_log.Event(Tag(), "[TRM] Tightening SL during news window");
         }
+     }
+
+   void              TrmPartialClose()
+     {
+      // Per-order logic: Close big winners/losers, keep small ones with SL protection
+      // Logic:
+      //   PnL > $3 → Close (lock profit)
+      //   0 < PnL <= $3 → Keep + SL breakeven
+      //   -$3 <= PnL < 0 → Keep + SL -$6
+      //   PnL < -$3 → Close (cut loss)
+
+      if(m_executor == NULL)
+         return;
+
+      int total = PositionsTotal();
+      int closed_count = 0;
+      int kept_with_sl = 0;
+
+      for(int i = total - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+
+         if(PositionGetString(POSITION_SYMBOL) != m_symbol) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != m_magic) continue;
+
+         double pnl = PositionGetDouble(POSITION_PROFIT);
+         double entry_price = PositionGetDouble(POSITION_PRICE_OPEN);
+         double lot = PositionGetDouble(POSITION_VOLUME);
+         ENUM_POSITION_TYPE pos_type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+
+         // Decision tree
+         if(pnl > m_params.trm_close_threshold)
+           {
+            // Close big winner
+            m_executor.ClosePosition(ticket, "TRM-Partial big profit");
+            closed_count++;
+            if(m_log != NULL)
+               m_log.Event(Tag(), StringFormat("[TRM-Partial] Closed #%I64u (profit $%.2f > $%.2f)",
+                                              ticket, pnl, m_params.trm_close_threshold));
+           }
+         else if(pnl < -m_params.trm_close_threshold)
+           {
+            // Close big loser
+            m_executor.ClosePosition(ticket, "TRM-Partial big loss");
+            closed_count++;
+            if(m_log != NULL)
+               m_log.Event(Tag(), StringFormat("[TRM-Partial] Closed #%I64u (loss $%.2f < -$%.2f)",
+                                              ticket, pnl, m_params.trm_close_threshold));
+           }
+         else
+           {
+            // Keep position, set protective SL
+            double sl_price = 0.0;
+
+            if(pnl >= 0.0)
+              {
+               // Small profit → SL at breakeven
+               sl_price = entry_price;
+              }
+            else
+              {
+               // Small loss → SL at -$6
+               // Calculate SL price from USD distance
+               double point = SymbolInfoDouble(m_symbol, SYMBOL_POINT);
+               double tick_value = SymbolInfoDouble(m_symbol, SYMBOL_TRADE_TICK_VALUE);
+               double tick_size = SymbolInfoDouble(m_symbol, SYMBOL_TRADE_TICK_SIZE);
+
+               if(tick_value > 0 && lot > 0)
+                 {
+                  double point_value = (tick_value / tick_size) * point;
+                  double sl_distance_points = m_params.trm_keep_sl_distance / (point_value * lot);
+
+                  if(pos_type == POSITION_TYPE_BUY)
+                     sl_price = entry_price - sl_distance_points * point;
+                  else
+                     sl_price = entry_price + sl_distance_points * point;
+                 }
+               else
+                 {
+                  sl_price = entry_price;  // Fallback to breakeven
+                 }
+              }
+
+            // Modify SL
+            if(sl_price > 0)
+              {
+               m_executor.ModifyPosition(ticket, sl_price, 0.0);
+               kept_with_sl++;
+               if(m_log != NULL)
+                  m_log.Event(Tag(), StringFormat("[TRM-Partial] Keep #%I64u (PnL=$%.2f) SL=%.5f",
+                                                 ticket, pnl, sl_price));
+              }
+           }
+        }
+
+      if(m_log != NULL)
+         m_log.Event(Tag(), StringFormat("[TRM-Partial] Summary: Closed=%d, Kept+SL=%d",
+                                        closed_count, kept_with_sl));
      }
 
 public:

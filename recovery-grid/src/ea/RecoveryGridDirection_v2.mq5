@@ -130,8 +130,14 @@ input int               InpTrmBufferMinutes        = 30;     // Minutes before/a
 input string            InpTrmNewsWindows          = "08:30-09:00,14:00-14:30";  // CSV format HH:MM-HH:MM (UTC) - FALLBACK ONLY
 input bool              InpTrmPauseOrders          = true;   // Pause new orders during news
 input bool              InpTrmTightenSL            = false;  // Tighten SSL during news (requires SSL)
+input int               InpTrmTightenSLBuffer      = 5;      // Tighten SL only N minutes before news (not full buffer)
 input double            InpTrmSLMultiplier         = 0.5;    // SL tightening factor (0.5 = half distance)
-input bool              InpTrmCloseOnNews          = false;  // Close all positions before news window
+input bool              InpTrmCloseOnNews          = false;  // Close all positions before news window (legacy)
+
+input group "=== TRM Partial Close (Simple & Smart) ==="
+input bool              InpTrmPartialCloseEnabled  = false;  // ✅ Enable partial close (per-order logic)
+input double            InpTrmCloseThreshold       = 3.0;    // Close if |PnL| > this (USD, both profit/loss)
+input double            InpTrmKeepSLDistance       = 6.0;    // SL distance for kept losing orders (USD)
 
 input group "=== Anti-Drawdown Cushion (ADC) ==="
 input bool              InpAdcEnabled              = true;  // Master switch (DEFAULT OFF)
@@ -476,9 +482,14 @@ void BuildParams()
    g_params.trm_buffer_minutes     =InpTrmBufferMinutes;
    g_params.trm_pause_orders       =InpTrmPauseOrders;
    g_params.trm_tighten_sl         =InpTrmTightenSL;
+   g_params.trm_tighten_sl_buffer  =InpTrmTightenSLBuffer;
    g_params.trm_sl_multiplier      =InpTrmSLMultiplier;
    g_params.trm_close_on_news      =InpTrmCloseOnNews;
    g_params.trm_news_windows       =InpTrmNewsWindows;
+
+   g_params.trm_partial_close_enabled=InpTrmPartialCloseEnabled;
+   g_params.trm_close_threshold     =InpTrmCloseThreshold;
+   g_params.trm_keep_sl_distance    =InpTrmKeepSLDistance;
 
    g_params.adc_enabled            =InpAdcEnabled;
    g_params.adc_equity_dd_threshold=InpAdcEquityDdThreshold;

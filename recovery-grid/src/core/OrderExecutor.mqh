@@ -123,6 +123,18 @@ public:
       return false;
      }
 
+   bool              ModifyPosition(const ulong ticket, const double sl, const double tp)
+     {
+      if(!PositionSelectByTicket(ticket))
+         return false;
+      if(!Ready())
+         return false;
+      bool ok = m_trade.PositionModify(ticket, sl, tp);
+      if(ok && TrackResult())
+         return true;
+      return false;
+     }
+
    void              CloseAllByDirection(const EDirection dir,const long magic)
      {
       int total=(int)PositionsTotal();
