@@ -21,6 +21,11 @@ struct SParams
    int          grid_levels;        // number of levels including market seed
    double       lot_base;
    double       lot_offset;         // linear lot increment (e.g., 0.01)
+
+   // lot % risk
+   bool         lot_percent_enabled;     // enable lot % risk calculation
+   double       lot_percent_risk;        // % of account balance to risk per grid level
+   double       lot_percent_max_lot;     // max lot size when using % risk
    
    // dynamic grid
    bool         grid_dynamic_enabled;

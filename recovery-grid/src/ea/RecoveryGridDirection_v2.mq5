@@ -70,7 +70,12 @@ input int               InpMaxPendings      = 15;    // Max pending orders per b
 
 input group "=== Lot Sizing ==="
 input double            InpLotBase          = 0.01;  // First grid level lot
-input double            InpLotOffset        = 0.01;  // Linear increment per level
+input double            InpLotOffset        = 0.02;  // Linear increment per level
+
+input group "=== Lot % Risk (Auto Lot Sizing) ==="
+input bool              InpLotPercentEnabled = false;  // ✅ Enable lot % risk calculation
+input double            InpLotPercentRisk    = 1.0;    // % of account balance to risk per level
+input double            InpLotPercentMaxLot  = 1.0;    // Max lot size cap for % risk
 
 input group "=== Take Profit & TSL ==="
 input double            InpTargetCycleUSD   = 5.0;   // Group TP target (USD)
@@ -79,10 +84,9 @@ input int               InpTSLStartPoints   = 1000;  // TSL activation threshold
 input int               InpTSLStepPoints    = 200;   // TSL step size
 
 input group "=== Rescue/Hedge System v3 (Delta + Cooldown) ==="
-input string            InpRecoverySteps       = "1000,2000,3000";  // Staged limit offsets (points)
 input bool              InpRescueAdaptiveLot   = true;   // ✅ Enable delta-based rescue
 input double            InpMinDeltaTrigger     = 0.02;   // Min imbalance to trigger (lot)
-input double            InpRescueLotMultiplier = 0.6;    // Delta multiplier (1.0 = 100%)
+input double            InpRescueLotMultiplier = 1;    // Delta multiplier (1.0 = 100%)
 input double            InpRescueMaxLot        = 0.1;   // Max per rescue deployment
 input int               InpRescueCooldownBars  = 3;      // Bars between rescues (anti-spam)
 
@@ -171,29 +175,6 @@ string TrimAll(const string value)
    StringTrimLeft(tmp);
    StringTrimRight(tmp);
    return tmp;
-  }
-
-int ParseRecoverySteps(const string csv,int &buffer[])
-  {
-   if(StringLen(csv)==0)
-     {
-      ArrayResize(buffer,0);
-      return 0;
-     }
-   string parts[];
-   int count=StringSplit(csv,',',parts);
-   if(count<=0)
-     {
-      ArrayResize(buffer,0);
-      return 0;
-     }
-   ArrayResize(buffer,count);
-   for(int i=0;i<count;i++)
-     {
-      string trimmed=TrimAll(parts[i]);
-      buffer[i]=(int)StringToInteger(trimmed);
-     }
-   return count;
   }
 
 SymbolPresetEnum DetectSymbolPreset(const string symbol)
@@ -438,6 +419,10 @@ void BuildParams()
    g_params.lot_base           =g_lot_base;
    g_params.lot_offset         =g_lot_offset;
 
+   g_params.lot_percent_enabled =InpLotPercentEnabled;
+   g_params.lot_percent_risk    =InpLotPercentRisk;
+   g_params.lot_percent_max_lot =InpLotPercentMaxLot;
+
    g_params.grid_dynamic_enabled=InpDynamicGrid;
    g_params.grid_warm_levels   =InpWarmLevels;
    g_params.grid_refill_threshold=InpRefillThreshold;
@@ -450,7 +435,6 @@ void BuildParams()
    g_params.tsl_start_points   =InpTSLStartPoints;
    g_params.tsl_step_points    =InpTSLStepPoints;
 
-   ParseRecoverySteps(InpRecoverySteps,g_params.recovery_steps);
    g_params.rescue_adaptive_lot    =InpRescueAdaptiveLot;
    g_params.min_delta_trigger      =g_min_delta_trigger;
    g_params.rescue_lot_multiplier  =g_rescue_lot_multiplier;

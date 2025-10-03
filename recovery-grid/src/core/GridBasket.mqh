@@ -98,9 +98,42 @@ private:
 
    double         LevelLot(const int idx) const
      {
-      // Linear lot scaling: lot = base + (offset × level)
-      // Example: base=0.01, offset=0.01 → level 0: 0.01, level 1: 0.02, level 2: 0.03
-      double result = m_params.lot_base + (m_params.lot_offset * idx);
+      double result = 0.0;
+
+      // Lot % Risk: Calculate lot based on % of account balance
+      if(m_params.lot_percent_enabled)
+        {
+         double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+         double risk_amount = balance * (m_params.lot_percent_risk / 100.0);
+
+         // Get symbol info for calculation
+         double tick_value = SymbolInfoDouble(m_symbol, SYMBOL_TRADE_TICK_VALUE);
+         double point_value = SymbolInfoDouble(m_symbol, SYMBOL_TRADE_TICK_VALUE) / SymbolInfoDouble(m_symbol, SYMBOL_TRADE_TICK_SIZE) * _Point;
+
+         // Use stored spacing (pips to points conversion)
+         // If not initialized yet, fall back to params
+         double spacing_points = (m_initial_spacing_pips > 0) ? m_initial_spacing_pips * 10.0 : m_params.spacing_pips * 10.0;
+
+         if(point_value > 0 && spacing_points > 0)
+           {
+            result = risk_amount / (point_value * spacing_points);
+
+            // Apply max lot cap
+            if(result > m_params.lot_percent_max_lot)
+               result = m_params.lot_percent_max_lot;
+           }
+         else
+           {
+            result = m_params.lot_base; // Fallback to base lot
+           }
+        }
+      else
+        {
+         // Linear lot scaling: lot = base + (offset × level)
+         // Example: base=0.01, offset=0.01 → level 0: 0.01, level 1: 0.02, level 2: 0.03
+         result = m_params.lot_base + (m_params.lot_offset * idx);
+        }
+
       return NormalizeVolumeValue(result);
      }
 
@@ -762,43 +795,21 @@ public:
       if(m_executor==NULL)
          return;
       m_executor.SetMagic(m_magic);
-      int pendings=1+ArraySize(m_params.recovery_steps);
-      if(pendings<1)
-         pendings=1;
-      m_executor.BypassNext(pendings);
+
+      // Rescue v3: ONLY market order, NO staged limits
+      // Reason: Delta-based continuous rebalancing doesn't need staged limits
+      // Each rescue deployment = 1 market order matching current delta
+      m_executor.BypassNext(1);
       double normalized_lot=NormalizeVolumeValue(rescue_lot);
       if(normalized_lot<=0.0)
          return;
-      m_executor.Market(m_direction,normalized_lot,"RGDv2_RescueSeed");
-      double point=SymbolInfoDouble(m_symbol,SYMBOL_POINT);
-      if(point<=0.0)
-         point=_Point;
-      double updated_last=m_last_grid_price;
-      if(m_direction==DIR_BUY)
-        {
-         for(int i=0;i<ArraySize(m_params.recovery_steps);i++)
-           {
-            double level=price-m_params.recovery_steps[i]*point;
-            ulong ticket=m_executor.Limit(DIR_BUY,level,normalized_lot,"RGDv2_RescueGrid");
-            if(ticket>0 && (updated_last==0.0 || level<updated_last))
-               updated_last=level;
-           }
-        }
-      else
-        {
-         for(int i=0;i<ArraySize(m_params.recovery_steps);i++)
-           {
-            double level=price+m_params.recovery_steps[i]*point;
-            ulong ticket=m_executor.Limit(DIR_SELL,level,normalized_lot,"RGDv2_RescueGrid");
-            if(ticket>0 && (updated_last==0.0 || level>updated_last))
-               updated_last=level;
-           }
-        }
-      if(updated_last!=0.0)
-         m_last_grid_price=updated_last;
+
+      // Deploy single market order
+      ulong ticket=m_executor.Market(m_direction,normalized_lot,"RGDv2_RescueSeed");
+
       RefreshState();
       if(m_log!=NULL)
-         m_log.Event(Tag(),"Rescue layer deployed");
+         m_log.Event(Tag(),StringFormat("Rescue deployed: %.2f lot (delta-based)",normalized_lot));
      }
 
    CGridBasket(const string symbol,

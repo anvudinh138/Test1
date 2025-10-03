@@ -1,8 +1,8 @@
-input double            InpMinDeltaTrigger     = 0.01;   // Min imbalance to trigger (lot)
-input double            InpRescueLotMultiplier = 0.3;    // Delta multiplier (1.0 = 100%)
-input double            InpRescueMaxLot        = 0.2;   // Max per rescue deployment
-input int               InpRescueCooldownBars  = 4;      // Bars between rescues (anti-spam)
-input double            InpTargetCycleUSD   = 3;   // Group TP target (USD)
-input double            InpLotOffset        = 0;  // Linear increment per level
-input double            InpSpacingAtrMult   = 1.5;   // ATR/HYBRID: ATR multiplier
-input double            InpMinSpacingPips   = 12;   // ATR/HYBRID: Min spacing floor
+            InpMinDeltaTrigger     = 0.01   
+            InpRescueLotMultiplier = 0.3    
+            InpRescueMaxLot        = 0.2;   
+                      InpRescueCooldownBars  = 4;   
+            InpTargetCycleUSD   = 3;     
+            InpLotOffset        = 0; 
+            InpSpacingAtrMult   = 1.5;   
+            InpMinSpacingPips   = 12;   
