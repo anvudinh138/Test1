@@ -35,30 +35,32 @@ input long              InpMagic            = 990045;  // ⚠️ CHANGE THIS for
 input int               InpStatusInterval   = 60;
 input bool              InpLogEvents        = true;
 
-input ENUM_TIMEFRAMES InpAtrTimeframe       = PERIOD_M15;
-input int             InpAtrPeriod          = 14;
-
+input group "=== Grid Configuration ==="
 enum InpSpacingModeEnum { InpSpacingPips=0, InpSpacingATR=1, InpSpacingHybrid=2 };
-input InpSpacingModeEnum InpSpacingMode     = InpSpacingHybrid;
-input double            InpSpacingStepPips  = 8.0;   // Default for Forex majors (EURUSD, GBPUSD, etc.)
-input double            InpSpacingAtrMult   = 0.8;   // Default for Forex majors
-input double            InpMinSpacingPips   = 5.0;   // Default for Forex majors
+input InpSpacingModeEnum InpSpacingMode     = InpSpacingHybrid;  // Grid spacing method
+input double            InpSpacingStepPips  = 8.0;   // PIPS mode: Fixed step
+input double            InpSpacingAtrMult   = 0.8;   // ATR/HYBRID: ATR multiplier
+input double            InpMinSpacingPips   = 5.0;   // ATR/HYBRID: Min spacing floor
 
-input int               InpGridLevels       = 1000;
-input double            InpLotBase          = 0.01;
-input double            InpLotOffset        = 0.01;  // Linear lot increment
+input ENUM_TIMEFRAMES InpAtrTimeframe       = PERIOD_M15;  // ATR calculation timeframe
+input int             InpAtrPeriod          = 14;          // ATR period
 
-input bool              InpDynamicGrid      = true;
-input int               InpWarmLevels       = 5;
-input int               InpRefillThreshold  = 2;
-input int               InpRefillBatch      = 3;
-input int               InpMaxPendings      = 15;
+input int               InpGridLevels       = 1000;  // Max grid levels (high = infinite)
+input bool              InpDynamicGrid      = true;  // ✅ Dynamic refill (recommended)
+input int               InpWarmLevels       = 5;     // Initial pendings per basket
+input int               InpRefillThreshold  = 2;     // Refill when pendings drop to this
+input int               InpRefillBatch      = 3;     // Add this many pendings per refill
+input int               InpMaxPendings      = 15;    // Max pending orders per basket
 
-input double            InpTargetCycleUSD   = 5.0;
+input group "=== Lot Sizing ==="
+input double            InpLotBase          = 0.01;  // First grid level lot
+input double            InpLotOffset        = 0.01;  // Linear increment per level
 
-input bool              InpTSLEnabled       = true;
-input int               InpTSLStartPoints   = 1000;
-input int               InpTSLStepPoints    = 200;
+input group "=== Take Profit & TSL ==="
+input double            InpTargetCycleUSD   = 5.0;   // Group TP target (USD)
+input bool              InpTSLEnabled       = true;  // ✅ Enable TSL on rescue hedge
+input int               InpTSLStartPoints   = 1000;  // TSL activation threshold
+input int               InpTSLStepPoints    = 200;   // TSL step size
 
 input group "=== Rescue/Hedge System v3 (Delta + Cooldown) ==="
 input string            InpRecoverySteps       = "1000,2000,3000";  // Staged limit offsets (points)
