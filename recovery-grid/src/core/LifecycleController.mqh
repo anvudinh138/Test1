@@ -803,11 +803,16 @@ public:
          m_adc_cushion_active=is_cushion;
         }
 
+      // Multi-Job v3.0: Session SL moved to JobManager level
+      // Each job calling this would cause duplicate flatten → DISABLED here
+      // JobManager now handles global Session SL check
+      /*
       if(m_ledger!=NULL && m_ledger.SessionRiskBreached())
         {
          FlattenAll("Session SL");
          return;
         }
+      */
 
       // Check equity DD for grid pause (BEFORE basket updates)
       // Pause grid expansion when DD reaches threshold (similar to ADC but for grid only)

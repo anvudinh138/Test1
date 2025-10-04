@@ -572,6 +572,27 @@ public:
      {
       // Phase 2 & 3: Full job management loop
 
+      // CRITICAL: Check GLOBAL Session SL FIRST (before any job updates)
+      // This prevents multiple jobs from all calling FlattenAll() simultaneously
+      if(m_ledger != NULL && m_ledger.SessionRiskBreached())
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), "[GLOBAL] Session SL breached - stopping ALL jobs (no new spawns)");
+
+         // Stop all active jobs (no spawn after Session SL)
+         for(int i = 0; i < ArraySize(m_jobs); i++)
+           {
+            if(m_jobs[i].status == JOB_ACTIVE && m_jobs[i].controller != NULL)
+              {
+               m_jobs[i].controller.FlattenAllPublic("Session SL");
+               m_jobs[i].status = JOB_STOPPED;
+              }
+           }
+
+         // HALT: Do not spawn new jobs after Session SL
+         return;
+        }
+
       // FIRST: Check spawn trigger and close OLD job BEFORE it accumulates too much loss
       int newest_idx = GetNewestJobIndex();
       if(newest_idx >= 0 && m_jobs[newest_idx].status == JOB_ACTIVE)
