@@ -1,0 +1,111 @@
+; Multi-Job System v3.0 - GOLD (XAUUSD) Optimized
+; Preset: XAUUSD Specific Settings
+; Target: PF 2.0+, Max DD <20%
+; Symbol: XAUUSD (Gold)
+; Timeframe: M5 or M15
+; IMPORTANT: Gold has different lot rules than forex!
+
+; === Symbol Preset ===
+InpSymbolPreset=9||0||9||PRESET_CUSTOM||N
+InpSpacingAtrMult=2.0||0.1||2.0||WIDER spacing for Gold volatility||N
+InpLotBase=0.01||0.01||0.01||MINIMUM lot for XAUUSD||N
+InpLotOffset=0.0||0.0||0.0||No offset||N
+InpTargetCycleUSD=20.0||1.0||20.0||Higher TP for Gold||N
+InpMinDeltaTrigger=0.01||0.01||0.01||Rescue delta (0.01 step only)||N
+InpRescueLotMultiplier=1.0||0.1||1.0||No multiplier (0.01 fixed)||N
+InpRescueMaxLot=0.01||0.01||0.01||Max 0.01 lot rescue||N
+InpRescueCooldownBars=10||1||10||Rescue cooldown||N
+
+; === Grid Settings ===
+InpGridLevels=5||1||5||FEWER levels for Gold||N
+InpSpacingMode=1||0||1||SPACING_ATR (better for Gold)||N
+InpSpacingPips=50||10||50||Wide spacing (Gold moves fast)||N
+InpATRPeriod=14||1||14||ATR period||N
+InpATRTimeframe=16388||0||16388||PERIOD_M15||N
+
+; === Lot Settings ===
+InpLotScale=1.0||0.1||1.0||FLAT lot only (critical for Gold)||N
+
+; === Multi-Job v3.0 ===
+InpMultiJobEnabled=true||0||1||Multi-job ON||N
+InpMaxJobs=2||1||2||Max 2 jobs (Gold is volatile)||N
+InpSpawnCooldownSec=30||1||30||SHORT cooldown for Gold||N
+InpGlobalDDLimit=30.0||1.0||30.0||Global DD limit||N
+
+; === Job Risk Management ===
+InpJobSL_USD=100.0||1.0||100.0||Higher job SL for Gold||N
+InpJobDDThreshold=35.0||1.0||35.0||Abandon at 35% DD||N
+
+; === Profit Optimization Phase 4 ===
+; Smart Close
+InpSmartCloseEnabled=true||0||1||Smart close ON||N
+InpMinProfitToClose=5.0||0.1||5.0||Higher min profit for Gold||N
+InpJobTPUSD=25.0||1.0||25.0||Higher job TP||N
+InpJobTrailStartUSD=15.0||0.5||15.0||Trail starts higher||N
+InpJobTrailStepUSD=5.0||0.5||5.0||Larger trail step||N
+
+; Range Detection - DISABLED for Gold (too volatile)
+InpRangeDetectEnabled=false||0||0||OFF for Gold||N
+InpRangeATRPeriod=14||1||14||N/A||N
+InpRangeThreshold=0.5||0.1||0.5||N/A||N
+InpTrendThreshold=1.5||0.1||1.5||N/A||N
+InpRangeLookbackBars=50||10||50||N/A||N
+InpRangeTightSpacing=0.5||0.1||0.5||N/A||N
+InpRangeLotMultiplier=1.0||0.5||1.0||N/A (keep 1.0)||N
+InpRangeTPMultiplier=1.0||0.1||1.0||N/A (keep 1.0)||N
+
+; Profit Acceleration - DISABLED (lot step issue)
+InpProfitAccelEnabled=false||0||0||OFF for Gold (lot step)||N
+InpBoosterThreshold=10.0||1.0||10.0||N/A||N
+InpBoosterLotMultiplier=1.0||0.5||1.0||N/A||N
+InpMaxBoosters=0||0||0||No boosters||N
+
+; === Magic Numbers ===
+InpMagicStart=3000||1000||3000||Different magic for Gold||N
+InpMagicOffset=600||1||600||Larger offset||N
+
+; === Risk Management ===
+InpExposureCapLots=0.5||0.01||0.5||LOWER exposure for Gold||N
+InpSessionSL_USD=200.0||10.0||200.0||HIGHER session SL for Gold||N
+InpDDPauseGridThreshold=20.0||1.0||20.0||Pause at 20% DD||N
+
+; === Group TP & TSL ===
+InpTPEnabled=true||0||1||TP ON||N
+InpTSLEnabled=true||0||1||TSL ON||N
+InpTSLStartPoints=2000||100||2000||Higher TSL for Gold||N
+InpTSLStepPoints=1000||50||1000||Larger steps||N
+
+; === SSL Protection ===
+InpSSLEnabled=false||0||0||SSL OFF||N
+
+; === ADC ===
+InpADCEnabled=false||0||0||ADC OFF||N
+
+; === TRM (Time Risk Management) ===
+InpTRMEnabled=true||0||1||TRM ON (important for Gold news)||N
+InpTRMUseAPINews=false||0||0||No API||N
+InpTRMImpactFilter=3||1||3||HIGH impact only||N
+InpTRMBufferMinutes=60||5||60||1-hour buffer for Gold news||N
+
+; === Partial Close ===
+InpPCEnabled=false||0||0||PC OFF||N
+
+; === Dynamic Grid ===
+InpDynamicGrid=true||0||1||DG ON||N
+InpWarmLevels=3||1||3||Fewer warm levels||N
+
+; === Rescue v3 ===
+InpRescueEnabled=false||0||0||RESCUE OFF for Gold (lot step issue)||N
+InpRescueMaxDeployments=0||1||0||No rescue||N
+
+; === Advanced ===
+InpSlippagePips=10||1||10||More slippage for Gold||N
+InpRespectStops=false||0||0||No stops limit||N
+
+; === Logging ===
+InpLogEvents=true||0||1||Logging ON||N
+InpStatusInterval=60||5||60||1-min status||N
+
+; === Features ===
+InpPreserveOnTfSwitch=true||0||1||Preserve ON||N
+InpMcdEnabled=true||0||1||MCD ON||N
