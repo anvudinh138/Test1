@@ -1050,6 +1050,12 @@ public:
       return grid_full;
      }
 
+   // Multi-Job v3.0: Public wrapper for FlattenAll (JobManager needs access)
+   void FlattenAllPublic(const string reason)
+     {
+      FlattenAll(reason);
+     }
+
    void              Shutdown()
      {
       if(m_buy!=NULL)
