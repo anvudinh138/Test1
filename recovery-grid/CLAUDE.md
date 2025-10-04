@@ -193,6 +193,47 @@ if(had_positions && now_no_positions) {
 
 ---
 
+### Session: 2025-10-04 (Profit Optimization Phase 4) - COMPLETE
+
+**Problem**: System losing money with PF 0.66 despite 83% win rate
+- Average Win: $8 (too small)
+- Average Loss: $25 (3x average win!)
+- Closing jobs at worst time (grid full = max drawdown)
+
+**Solution**: Comprehensive Profit Optimization System
+1. **Smart Close Logic** - Only close profitable jobs at grid full
+2. **Job TP & Trailing** - Profit targets and trailing stops per job
+3. **Range Detection** - Adapt to market conditions dynamically
+4. **Profit Acceleration** - Add booster positions when winning
+5. **Testing Guide** - Systematic validation approach
+
+**Implementation Complete**:
+- [x] Smart Close Logic - Don't close losing jobs
+- [x] Job TP System - $10 target with $5/$2 trailing
+- [x] Range Detector - ATR-based market classification
+- [x] Market Adaptation - Dynamic spacing/lots/levels per job
+- [x] Profit Acceleration - Booster positions on winners
+- [x] Comprehensive testing guide with 6 configurations
+
+**Files Modified**:
+- JobManager.mqh (smart close, TP, trailing, acceleration)
+- LifecycleController.mqh (booster support)
+- RangeDetector.mqh (NEW - market analysis)
+- Types.mqh (EMarketCondition enum)
+- RecoveryGridDirection_v2.mq5 (20+ new inputs)
+
+**Documents Created**:
+- PROFIT_OPTIMIZATION_SYSTEM.md (full design)
+- TESTING_PROFIT_OPTIMIZATION.md (testing guide)
+
+**Expected Results**:
+- Profit Factor: 0.66 → **2.0+**
+- Average Win: $8 → **$20+**
+- Average Loss: $25 → **<$15**
+- Recovery Factor: -0.91 → **3.0+**
+
+---
+
 ### Session: 2025-10-04 (Multi-Job System v3.0) - PHASE 1 + 2 + 3 COMPLETE
 
 **Problem**: Strong trends cause "slow bubble burst"
