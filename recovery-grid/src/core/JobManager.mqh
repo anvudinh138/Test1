@@ -303,7 +303,7 @@ public:
 
          // Log market adaptation
          if(m_log != NULL)
-            m_log.Info(Tag(), StringFormat("Job %d spawned in %s market: Spacing=%.1fx, Lot=%.1fx, TP=$%.2f, Levels=%d",
+            m_log.Event(Tag(), StringFormat("Job %d spawned in %s market: Spacing=%.1fx, Lot=%.1fx, TP=$%.2f, Levels=%d",
                                         job_id,
                                         m_range_detector.ConditionToString(job.market_condition),
                                         job.grid_spacing_mult,
@@ -543,7 +543,7 @@ public:
          m_jobs[job_index].profit_target_usd *= 0.7;
 
          if(m_log != NULL)
-            m_log.Info(Tag(), StringFormat("[ACCEL] Job %d added booster #%d: %s %.2f lot at %.5f (PnL=%.2f)",
+            m_log.Event(Tag(), StringFormat("[ACCEL] Job %d added booster #%d: %s %.2f lot at %.5f (PnL=%.2f)",
                                         m_jobs[job_index].job_id, m_jobs[job_index].booster_count,
                                         (winning_dir == DIR_BUY) ? "BUY" : "SELL",
                                         booster_lot, price, m_jobs[job_index].unrealized_pnl));

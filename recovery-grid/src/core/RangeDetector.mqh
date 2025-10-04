@@ -144,7 +144,7 @@ bool CRangeDetector::Init(string symbol, ENUM_TIMEFRAMES tf, const SRangeParams 
    m_atr_handle = iATR(m_symbol, m_timeframe, m_params.atr_period);
    if(m_atr_handle == INVALID_HANDLE)
      {
-      if(m_logger) m_logger.Error("[RangeDetector]", "Failed to create ATR indicator");
+      if(m_logger) m_logger.Event("[RangeDetector]", "ERROR: Failed to create ATR indicator");
       return false;
      }
 
@@ -154,7 +154,7 @@ bool CRangeDetector::Init(string symbol, ENUM_TIMEFRAMES tf, const SRangeParams 
    ArrayResize(m_closes, m_params.lookback_bars);
 
    if(m_logger)
-      m_logger.Info("[RangeDetector]", StringFormat("Initialized for %s %s, ATR=%d, Lookback=%d",
+      m_logger.Event("[RangeDetector]", StringFormat("Initialized for %s %s, ATR=%d, Lookback=%d",
                     m_symbol, EnumToString(m_timeframe), m_params.atr_period, m_params.lookback_bars));
 
    return true;
@@ -306,7 +306,7 @@ bool CRangeDetector::Update()
    // Load latest price data
    if(!LoadPriceData())
      {
-      if(m_logger) m_logger.Error("[RangeDetector]", "Failed to load price data");
+      if(m_logger) m_logger.Event("[RangeDetector]", "ERROR: Failed to load price data");
       return false;
      }
 
@@ -321,7 +321,7 @@ bool CRangeDetector::Update()
    if(m_info.condition != last_condition)
      {
       if(m_logger)
-         m_logger.Info("[RangeDetector]", StringFormat("Market changed: %s → %s (Bounces=%d, ATR=%.5f)",
+         m_logger.Event("[RangeDetector]", StringFormat("Market changed: %s → %s (Bounces=%d, ATR=%.5f)",
                        ConditionToString(last_condition),
                        ConditionToString(m_info.condition),
                        m_info.bounce_count,

@@ -572,7 +572,7 @@ int OnInit()
            {
             delete g_range_detector;
             g_range_detector = NULL;
-            if(g_logger) g_logger.Error(Tag(), "Failed to initialize range detector");
+            if(g_logger) g_logger.Event("[RGDv2]", "Failed to initialize range detector");
            }
         }
      }

@@ -1091,9 +1091,9 @@ public:
 
          // Force basket refresh to include new position
          if(dir == DIR_BUY && m_buy != NULL)
-            m_buy.RefreshState();
+            m_buy.RefreshStatePublic();
          else if(dir == DIR_SELL && m_sell != NULL)
-            m_sell.RefreshState();
+            m_sell.RefreshStatePublic();
 
          return true;
         }

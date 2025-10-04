@@ -1163,6 +1163,9 @@ public:
    void           SetKind(const EBasketKind kind) { m_kind=kind; }
    int            PendingCount() const { return m_pending_count; }
 
+   // Phase 4: Public wrapper for RefreshState (needed by booster logic)
+   void           RefreshStatePublic() { RefreshState(); }
+
    // Multi-Job v3.0: Spawn trigger helpers
    int GetActivePositionCount() const
      {
