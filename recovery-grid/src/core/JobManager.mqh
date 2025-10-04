@@ -714,6 +714,13 @@ public:
          if(ShouldStopJob(i))
            {
             StopJob(m_jobs[i].job_id, StringFormat("SL hit: %.2f USD", m_jobs[i].unrealized_pnl));
+
+            // CRITICAL: Spawn new job after SL (like we do for TP)
+            // Don't leave EA idle after one job fails!
+            if(m_log != NULL)
+               m_log.Event(Tag(), StringFormat("[RESPAWN] Job %d hit SL, spawning replacement job", m_jobs[i].job_id));
+            SpawnJob();
+
             continue;
            }
 
