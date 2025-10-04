@@ -7,6 +7,9 @@
 
 #include "Types.mqh"
 #include "Params.mqh"
+#include "SpacingEngine.mqh"
+#include "OrderExecutor.mqh"
+#include "RescueEngine.mqh"
 #include "LifecycleController.mqh"
 #include "PortfolioLedger.mqh"
 #include "Logger.mqh"
@@ -79,6 +82,11 @@ private:
    string            m_symbol;              // Trading symbol
    SParams           m_params;              // Strategy parameters
 
+   // Shared resources (all jobs use same instances)
+   CSpacingEngine   *m_spacing;             // Spacing calculator
+   COrderExecutor   *m_executor;            // Order executor
+   CRescueEngine    *m_rescue;              // Rescue engine
+
    // Helpers
    string            Tag() const { return StringFormat("[RGDv3][%s][JobMgr]", m_symbol); }
 
@@ -90,6 +98,9 @@ public:
                const long magic_offset,
                const int max_jobs,
                const double global_dd_limit,
+               CSpacingEngine *spacing,
+               COrderExecutor *executor,
+               CRescueEngine *rescue,
                CPortfolioLedger *ledger,
                CLogger *logger)
       : m_symbol(symbol),
@@ -98,6 +109,9 @@ public:
         m_magic_offset(magic_offset),
         m_max_jobs(max_jobs),
         m_global_dd_limit(global_dd_limit),
+        m_spacing(spacing),
+        m_executor(executor),
+        m_rescue(rescue),
         m_ledger(ledger),
         m_log(logger),
         m_next_job_id(1)  // Start from 1
@@ -179,10 +193,29 @@ public:
       job.job_sl_usd = m_params.session_sl_usd;  // Use session SL as job SL (for now)
       job.job_dd_threshold = 30.0;  // Hardcoded for now (TODO: make input)
 
-      // TODO: Create lifecycle controller with job magic & job_id
-      // job.controller = new CLifecycleController(...);
-      // For now, set NULL (will implement in Step 5)
-      job.controller = NULL;
+      // Create lifecycle controller with job magic & job_id
+      job.controller = new CLifecycleController(
+         m_symbol,
+         m_params,
+         m_spacing,
+         m_executor,
+         m_rescue,
+         m_ledger,
+         m_log,
+         job_magic,
+         job_id
+      );
+
+      // Initialize the controller
+      if(job.controller != NULL && !job.controller.Init())
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("Job %d failed to initialize", job_id));
+
+         delete job.controller;
+         job.controller = NULL;
+         return -1;
+        }
 
       // Add to array
       int new_size = ArraySize(m_jobs) + 1;
@@ -205,7 +238,8 @@ public:
 
       if(job.controller != NULL)
         {
-         // TODO: job.controller.CloseAll(reason);
+         // Close all positions for this job
+         job.controller.FlattenAll(reason);
         }
 
       job.status = JOB_STOPPED;
@@ -221,11 +255,12 @@ public:
          if(m_jobs[i].status != JOB_ACTIVE)
             continue;
 
-         // TODO: Update lifecycle
-         // if(m_jobs[i].controller != NULL)
-         //    m_jobs[i].controller.OnTick();
+         // Update lifecycle (main trading logic)
+         if(m_jobs[i].controller != NULL)
+            m_jobs[i].controller.Update();
 
-         // TODO: Update stats
+         // Update stats (TODO: add PnL getter methods to LifecycleController)
+         // For now, stats will be updated when we add the methods
          // m_jobs[i].unrealized_pnl = m_jobs[i].controller.GetUnrealizedPnL();
          // m_jobs[i].realized_pnl = m_jobs[i].controller.GetRealizedPnL();
 
