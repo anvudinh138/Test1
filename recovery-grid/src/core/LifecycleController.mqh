@@ -1005,6 +1005,51 @@ public:
       EnsureRescueReset();
      }
 
+   // Multi-Job v3.0: P&L tracking for JobManager
+   double GetUnrealizedPnL() const
+     {
+      double pnl = 0.0;
+      if(m_buy != NULL)
+         pnl += m_buy.BasketPnL();
+      if(m_sell != NULL)
+         pnl += m_sell.BasketPnL();
+      return pnl;
+     }
+
+   double GetRealizedPnL() const
+     {
+      // Note: Realized PnL is transferred and consumed by opposite basket
+      // This method returns cumulative cycles profit
+      // For accurate tracking, would need to add m_total_realized member
+      // For now, return 0 (TODO: implement if needed)
+      return 0.0;
+     }
+
+   double GetTotalPnL() const
+     {
+      return GetUnrealizedPnL() + GetRealizedPnL();
+     }
+
+   bool IsTSLActive() const
+     {
+      bool tsl_active = false;
+      if(m_buy != NULL && m_buy.IsTSLActive())
+         tsl_active = true;
+      if(m_sell != NULL && m_sell.IsTSLActive())
+         tsl_active = true;
+      return tsl_active;
+     }
+
+   bool IsGridFull() const
+     {
+      bool grid_full = false;
+      if(m_buy != NULL && m_buy.IsGridFull())
+         grid_full = true;
+      if(m_sell != NULL && m_sell.IsGridFull())
+         grid_full = true;
+      return grid_full;
+     }
+
    void              Shutdown()
      {
       if(m_buy!=NULL)

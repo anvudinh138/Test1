@@ -1163,6 +1163,46 @@ public:
    void           SetKind(const EBasketKind kind) { m_kind=kind; }
    int            PendingCount() const { return m_pending_count; }
 
+   // Multi-Job v3.0: Spawn trigger helpers
+   int GetActivePositionCount() const
+     {
+      int count = 0;
+      int total = (int)PositionsTotal();
+      for(int i=0; i<total; i++)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket==0)
+            continue;
+
+         // Filter by job magic
+         if(!IsMyOrder(ticket))
+            continue;
+         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
+            continue;
+
+         long type = PositionGetInteger(POSITION_TYPE);
+         if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
+            (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
+            continue;
+
+         count++;
+        }
+      return count;
+     }
+
+   bool IsGridFull() const
+     {
+      // Grid is full when active positions >= configured grid levels
+      int active_positions = GetActivePositionCount();
+      return active_positions >= m_params.grid_levels;
+     }
+
+   bool IsTSLActive() const
+     {
+      // TSL is active when trailing flag is on
+      return m_trailing_on;
+     }
+
    EBasketKind    Kind() const { return m_kind; }
    EDirection     Direction() const { return m_direction; }
 

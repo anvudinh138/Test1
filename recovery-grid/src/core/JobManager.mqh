@@ -76,6 +76,16 @@ private:
    int               m_max_jobs;            // Max concurrent jobs
    double            m_global_dd_limit;     // Global DD% to stop spawning
 
+   // Spawn control (Phase 2)
+   datetime          m_last_spawn_time;     // Last spawn timestamp
+   int               m_total_spawns;        // Total spawns this session
+   int               m_spawn_cooldown_sec;  // Cooldown between spawns
+   int               m_max_spawns;          // Max spawns per session
+
+   // Job risk params (Phase 3)
+   double            m_job_sl_usd;          // Per-job SL in USD
+   double            m_job_dd_threshold;    // Per-job DD% abandon threshold
+
    // Dependencies
    CPortfolioLedger *m_ledger;              // Global ledger
    CLogger          *m_log;                 // Logger
@@ -98,6 +108,9 @@ public:
                const long magic_offset,
                const int max_jobs,
                const double global_dd_limit,
+               const int spawn_cooldown_sec,
+               const double job_sl_usd,
+               const double job_dd_threshold,
                CSpacingEngine *spacing,
                COrderExecutor *executor,
                CRescueEngine *rescue,
@@ -109,6 +122,12 @@ public:
         m_magic_offset(magic_offset),
         m_max_jobs(max_jobs),
         m_global_dd_limit(global_dd_limit),
+        m_last_spawn_time(0),
+        m_total_spawns(0),
+        m_spawn_cooldown_sec(spawn_cooldown_sec),
+        m_max_spawns(20),
+        m_job_sl_usd(job_sl_usd),
+        m_job_dd_threshold(job_dd_threshold),
         m_spacing(spacing),
         m_executor(executor),
         m_rescue(rescue),
@@ -190,8 +209,8 @@ public:
       job.magic = job_magic;
       job.created_at = TimeCurrent();
       job.status = JOB_ACTIVE;
-      job.job_sl_usd = m_params.session_sl_usd;  // Use session SL as job SL (for now)
-      job.job_dd_threshold = 30.0;  // Hardcoded for now (TODO: make input)
+      job.job_sl_usd = m_job_sl_usd;
+      job.job_dd_threshold = m_job_dd_threshold;
 
       // Create lifecycle controller with job magic & job_id
       job.controller = new CLifecycleController(
@@ -222,12 +241,129 @@ public:
       ArrayResize(m_jobs, new_size);
       m_jobs[new_size - 1] = job;
 
+      // Track spawn
+      m_last_spawn_time = TimeCurrent();
+      m_total_spawns++;
+
       if(m_log != NULL)
-         m_log.Event(Tag(), StringFormat("Job %d spawned (Magic %d) at %s",
+         m_log.Event(Tag(), StringFormat("Job %d spawned (Magic %d) at %s [Total spawns: %d]",
                                        job_id, job_magic,
-                                       TimeToString(job.created_at)));
+                                       TimeToString(job.created_at),
+                                       m_total_spawns));
 
       return job_id;
+     }
+
+   //+------------------------------------------------------------------+
+   //| Phase 2 & 3: Spawn and Risk Decision Logic                      |
+   //+------------------------------------------------------------------+
+   bool ShouldSpawnNew(SJob &job)
+     {
+      // Guard 1: Check spawn cooldown
+      datetime now = TimeCurrent();
+      int elapsed = (int)(now - m_last_spawn_time);
+      if(elapsed < m_spawn_cooldown_sec)
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("[Spawn] Cooldown active (%d/%d sec)", elapsed, m_spawn_cooldown_sec));
+         return false;
+        }
+
+      // Guard 2: Check max spawns per session
+      if(m_total_spawns >= m_max_spawns)
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("[Spawn] Max spawns reached (%d/%d)", m_total_spawns, m_max_spawns));
+         return false;
+        }
+
+      // Guard 3: Check global DD limit
+      double global_dd = 0.0;
+      if(m_ledger != NULL)
+         global_dd = m_ledger.GetEquityDrawdownPercent();
+      if(global_dd >= m_global_dd_limit)
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("[Spawn] Global DD %.2f%% >= %.2f%%, blocked", global_dd, m_global_dd_limit));
+         return false;
+        }
+
+      // Trigger 1: Grid full
+      if(job.controller != NULL && job.controller.IsGridFull())
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("[Spawn] Job %d grid full, spawning new job", job.job_id));
+         return true;
+        }
+
+      // Trigger 2: TSL active
+      if(job.controller != NULL && job.controller.IsTSLActive())
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("[Spawn] Job %d TSL active, spawning new job", job.job_id));
+         return true;
+        }
+
+      // Trigger 3: Job DD threshold breached
+      double job_dd_pct = 0.0;
+      if(job.peak_equity > 0)
+        {
+         job_dd_pct = (job.peak_equity - job.unrealized_pnl) / job.peak_equity * 100.0;
+        }
+      if(job_dd_pct >= job.job_dd_threshold)
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("[Spawn] Job %d DD %.2f%% >= %.2f%%, spawning new job",
+                                          job.job_id, job_dd_pct, job.job_dd_threshold));
+         return true;
+        }
+
+      return false;
+     }
+
+   bool ShouldStopJob(SJob &job)
+     {
+      // Stop if unrealized PnL <= -job_sl_usd
+      if(job.unrealized_pnl <= -job.job_sl_usd)
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("[SL] Job %d PnL %.2f <= -%.2f, stopping",
+                                          job.job_id, job.unrealized_pnl, job.job_sl_usd));
+         return true;
+        }
+      return false;
+     }
+
+   bool ShouldAbandonJob(SJob &job)
+     {
+      // Abandon if job DD% >= global DD limit (can't be saved)
+      double account_equity = AccountInfoDouble(ACCOUNT_EQUITY);
+      if(account_equity <= 0)
+         return false;
+
+      double job_dd_usd = MathAbs(job.unrealized_pnl);
+      double job_dd_pct = job_dd_usd / account_equity * 100.0;
+
+      if(job_dd_pct >= m_global_dd_limit)
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("[Abandon] Job %d DD %.2f%% >= %.2f%%, abandoning",
+                                          job.job_id, job_dd_pct, m_global_dd_limit));
+         return true;
+        }
+      return false;
+     }
+
+   void AbandonJob(int job_id)
+     {
+      SJob *job = GetJob(job_id);
+      if(job == NULL)
+         return;
+
+      job.status = JOB_ABANDONED;
+
+      if(m_log != NULL)
+         m_log.Event(Tag(), StringFormat("Job %d abandoned (DD too high, positions kept open)", job_id));
      }
 
    void StopJob(int job_id, const string reason)
@@ -250,24 +386,52 @@ public:
 
    void UpdateJobs()
      {
+      // Phase 2 & 3: Full job management loop
       for(int i = 0; i < ArraySize(m_jobs); i++)
         {
          if(m_jobs[i].status != JOB_ACTIVE)
             continue;
 
-         // Update lifecycle (main trading logic)
+         // 1. Update lifecycle (main trading logic)
          if(m_jobs[i].controller != NULL)
             m_jobs[i].controller.Update();
 
-         // Update stats (TODO: add PnL getter methods to LifecycleController)
-         // For now, stats will be updated when we add the methods
-         // m_jobs[i].unrealized_pnl = m_jobs[i].controller.GetUnrealizedPnL();
-         // m_jobs[i].realized_pnl = m_jobs[i].controller.GetRealizedPnL();
+         // 2. Update job stats
+         if(m_jobs[i].controller != NULL)
+           {
+            m_jobs[i].unrealized_pnl = m_jobs[i].controller.GetUnrealizedPnL();
+            m_jobs[i].realized_pnl = m_jobs[i].controller.GetRealizedPnL();
+           }
 
-         // Update peak equity
+         // 3. Update peak equity
          double current_equity = m_jobs[i].realized_pnl + m_jobs[i].unrealized_pnl;
          if(current_equity > m_jobs[i].peak_equity)
             m_jobs[i].peak_equity = current_equity;
+
+         // 4. Check risk conditions (Phase 3)
+         if(ShouldStopJob(m_jobs[i]))
+           {
+            StopJob(m_jobs[i].job_id, StringFormat("SL hit: %.2f USD", m_jobs[i].unrealized_pnl));
+            continue;
+           }
+
+         if(ShouldAbandonJob(m_jobs[i]))
+           {
+            AbandonJob(m_jobs[i].job_id);
+            continue;
+           }
+        }
+
+      // 5. Check spawn trigger (Phase 2) - only newest job can spawn
+      SJob *newest = GetNewestJob();
+      if(newest != NULL && newest.status == JOB_ACTIVE)
+        {
+         if(ShouldSpawnNew(*newest))
+           {
+            int new_job_id = SpawnJob();
+            if(new_job_id > 0 && m_log != NULL)
+               m_log.Event(Tag(), StringFormat("Auto-spawned Job %d from Job %d trigger", new_job_id, newest.job_id));
+           }
         }
      }
 

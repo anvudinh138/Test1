@@ -148,6 +148,13 @@ input bool              InpMultiJobEnabled         = false;  // ✅ Enable multi
 input int               InpMaxJobs                 = 5;      // Max concurrent jobs (5-10 recommended)
 input double            InpGlobalDDLimit           = 50.0;   // Stop spawning if global DD >= this % (e.g., 50%)
 
+input group "=== Spawn Triggers (Phase 2) ==="
+input int               InpSpawnCooldownSec        = 30;     // Cooldown between spawns (seconds)
+
+input group "=== Job Risk Management (Phase 3) ==="
+input double            InpJobSL_USD               = 50.0;   // Per-job stop loss in USD (0 = disabled)
+input double            InpJobDDThreshold          = 30.0;   // Abandon job if DD >= this % (e.g., 30%)
+
 input group "=== Magic Number (Job Isolation) ==="
 input long              InpMagicStart              = 1000;   // Starting magic number (e.g., 1000)
 input long              InpMagicOffset             = 421;    // Magic offset between jobs (e.g., 421)
@@ -534,6 +541,9 @@ int OnInit()
          InpMagicOffset,
          InpMaxJobs,
          InpGlobalDDLimit,
+         InpSpawnCooldownSec,
+         InpJobSL_USD,
+         InpJobDDThreshold,
          g_spacing,
          g_executor,
          g_rescue,
