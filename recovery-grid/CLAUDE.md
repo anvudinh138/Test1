@@ -171,8 +171,16 @@ if(had_positions && now_no_positions) {
    - Log once per minute instead of every tick
    - Lines: LifecycleController.mqh:937-947, 949-961
 
+6. **Rescue Flip-Flop Loop** (CRITICAL):
+   - Cause: Using loser/winner roles (PnL-based) caused endless flip when roles change
+   - Old: `delta = loser_lot - winner.RescueLot()` → winner.RescueLot() = 0 after role flip!
+   - Fix: Use absolute volume balance: `delta = |buy_lot - sell_lot|`
+   - Deploy on LIGHTER side (less volume), not winner side (better PnL)
+   - This prevents infinite loop when roles flip
+   - Lines: LifecycleController.mqh:889-967
+
 **Files Modified**:
-- LifecycleController.mqh (+60 lines)
+- LifecycleController.mqh (+75 lines total)
 - GridBasket.mqh (+2 lines)
 - Params.mqh (+1 line)
 - RecoveryGridDirection_v2.mq5 (+2 lines)

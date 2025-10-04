@@ -886,13 +886,15 @@ public:
            }
          if(!news_active && !cushion_active)
            {
-            double price_winner=CurrentPrice(winner.Direction());
-            double dd=-MathMin(0.0,loser.BasketPnL());
+            // v3: Delta-based continuous rebalancing (FIX: absolute volume balance to prevent flip-flop)
+            double buy_lot = m_buy.TotalLot();
+            double sell_lot = m_sell.TotalLot();
+            double delta = MathAbs(buy_lot - sell_lot);
 
-            // v3: Delta-based continuous rebalancing
-            double loser_lot = loser.TotalLot();
-            double rescue_lot_current = winner.RescueLot();  // Current rescue size (rescue orders only!)
-            double delta = loser_lot - rescue_lot_current;
+            // Determine lighter basket (deploy rescue on lighter side for balance)
+            CGridBasket *lighter = (buy_lot < sell_lot) ? m_buy : m_sell;
+            CGridBasket *heavier = (buy_lot < sell_lot) ? m_sell : m_buy;
+            double price_lighter = CurrentPrice(lighter.Direction());
 
             // Check delta threshold: Only rescue if imbalance >= trigger
             if(delta >= m_params.min_delta_trigger)
@@ -904,18 +906,20 @@ public:
                if(m_params.rescue_max_lot > 0 && rescue_lot > m_params.rescue_max_lot)
                  {
                   if(m_log!=NULL)
-                     m_log.Event(Tag(),StringFormat("[RESCUE-DELTA] Loser=%.2f Rescue=%.2f Delta=%.2f → Deploy %.2f lot (CAPPED from %.2f)",
-                                                     loser_lot, rescue_lot_current, delta, m_params.rescue_max_lot, rescue_lot));
+                     m_log.Event(Tag(),StringFormat("[RESCUE-DELTA] Heavy=%.2f Light=%.2f Delta=%.2f → Deploy %.2f lot on %s (CAPPED from %.2f)",
+                                                     heavier.TotalLot(), lighter.TotalLot(), delta,
+                                                     m_params.rescue_max_lot, lighter.Direction()==DIR_BUY?"BUY":"SELL", rescue_lot));
                   rescue_lot = m_params.rescue_max_lot;
                  }
                else
                  {
                   if(m_log!=NULL)
-                     m_log.Event(Tag(),StringFormat("[RESCUE-DELTA] Loser=%.2f Rescue=%.2f Delta=%.2f → Deploy %.2f lot (EXACT)",
-                                                     loser_lot, rescue_lot_current, delta, rescue_lot));
+                     m_log.Event(Tag(),StringFormat("[RESCUE-DELTA] Heavy=%.2f Light=%.2f Delta=%.2f → Deploy %.2f lot on %s (EXACT)",
+                                                     heavier.TotalLot(), lighter.TotalLot(), delta,
+                                                     rescue_lot, lighter.Direction()==DIR_BUY?"BUY":"SELL"));
                  }
 
-               rescue_lot = winner.NormalizeLot(rescue_lot);
+               rescue_lot = lighter.NormalizeLot(rescue_lot);
 
                // Deploy rescue (delta trigger + cooldown anti-spam)
                if(rescue_lot>0.0 && m_rescue.CooldownOk())
@@ -923,10 +927,12 @@ public:
                   bool exposure_ok=(m_ledger==NULL) || m_ledger.ExposureAllowed(rescue_lot,m_magic,m_symbol);
                   if(exposure_ok)
                     {
-                     winner.DeployRecovery(price_winner,rescue_lot);
+                     lighter.DeployRecovery(price_lighter,rescue_lot);
                      m_rescue.RecordRescue();
                      if(m_log!=NULL)
-                        m_log.Event(Tag(),StringFormat("Rescue deployed: %.2f lot (cooldown: %d bars)",rescue_lot,m_params.rescue_cooldown_bars));
+                        m_log.Event(Tag(),StringFormat("Rescue deployed: %.2f lot on %s (cooldown: %d bars)",
+                                                     rescue_lot, lighter.Direction()==DIR_BUY?"BUY":"SELL",
+                                                     m_params.rescue_cooldown_bars));
                     }
                   else
                     {
@@ -954,8 +960,8 @@ public:
                datetime now=TimeCurrent();
                if(m_log!=NULL && (now-last_balanced_log>=60))
                  {
-                  m_log.Event(Tag(),StringFormat("[RESCUE-BALANCED] Loser=%.2f Rescue=%.2f Delta=%.2f < %.2f (skip, balanced)",
-                                                  loser_lot, rescue_lot_current, delta, m_params.min_delta_trigger));
+                  m_log.Event(Tag(),StringFormat("[RESCUE-BALANCED] BUY=%.2f SELL=%.2f Delta=%.2f < %.2f (skip, balanced)",
+                                                  buy_lot, sell_lot, delta, m_params.min_delta_trigger));
                   last_balanced_log=now;
                  }
               }
