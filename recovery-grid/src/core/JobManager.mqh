@@ -443,9 +443,18 @@ public:
         {
          if(ShouldSpawnNew(newest_idx))
            {
+            // Close all orders of OLD job before spawning new job
+            // "DCA thành công" - Grid full means we reached max capacity, close out
+            int old_job_id = m_jobs[newest_idx].job_id;
+            if(m_log != NULL)
+               m_log.Event(Tag(), StringFormat("Closing Job %d (grid full, DCA successful)", old_job_id));
+
+            StopJob(old_job_id, "Grid full, spawning new job");
+
+            // Spawn new job
             int new_job_id = SpawnJob();
             if(new_job_id > 0 && m_log != NULL)
-               m_log.Event(Tag(), StringFormat("Auto-spawned Job %d from Job %d trigger", new_job_id, m_jobs[newest_idx].job_id));
+               m_log.Event(Tag(), StringFormat("Auto-spawned Job %d after closing Job %d", new_job_id, old_job_id));
            }
         }
      }
