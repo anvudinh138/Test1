@@ -1,0 +1,108 @@
+; Multi-Job System v3.0 + Profit Optimization Phase 4
+; Preset: Conservative Safe Trading
+; Target: PF 1.5+, Max DD <15%
+; Symbol: EURUSD
+; Timeframe: M15 or H1
+
+; === Symbol Preset ===
+InpSymbolPreset=9||0||9||PRESET_CUSTOM||N
+InpSpacingAtrMult=1.0||0.1||1.0||Spacing ATR Multiplier||N
+InpLotBase=0.01||0.01||0.01||Base lot size||N
+InpLotOffset=0.0||0.0||0.0||Lot offset for levels||N
+InpTargetCycleUSD=8.0||0.1||8.0||Higher TP for safety||N
+InpMinDeltaTrigger=0.03||0.01||0.03||Larger delta trigger||N
+InpRescueLotMultiplier=0.8||0.1||0.8||Smaller rescue lots||N
+InpRescueMaxLot=0.05||0.01||0.05||Conservative max lot||N
+InpRescueCooldownBars=10||1||10||Longer cooldown||N
+
+; === Grid Settings ===
+InpGridLevels=8||1||8||Fewer levels per job||N
+InpSpacingMode=2||0||2||SPACING_HYBRID||N
+InpSpacingPips=30||1||30||Wider spacing||N
+InpATRPeriod=14||1||14||ATR period||N
+InpATRTimeframe=16388||0||16388||PERIOD_M15||N
+
+; === Lot Settings ===
+InpLotScale=1.0||0.1||1.0||Flat lot only||N
+
+; === Multi-Job v3.0 ===
+InpMultiJobEnabled=true||0||1||Enable multi-job||N
+InpMaxJobs=2||1||2||Max 2 jobs (safe)||N
+InpSpawnCooldownSec=120||1||120||2-min cooldown||N
+InpGlobalDDLimit=15.0||1.0||15.0||Lower DD limit||N
+
+; === Job Risk Management ===
+InpJobSL_USD=30.0||1.0||30.0||Tighter job SL||N
+InpJobDDThreshold=20.0||1.0||20.0||Earlier abandon||N
+
+; === Profit Optimization Phase 4 ===
+; Smart Close
+InpSmartCloseEnabled=true||0||1||Smart close ON||N
+InpMinProfitToClose=2.0||0.1||2.0||Higher min profit||N
+InpJobTPUSD=15.0||1.0||15.0||Larger job TP||N
+InpJobTrailStartUSD=8.0||0.5||8.0||Trail starts higher||N
+InpJobTrailStepUSD=3.0||0.5||3.0||Larger trail step||N
+
+; Range Detection
+InpRangeDetectEnabled=true||0||1||Range detection ON||N
+InpRangeATRPeriod=20||1||20||Longer ATR||N
+InpRangeThreshold=0.6||0.1||0.6||Stricter range||N
+InpTrendThreshold=1.8||0.1||1.8||Higher trend threshold||N
+InpRangeLookbackBars=100||10||100||More bars||N
+InpRangeTightSpacing=0.7||0.1||0.7||Less tight in range||N
+InpRangeLotMultiplier=1.5||0.5||1.5||Conservative mult||N
+InpRangeTPMultiplier=0.5||0.1||0.5||Safer TP||N
+
+; Profit Acceleration
+InpProfitAccelEnabled=true||0||1||Acceleration ON||N
+InpBoosterThreshold=8.0||1.0||8.0||Higher threshold||N
+InpBoosterLotMultiplier=1.5||0.5||1.5||Smaller booster||N
+InpMaxBoosters=2||1||2||Max 2 boosters||N
+
+; === Magic Numbers ===
+InpMagicStart=2000||1000||2000||Different magic||N
+InpMagicOffset=500||1||500||Larger offset||N
+
+; === Risk Management ===
+InpExposureCapLots=1.0||0.1||1.0||Lower exposure||N
+InpSessionSL_USD=50.0||10.0||50.0||Tighter session SL||N
+InpDDPauseGridThreshold=10.0||1.0||10.0||Early pause||N
+
+; === Group TP & TSL ===
+InpTPEnabled=true||0||1||TP ON||N
+InpTSLEnabled=true||0||1||TSL ON||N
+InpTSLStartPoints=1500||100||1500||TSL starts later||N
+InpTSLStepPoints=700||50||700||Larger steps||N
+
+; === SSL Protection ===
+InpSSLEnabled=false||0||0||SSL OFF for multi-job||N
+
+; === ADC ===
+InpADCEnabled=false||0||0||ADC OFF||N
+
+; === TRM ===
+InpTRMEnabled=true||0||1||TRM ON||N
+InpTRMUseAPINews=false||0||0||No API||N
+InpTRMImpactFilter=3||1||3||IMPACT_HIGH only||N
+InpTRMBufferMinutes=60||5||60||Longer buffer||N
+
+; === PC & DG ===
+InpPCEnabled=false||0||0||PC OFF||N
+InpDynamicGrid=true||0||1||DG ON||N
+InpWarmLevels=4||1||4||Fewer warm levels||N
+
+; === Rescue ===
+InpRescueEnabled=true||0||1||Rescue ON||N
+InpRescueMaxDeployments=5||1||5||Fewer rescues||N
+
+; === Advanced ===
+InpSlippagePips=5||1||5||More slippage tolerance||N
+InpRespectStops=false||0||0||No stops limit||N
+
+; === Logging ===
+InpLogEvents=true||0||1||Logging ON||N
+InpStatusInterval=60||5||60||1-min status||N
+
+; === Features ===
+InpPreserveOnTfSwitch=true||0||1||Preserve ON||N
+InpMcdEnabled=true||0||1||MCD ON||N
