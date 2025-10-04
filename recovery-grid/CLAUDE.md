@@ -206,13 +206,14 @@ if(had_positions && now_no_positions) {
 - Job SL limit per job (e.g., -$50 max loss)
 - Always active trading (don't wait for old job breakeven)
 
-**Phase 1 Goals (Foundation - 18.5 hours)**:
-- [ ] Create SJob struct with job_id, magic, status, P&L
-- [ ] Create CJobManager class (spawn, update, stop jobs)
-- [ ] Magic isolation: start + offset (1000, 1421, 1842...)
-- [ ] Job-aware position filtering (RefreshState by job magic)
-- [ ] Order comments: RGDv2_J1_Seed, RGDv2_J2_RescueSeed
-- [ ] Test: 3 jobs trading independently, no interference
+**Phase 1 Progress (Foundation - Steps 1-5 COMPLETE)**:
+- [x] Create SJob struct with job_id, magic, status, P&L
+- [x] Create CJobManager class (spawn, update, stop jobs)
+- [x] Magic isolation: start + offset (1000, 1421, 1842...)
+- [x] Job-aware position filtering (RefreshState by job magic)
+- [x] Order comments: RGDv2_J1_Seed, RGDv2_J2_RescueSeed
+- [x] EA integration: OnInit/OnTick/OnDeinit wired up
+- [ ] Test: Compilation & basic validation (NEXT)
 
 **Branch**: `feature/multi-job-v3.0` (from `feature/lot-percent-risk`)
 
