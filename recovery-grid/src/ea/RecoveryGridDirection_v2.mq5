@@ -55,11 +55,11 @@ input int               InpStatusInterval   = 60;
 input bool              InpLogEvents        = true;
 
 input group "=== Grid Configuration (ATR-Based Auto-Spacing) ==="
-input ENUM_TIMEFRAMES InpAtrTimeframe       = PERIOD_H4;   // ATR timeframe (H4 recommended for stability)
+input ENUM_TIMEFRAMES InpAtrTimeframe       = PERIOD_M1;   // ATR timeframe (H4 recommended for stability)
 input int             InpAtrPeriod          = 14;          // ATR period
 input double          InpSpacingAtrMult     = 1;         // Spacing = ATR × this multiplier
 
-input int             InpGridLevels         = 100000;      // Max grid levels (high = infinite, no lag with dynamic mode)
+input int             InpGridLevels         = 6;      // Max grid levels (high = infinite, no lag with dynamic mode)
 
 input group "=== Lot Sizing ==="
 input double            InpLotBase          = 0.01;  // First grid level lot
@@ -74,13 +74,13 @@ input group "=== Take Profit & TSL (Spacing-Based, Auto-Adaptive) ==="
 input double            InpTargetCycleUSD      = 5.0;   // Group TP target (USD)
 input bool              InpTSLEnabled          = true;  // ✅ Enable TSL on rescue hedge
 input double            InpTSLStartMultiplier  = 2.0;   // TSL activates after profit = spacing × this
-input double            InpTSLStepMultiplier   = 0.5;   // TSL trails by spacing × this
+input double            InpTSLStepMultiplier   = 1;   // TSL trails by spacing × this
 
 input group "=== Rescue/Hedge System v3 (Delta-Based Rebalancing) ==="
 input bool              InpRescueAdaptiveLot   = true;   // ✅ Enable delta-based rescue
 input double            InpMinDeltaTrigger     = 0.01;   // Min imbalance to trigger (lot) - lowered for early rescue
 input double            InpRescueLotMultiplier = 1.0;    // Delta multiplier (1.0 = 100%)
-input double            InpRescueMaxLot        = 0.5;    // Max per rescue deployment - increased for larger baskets
+input double            InpRescueMaxLot        = 0.1;    // Max per rescue deployment - increased for larger baskets
 input int               InpRescueCooldownBars  = 3;      // Bars between rescues (anti-spam)
 
 input group "=== Risk Management ==="
@@ -132,7 +132,7 @@ input double            InpTrmCloseThreshold       = 3.0;    // Close if |PnL| >
 input double            InpTrmKeepSLDistance       = 6.0;    // SL distance for kept losing orders (USD)
 
 input group "=== Anti-Drawdown Cushion (ADC) ==="
-input bool              InpAdcEnabled              = true;  // Master switch (DEFAULT OFF)
+input bool              InpAdcEnabled              = false;  // Master switch (DEFAULT OFF)
 input double            InpAdcEquityDdThreshold    = 10.0;   // Equity DD % threshold to activate cushion
 input bool              InpAdcPauseNewGrids        = true;   // Pause grid reseeding during cushion
 input bool              InpAdcPauseRescue          = true;   // Pause rescue hedge deployment during cushion
