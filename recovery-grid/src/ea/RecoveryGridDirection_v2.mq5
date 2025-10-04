@@ -1,17 +1,19 @@
 //+------------------------------------------------------------------+
-//| Recovery Grid Direction v2.7                                     |
-//| Two-sided recovery grid with DTS + SSL + TRM + ADC + Rescue v3  |
+//| Recovery Grid Direction v3.0 (Multi-Job System)                  |
+//| Two-sided recovery grid with Multi-Job + DTS + SSL + TRM + ADC  |
 //+------------------------------------------------------------------+
-//| PRODUCTION DEFAULTS: Rescue v3 Delta-Based (PC removed)          |
+//| v3.0 FEATURES: Multi-Job Portfolio System (EXPERIMENTAL)         |
+//| - Multi-Job: Independent jobs with limited risk per job          |
+//| - Job Isolation: Magic number isolation (start + offset)         |
+//| - Auto-spawn: New job when grid full or TSL active               |
 //| - Rescue v3: Delta-based continuous rebalancing                  |
-//| - Symbol Presets: 10 presets for easy optimization (NEW)         |
-//| - Features: Conservative DTS + SSL Protection                    |
+//| - Symbol Presets: 10 presets for easy optimization              |
 //| - TRM: Time-based Risk Management (DEFAULT OFF, enable for NFP)  |
 //| - ADC: Anti-Drawdown Cushion (DEFAULT OFF, target sub-10% DD)   |
-//| - PC: Partial Close REMOVED (incompatible with Grid DCA)         |
+//| - LEGACY: v2.x mode available (InpMultiJobEnabled=false)         |
 //+------------------------------------------------------------------+
 #property strict
-#property version "2.70"
+#property version "3.00"
 
 #include <Trade/Trade.mqh>
 
@@ -26,6 +28,7 @@
 #include <RECOVERY-GRID-DIRECTION_v2/core/RescueEngine.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/GridBasket.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/LifecycleController.mqh>
+#include <RECOVERY-GRID-DIRECTION_v2/core/JobManager.mqh>
 
 //--- Inputs
 input group "=== IMPORTANT: Set Unique Magic Number ==="
@@ -140,6 +143,16 @@ input bool              InpPreserveOnTfSwitch      = true;   // Preserve positio
 input group "=== Manual Close Detection ==="
 input bool              InpMcdEnabled              = true;   // Enable manual close detection & profit transfer
 
+input group "=== Multi-Job System v3.0 (EXPERIMENTAL) ==="
+input bool              InpMultiJobEnabled         = false;  // ✅ Enable multi-job system (OFF by default)
+input int               InpMaxJobs                 = 5;      // Max concurrent jobs (5-10 recommended)
+input double            InpGlobalDDLimit           = 50.0;   // Stop spawning if global DD >= this % (e.g., 50%)
+
+input group "=== Magic Number (Job Isolation) ==="
+input long              InpMagicStart              = 1000;   // Starting magic number (e.g., 1000)
+input long              InpMagicOffset             = 421;    // Magic offset between jobs (e.g., 421)
+// Job A: 1000, Job B: 1421, Job C: 1842...
+
 //--- Globals
 SParams              g_params;
 CLogger             *g_logger        = NULL;
@@ -149,6 +162,9 @@ COrderExecutor      *g_executor      = NULL;
 CPortfolioLedger    *g_ledger        = NULL;
 CRescueEngine       *g_rescue        = NULL;
 CLifecycleController *g_controller   = NULL;
+
+// Multi-Job v3.0
+CJobManager         *g_job_manager   = NULL;
 
 //--- Preset override variables (non-const)
 double               g_spacing_atr_mult;
@@ -506,13 +522,56 @@ int OnInit()
       g_executor.SetMagic(g_params.magic);
    g_ledger   = new CPortfolioLedger(g_params.exposure_cap_lots,g_params.session_sl_usd);
    g_rescue   = new CRescueEngine(trading_symbol,g_params,g_logger);
-   g_controller = new CLifecycleController(trading_symbol,g_params,g_spacing,g_executor,g_rescue,g_ledger,g_logger,g_params.magic);
 
-   if(g_controller==NULL || !g_controller.Init())
+   // Multi-Job v3.0: Choose between JobManager (multi-job) or LifecycleController (legacy)
+   if(InpMultiJobEnabled)
      {
-      if(g_logger!=NULL)
-         g_logger.Event("[RGDv2]","Controller init failed");
-      return(INIT_FAILED);
+      // Multi-job mode (v3.0)
+      g_job_manager = new CJobManager(
+         trading_symbol,
+         g_params,
+         InpMagicStart,
+         InpMagicOffset,
+         InpMaxJobs,
+         InpGlobalDDLimit,
+         g_spacing,
+         g_executor,
+         g_rescue,
+         g_ledger,
+         g_logger
+      );
+
+      if(g_job_manager == NULL)
+        {
+         if(g_logger != NULL)
+            g_logger.Event("[RGDv3]","JobManager creation failed");
+         return(INIT_FAILED);
+        }
+
+      // Spawn first job
+      int first_job = g_job_manager.SpawnJob();
+      if(first_job < 0)
+        {
+         if(g_logger != NULL)
+            g_logger.Event("[RGDv3]","First job spawn failed");
+         return(INIT_FAILED);
+        }
+
+      if(g_logger != NULL)
+         g_logger.Event("[RGDv3]",StringFormat("Multi-job mode enabled (Job 1 spawned, Magic %d)",
+                                             InpMagicStart));
+     }
+   else
+     {
+      // Legacy mode (v2.x)
+      g_controller = new CLifecycleController(trading_symbol,g_params,g_spacing,g_executor,g_rescue,g_ledger,g_logger,g_params.magic);
+
+      if(g_controller==NULL || !g_controller.Init())
+        {
+         if(g_logger!=NULL)
+            g_logger.Event("[RGDv2]","Controller init failed");
+         return(INIT_FAILED);
+        }
      }
 
    // Debug info
@@ -545,17 +604,38 @@ void OnTick()
    if(!SymbolInfoInteger(trading_symbol,SYMBOL_TRADE_MODE))
       return;
 
-   if(g_controller!=NULL)
+   // Multi-Job v3.0: Update jobs or controller
+   if(InpMultiJobEnabled && g_job_manager != NULL)
+     {
+      g_job_manager.UpdateJobs();
+     }
+   else if(g_controller != NULL)
+     {
       g_controller.Update();
+     }
   }
 
 void OnDeinit(const int reason)
   {
-   if(g_controller!=NULL){ g_controller.Shutdown(); delete g_controller; g_controller=NULL; }
-   if(g_rescue!=NULL){ delete g_rescue; g_rescue=NULL; }
-   if(g_ledger!=NULL){ delete g_ledger; g_ledger=NULL; }
-   if(g_executor!=NULL){ delete g_executor; g_executor=NULL; }
-   if(g_validator!=NULL){ delete g_validator; g_validator=NULL; }
-   if(g_spacing!=NULL){ delete g_spacing; g_spacing=NULL; }
-   if(g_logger!=NULL){ delete g_logger; g_logger=NULL; }
+   // Multi-Job v3.0: Cleanup job manager or controller
+   if(g_job_manager != NULL)
+     {
+      delete g_job_manager;
+      g_job_manager = NULL;
+     }
+
+   if(g_controller != NULL)
+     {
+      g_controller.Shutdown();
+      delete g_controller;
+      g_controller = NULL;
+     }
+
+   // Cleanup shared resources
+   if(g_rescue != NULL) { delete g_rescue; g_rescue = NULL; }
+   if(g_ledger != NULL) { delete g_ledger; g_ledger = NULL; }
+   if(g_executor != NULL) { delete g_executor; g_executor = NULL; }
+   if(g_validator != NULL) { delete g_validator; g_validator = NULL; }
+   if(g_spacing != NULL) { delete g_spacing; g_spacing = NULL; }
+   if(g_logger != NULL) { delete g_logger; g_logger = NULL; }
   }
