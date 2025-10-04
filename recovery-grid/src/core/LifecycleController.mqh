@@ -1081,7 +1081,7 @@ public:
                      SymbolInfoDouble(m_symbol, SYMBOL_BID);
 
       m_executor.SetMagic(m_magic);
-      ulong ticket = m_executor.OpenPosition(dir, lot, 0, 0, comment);
+      ulong ticket = m_executor.Market(dir, lot, comment);
 
       if(ticket > 0)
         {
