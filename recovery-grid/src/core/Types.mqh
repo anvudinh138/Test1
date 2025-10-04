@@ -33,6 +33,16 @@ enum EJobStatus
    JOB_ABANDONED   = 3   // DD too high, can't save
   };
 
+// Market conditions for adaptive trading (Phase 4)
+enum EMarketCondition
+  {
+   MARKET_TRENDING_UP   = 0,  // Strong uptrend
+   MARKET_TRENDING_DOWN = 1,  // Strong downtrend
+   MARKET_RANGING       = 2,  // Range-bound, sideways
+   MARKET_VOLATILE      = 3,  // High volatility, unclear
+   MARKET_UNKNOWN       = 4   // Not enough data
+  };
+
 struct SGridLevel
   {
    double price;   // entry price for pending level

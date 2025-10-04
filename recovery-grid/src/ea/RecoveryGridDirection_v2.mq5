@@ -162,6 +162,16 @@ input double            InpJobTPUSD                = 10.0;   // Job take profit 
 input double            InpJobTrailStartUSD        = 5.0;    // Start trailing at profit (USD)
 input double            InpJobTrailStepUSD         = 2.0;    // Trail step size (USD)
 
+input group "=== Range Detection (Phase 4) ==="
+input bool              InpRangeDetectEnabled      = true;   // ✅ Enable range detection
+input int               InpRangeATRPeriod          = 14;     // ATR period for volatility
+input double            InpRangeThreshold          = 0.5;    // ATR ratio to classify as range
+input double            InpTrendThreshold          = 1.5;    // ATR ratio to classify as trend
+input int               InpRangeLookbackBars       = 50;     // Bars to analyze for range
+input double            InpRangeTightSpacing       = 0.5;    // Grid spacing mult in range
+input double            InpRangeLotMultiplier      = 2.0;    // Lot multiplier in range
+input double            InpRangeTPMultiplier       = 0.3;    // TP multiplier in range (quick profit)
+
 input group "=== Magic Number (Job Isolation) ==="
 input long              InpMagicStart              = 1000;   // Starting magic number (e.g., 1000)
 input long              InpMagicOffset             = 421;    // Magic offset between jobs (e.g., 421)
@@ -179,6 +189,7 @@ CLifecycleController *g_controller   = NULL;
 
 // Multi-Job v3.0
 CJobManager         *g_job_manager   = NULL;
+CRangeDetector      *g_range_detector = NULL;  // Phase 4: Range detection
 
 //--- Preset override variables (non-const)
 double               g_spacing_atr_mult;
@@ -537,6 +548,29 @@ int OnInit()
    g_ledger   = new CPortfolioLedger(g_params.exposure_cap_lots,g_params.session_sl_usd);
    g_rescue   = new CRescueEngine(trading_symbol,g_params,g_logger);
 
+   // Phase 4: Range detection
+   if(InpRangeDetectEnabled && InpMultiJobEnabled)
+     {
+      g_range_detector = new CRangeDetector();
+      if(g_range_detector != NULL)
+        {
+         SRangeParams range_params;
+         range_params.atr_period = InpRangeATRPeriod;
+         range_params.range_threshold = InpRangeThreshold;
+         range_params.trend_threshold = InpTrendThreshold;
+         range_params.lookback_bars = InpRangeLookbackBars;
+         range_params.min_bounces = 3;  // Min bounces for range confirmation
+         range_params.bounce_tolerance = 10;  // Points tolerance
+
+         if(!g_range_detector.Init(trading_symbol, PERIOD_M15, range_params, g_logger))
+           {
+            delete g_range_detector;
+            g_range_detector = NULL;
+            if(g_logger) g_logger.Error(Tag(), "Failed to initialize range detector");
+           }
+        }
+     }
+
    // Multi-Job v3.0: Choose between JobManager (multi-job) or LifecycleController (legacy)
    if(InpMultiJobEnabled)
      {
@@ -559,6 +593,7 @@ int OnInit()
          g_spacing,
          g_executor,
          g_rescue,
+         g_range_detector,       // Phase 4: Range detector
          g_ledger,
          g_logger
       );
@@ -654,6 +689,7 @@ void OnDeinit(const int reason)
      }
 
    // Cleanup shared resources
+   if(g_range_detector != NULL) { delete g_range_detector; g_range_detector = NULL; }  // Phase 4
    if(g_rescue != NULL) { delete g_rescue; g_rescue = NULL; }
    if(g_ledger != NULL) { delete g_ledger; g_ledger = NULL; }
    if(g_executor != NULL) { delete g_executor; g_executor = NULL; }

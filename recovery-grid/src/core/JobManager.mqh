@@ -13,6 +13,7 @@
 #include "LifecycleController.mqh"
 #include "PortfolioLedger.mqh"
 #include "Logger.mqh"
+#include "RangeDetector.mqh"
 
 //+------------------------------------------------------------------+
 //| Job Structure (contains lifecycle + metadata)                    |
@@ -48,6 +49,12 @@ struct SJob
    double                   trail_stop_usd;      // Current trailing stop
    bool                     is_trailing;         // Trailing active flag
 
+   // Market adaptation (Phase 4)
+   EMarketCondition         market_condition;    // Market state at spawn
+   double                   grid_spacing_mult;   // Grid spacing multiplier
+   double                   lot_size_mult;        // Lot size multiplier
+   int                      optimal_grid_levels; // Optimal levels for market
+
    // Constructor
    SJob() : job_id(0),
             magic(0),
@@ -65,7 +72,11 @@ struct SJob
             trail_start_usd(0),
             trail_step_usd(0),
             trail_stop_usd(0),
-            is_trailing(false)
+            is_trailing(false),
+            market_condition(MARKET_UNKNOWN),
+            grid_spacing_mult(1.0),
+            lot_size_mult(1.0),
+            optimal_grid_levels(10)
      {
      }
   };
@@ -115,6 +126,7 @@ private:
    CSpacingEngine   *m_spacing;             // Spacing calculator
    COrderExecutor   *m_executor;            // Order executor
    CRescueEngine    *m_rescue;              // Rescue engine
+   CRangeDetector   *m_range_detector;      // Range detection (Phase 4)
 
    // Helpers
    string            Tag() const { return StringFormat("[RGDv3][%s][JobMgr]", m_symbol); }
@@ -138,6 +150,7 @@ public:
                CSpacingEngine *spacing,
                COrderExecutor *executor,
                CRescueEngine *rescue,
+               CRangeDetector *range_detector,
                CPortfolioLedger *ledger,
                CLogger *logger)
       : m_symbol(symbol),
@@ -160,6 +173,7 @@ public:
         m_spacing(spacing),
         m_executor(executor),
         m_rescue(rescue),
+        m_range_detector(range_detector),
         m_ledger(ledger),
         m_log(logger),
         m_next_job_id(1)  // Start from 1
@@ -248,10 +262,53 @@ public:
       job.trail_stop_usd = 0;
       job.is_trailing = false;
 
-      // Create lifecycle controller with job magic & job_id
+      // Market adaptation (Phase 4)
+      if(m_range_detector != NULL)
+        {
+         // Update market analysis
+         m_range_detector.Update();
+
+         // Get current market condition
+         job.market_condition = m_range_detector.GetCondition();
+         job.grid_spacing_mult = m_range_detector.GetGridSpacingMultiplier();
+         job.lot_size_mult = m_range_detector.GetLotSizeMultiplier();
+         job.optimal_grid_levels = m_range_detector.GetOptimalGridLevels();
+
+         // Adapt job parameters based on market
+         job.profit_target_usd *= m_range_detector.GetTPMultiplier();
+
+         // Log market adaptation
+         if(m_log != NULL)
+            m_log.Info(Tag(), StringFormat("Job %d spawned in %s market: Spacing=%.1fx, Lot=%.1fx, TP=$%.2f, Levels=%d",
+                                        job_id,
+                                        m_range_detector.ConditionToString(job.market_condition),
+                                        job.grid_spacing_mult,
+                                        job.lot_size_mult,
+                                        job.profit_target_usd,
+                                        job.optimal_grid_levels));
+        }
+      else
+        {
+         // Default values if no range detector
+         job.market_condition = MARKET_UNKNOWN;
+         job.grid_spacing_mult = 1.0;
+         job.lot_size_mult = 1.0;
+         job.optimal_grid_levels = m_params.grid_levels;
+        }
+
+      // Create adapted params for this job
+      SParams job_params = m_params;  // Copy base params
+
+      // Apply market adaptations
+      job_params.grid_levels = job.optimal_grid_levels;
+      job_params.lot_base *= job.lot_size_mult;
+      job_params.spacing_atr_mult *= job.grid_spacing_mult;
+      job_params.target_cycle_usd = job.profit_target_usd;
+
+      // Create lifecycle controller with job magic & adapted params
       job.controller = new CLifecycleController(
          m_symbol,
-         m_params,
+         job_params,  // Use adapted params
          m_spacing,
          m_executor,
          m_rescue,
