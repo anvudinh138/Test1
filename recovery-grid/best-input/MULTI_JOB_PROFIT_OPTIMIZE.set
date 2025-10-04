@@ -65,7 +65,7 @@ InpMagicOffset=421||1||421||Magic offset between jobs||N
 
 ; === Risk Management ===
 InpExposureCapLots=2.0||0.1||2.0||Max total exposure||N
-InpSessionSL_USD=100.0||10.0||100.0||Session stop loss||N
+InpSessionSL_USD=300.0||10.0||300.0||Session SL (3% of $10k balance)||N
 InpDDPauseGridThreshold=15.0||1.0||15.0||Pause grid at DD %||N
 
 ; === Group TP & TSL ===
