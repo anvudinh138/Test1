@@ -193,11 +193,40 @@ if(had_positions && now_no_positions) {
 
 ---
 
+### Session: 2025-10-04 (Multi-Job System v3.0) - IN PROGRESS
+
+**Problem**: Strong trends cause "slow bubble burst"
+- Single lifecycle waits for losing basket to break even
+- Unlimited DCA → 0.3-0.4 lot accumulated on losing side
+- Rescue can't save forever → account blow-up
+
+**Solution**: Multi-Job Portfolio System
+- Each job = independent lifecycle with limited grid levels (5-10)
+- Job full/TSL → spawn new job at current price
+- Job SL limit per job (e.g., -$50 max loss)
+- Always active trading (don't wait for old job breakeven)
+
+**Phase 1 Goals (Foundation - 18.5 hours)**:
+- [ ] Create SJob struct with job_id, magic, status, P&L
+- [ ] Create CJobManager class (spawn, update, stop jobs)
+- [ ] Magic isolation: start + offset (1000, 1421, 1842...)
+- [ ] Job-aware position filtering (RefreshState by job magic)
+- [ ] Order comments: RGDv2_J1_Seed, RGDv2_J2_RescueSeed
+- [ ] Test: 3 jobs trading independently, no interference
+
+**Branch**: `feature/multi-job-v3.0` (from `feature/lot-percent-risk`)
+
+**Documents**:
+- DESIGN_MULTI_JOB_SYSTEM.md (architecture)
+- TODO_MULTI_JOB_PHASE_1.md (70+ tasks checklist)
+
+---
+
 ## Quick Reference
 
 ### Current EA Version
-- **Version**: 2.4 → 2.5 (after TF fix merge)
-- **Features**: PC + DTS + SSL + TRM + ADC + TF-Preserve
+- **Version**: 2.5 → 3.0 (Multi-Job System - IN PROGRESS)
+- **Features**: Multi-Job + PC + DTS + SSL + TRM + ADC + TF-Preserve
 - **Next**: Manual Close Detection (MCD)
 
 ### File Structure

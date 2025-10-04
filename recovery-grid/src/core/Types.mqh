@@ -24,6 +24,15 @@ enum EBasketKind
    BASKET_HEDGE   = 1
   };
 
+// Multi-Job System (v3.0)
+enum EJobStatus
+  {
+   JOB_ACTIVE      = 0,  // Trading normally
+   JOB_FULL        = 1,  // Grid full, may spawn new
+   JOB_STOPPED     = 2,  // SL hit or manual stop
+   JOB_ABANDONED   = 3   // DD too high, can't save
+  };
+
 struct SGridLevel
   {
    double price;   // entry price for pending level
