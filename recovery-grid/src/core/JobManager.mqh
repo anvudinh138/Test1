@@ -41,6 +41,13 @@ struct SJob
    double                   unrealized_pnl;      // Floating P&L
    double                   peak_equity;         // Peak for DD calculation
 
+   // Profit optimization (Phase 4)
+   double                   profit_target_usd;   // Job TP target
+   double                   trail_start_usd;     // Start trailing at
+   double                   trail_step_usd;      // Trail step size
+   double                   trail_stop_usd;      // Current trailing stop
+   bool                     is_trailing;         // Trailing active flag
+
    // Constructor
    SJob() : job_id(0),
             magic(0),
@@ -53,7 +60,12 @@ struct SJob
             is_tsl_active(false),
             realized_pnl(0),
             unrealized_pnl(0),
-            peak_equity(0)
+            peak_equity(0),
+            profit_target_usd(0),
+            trail_start_usd(0),
+            trail_step_usd(0),
+            trail_stop_usd(0),
+            is_trailing(false)
      {
      }
   };
@@ -86,6 +98,13 @@ private:
    double            m_job_sl_usd;          // Per-job SL in USD
    double            m_job_dd_threshold;    // Per-job DD% abandon threshold
 
+   // Profit optimization params (Phase 4)
+   bool              m_smart_close_enabled; // Only close profitable jobs
+   double            m_min_profit_to_close; // Min profit to allow close
+   double            m_job_tp_usd;          // Job take profit
+   double            m_job_trail_start;     // Start trailing at
+   double            m_job_trail_step;      // Trail step size
+
    // Dependencies
    CPortfolioLedger *m_ledger;              // Global ledger
    CLogger          *m_log;                 // Logger
@@ -111,6 +130,11 @@ public:
                const int spawn_cooldown_sec,
                const double job_sl_usd,
                const double job_dd_threshold,
+               const bool smart_close_enabled,
+               const double min_profit_to_close,
+               const double job_tp_usd,
+               const double job_trail_start,
+               const double job_trail_step,
                CSpacingEngine *spacing,
                COrderExecutor *executor,
                CRescueEngine *rescue,
@@ -128,6 +152,11 @@ public:
         m_max_spawns(20),
         m_job_sl_usd(job_sl_usd),
         m_job_dd_threshold(job_dd_threshold),
+        m_smart_close_enabled(smart_close_enabled),
+        m_min_profit_to_close(min_profit_to_close),
+        m_job_tp_usd(job_tp_usd),
+        m_job_trail_start(job_trail_start),
+        m_job_trail_step(job_trail_step),
         m_spacing(spacing),
         m_executor(executor),
         m_rescue(rescue),
@@ -211,6 +240,13 @@ public:
       job.status = JOB_ACTIVE;
       job.job_sl_usd = m_job_sl_usd;
       job.job_dd_threshold = m_job_dd_threshold;
+
+      // Profit optimization settings
+      job.profit_target_usd = m_job_tp_usd;
+      job.trail_start_usd = m_job_trail_start;
+      job.trail_step_usd = m_job_trail_step;
+      job.trail_stop_usd = 0;
+      job.is_trailing = false;
 
       // Create lifecycle controller with job magic & job_id
       job.controller = new CLifecycleController(
@@ -414,27 +450,54 @@ public:
             m_jobs[newest_idx].realized_pnl = m_jobs[newest_idx].controller.GetRealizedPnL();
            }
 
-         // CRITICAL: Check Job SL FIRST before allowing spawn
-         // Grid full + losing = don't spawn, just close with SL
+         // Phase 4: SMART CLOSE LOGIC
+         // Only close job at grid full if profitable or hit SL
          if(ShouldStopJob(newest_idx))
            {
-            StopJob(m_jobs[newest_idx].job_id, StringFormat("Job SL hit: %.2f USD (grid full)", m_jobs[newest_idx].unrealized_pnl));
+            StopJob(m_jobs[newest_idx].job_id, StringFormat("Job SL hit: %.2f USD", m_jobs[newest_idx].unrealized_pnl));
             // Don't spawn new job if SL hit (losing scenario)
            }
          else if(ShouldSpawnNew(newest_idx))
            {
-            // Grid full + NOT losing = DCA successful, close and spawn new
+            double pnl = m_jobs[newest_idx].unrealized_pnl;
             int old_job_id = m_jobs[newest_idx].job_id;
-            if(m_log != NULL)
-               m_log.Event(Tag(), StringFormat("Closing Job %d (grid full, DCA successful, PnL %.2f)",
-                                             old_job_id, m_jobs[newest_idx].unrealized_pnl));
 
-            StopJob(old_job_id, "Grid full, spawning new job");
-
-            // Spawn new job
-            int new_job_id = SpawnJob();
-            if(new_job_id > 0 && m_log != NULL)
-               m_log.Event(Tag(), StringFormat("Auto-spawned Job %d after closing Job %d", new_job_id, old_job_id));
+            // SMART CLOSE: Check if should close based on P&L
+            if(m_smart_close_enabled)
+              {
+               if(pnl >= m_min_profit_to_close)
+                 {
+                  // Profitable: close and spawn new
+                  if(m_log != NULL)
+                     m_log.Event(Tag(), StringFormat("[SMART] Closing Job %d (PROFIT %.2f >= %.2f)",
+                                                   old_job_id, pnl, m_min_profit_to_close));
+                  StopJob(old_job_id, StringFormat("Grid full - PROFIT %.2f", pnl));
+                  SpawnJob();
+                 }
+               else if(pnl > -m_job_sl_usd * 0.5)
+                 {
+                  // Small loss: keep running, spawn helper job
+                  if(m_log != NULL)
+                     m_log.Event(Tag(), StringFormat("[SMART] Job %d grid full but LOSING %.2f, spawning HELPER",
+                                                   old_job_id, pnl));
+                  m_jobs[newest_idx].is_full = true;  // Mark as full
+                  SpawnJob();  // Spawn helper job
+                 }
+               else
+                 {
+                  // Big loss: keep running, no spawn
+                  if(m_log != NULL)
+                     m_log.Event(Tag(), StringFormat("[SMART] Job %d grid full but BIG LOSS %.2f, NO ACTION",
+                                                   old_job_id, pnl));
+                  m_jobs[newest_idx].is_full = true;
+                 }
+              }
+            else
+              {
+               // Old logic: always close at grid full
+               StopJob(old_job_id, "Grid full, spawning new job");
+               SpawnJob();
+              }
            }
         }
 
@@ -460,7 +523,55 @@ public:
          if(current_equity > m_jobs[i].peak_equity)
             m_jobs[i].peak_equity = current_equity;
 
-         // 4. Check risk conditions (Phase 3) - Job SL protection
+         // 4. Phase 4: Check Job TP (PROFIT TARGET)
+         if(m_jobs[i].profit_target_usd > 0 && m_jobs[i].unrealized_pnl >= m_jobs[i].profit_target_usd)
+           {
+            if(m_log != NULL)
+               m_log.Event(Tag(), StringFormat("[TP] Job %d hit profit target %.2f >= %.2f",
+                                             m_jobs[i].job_id, m_jobs[i].unrealized_pnl, m_jobs[i].profit_target_usd));
+            StopJob(m_jobs[i].job_id, StringFormat("JOB TP HIT: %.2f USD", m_jobs[i].unrealized_pnl));
+            SpawnJob();  // Spawn new job after TP
+            continue;
+           }
+
+         // 5. Phase 4: Check Job Trailing Stop
+         if(m_jobs[i].trail_start_usd > 0 && m_jobs[i].unrealized_pnl >= m_jobs[i].trail_start_usd)
+           {
+            if(!m_jobs[i].is_trailing)
+              {
+               // Activate trailing
+               m_jobs[i].is_trailing = true;
+               m_jobs[i].trail_stop_usd = m_jobs[i].unrealized_pnl - m_jobs[i].trail_step_usd;
+               if(m_log != NULL)
+                  m_log.Event(Tag(), StringFormat("[TRAIL] Job %d activated trailing at %.2f, stop at %.2f",
+                                                m_jobs[i].job_id, m_jobs[i].unrealized_pnl, m_jobs[i].trail_stop_usd));
+              }
+            else
+              {
+               // Update trailing stop
+               double new_stop = m_jobs[i].unrealized_pnl - m_jobs[i].trail_step_usd;
+               if(new_stop > m_jobs[i].trail_stop_usd)
+                 {
+                  m_jobs[i].trail_stop_usd = new_stop;
+                  if(m_log != NULL)
+                     m_log.Event(Tag(), StringFormat("[TRAIL] Job %d updated stop to %.2f",
+                                                   m_jobs[i].job_id, m_jobs[i].trail_stop_usd));
+                 }
+
+               // Check if trail stop hit
+               if(m_jobs[i].unrealized_pnl <= m_jobs[i].trail_stop_usd)
+                 {
+                  if(m_log != NULL)
+                     m_log.Event(Tag(), StringFormat("[TRAIL] Job %d stop hit at %.2f",
+                                                   m_jobs[i].job_id, m_jobs[i].unrealized_pnl));
+                  StopJob(m_jobs[i].job_id, StringFormat("TRAIL STOP HIT: %.2f USD", m_jobs[i].unrealized_pnl));
+                  SpawnJob();  // Spawn new after trail stop
+                  continue;
+                 }
+              }
+           }
+
+         // 6. Check risk conditions (Phase 3) - Job SL protection
          if(ShouldStopJob(i))
            {
             StopJob(m_jobs[i].job_id, StringFormat("SL hit: %.2f USD", m_jobs[i].unrealized_pnl));

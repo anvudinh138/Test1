@@ -155,6 +155,13 @@ input group "=== Job Risk Management (Phase 3) ==="
 input double            InpJobSL_USD               = 50.0;   // Per-job stop loss in USD (0 = disabled)
 input double            InpJobDDThreshold          = 30.0;   // Abandon job if DD >= this % (e.g., 30%)
 
+input group "=== Profit Optimization (Phase 4) ==="
+input bool              InpSmartCloseEnabled       = true;   // ✅ Only close profitable jobs at grid full
+input double            InpMinProfitToClose        = 1.0;    // Min profit to allow close (USD)
+input double            InpJobTPUSD                = 10.0;   // Job take profit target (USD)
+input double            InpJobTrailStartUSD        = 5.0;    // Start trailing at profit (USD)
+input double            InpJobTrailStepUSD         = 2.0;    // Trail step size (USD)
+
 input group "=== Magic Number (Job Isolation) ==="
 input long              InpMagicStart              = 1000;   // Starting magic number (e.g., 1000)
 input long              InpMagicOffset             = 421;    // Magic offset between jobs (e.g., 421)
@@ -544,6 +551,11 @@ int OnInit()
          InpSpawnCooldownSec,
          InpJobSL_USD,
          InpJobDDThreshold,
+         InpSmartCloseEnabled,      // Phase 4: Smart close logic
+         InpMinProfitToClose,       // Phase 4: Min profit to allow close
+         InpJobTPUSD,               // Phase 4: Job take profit
+         InpJobTrailStartUSD,       // Phase 4: Start trailing at
+         InpJobTrailStepUSD,        // Phase 4: Trail step
          g_spacing,
          g_executor,
          g_rescue,
