@@ -23,6 +23,7 @@ private:
    COrderExecutor *m_executor;
    CLogger       *m_log;
    long           m_magic;
+   int            m_job_id;        // Multi-Job v3.0: Job identifier
 
    SGridLevel     m_levels[];
    bool           m_active;
@@ -67,7 +68,11 @@ private:
      {
       string side=(m_direction==DIR_BUY)?"BUY":"SELL";
       string role=(m_kind==BASKET_PRIMARY)?"PRI":"HEDGE";
-      return StringFormat("[RGDv2][%s][%s][%s]",m_symbol,side,role);
+      // Multi-Job v3.0: Include job_id in tag
+      if(m_job_id > 0)
+         return StringFormat("[RGDv2][%s][J%d][%s][%s]",m_symbol,m_job_id,side,role);
+      else
+         return StringFormat("[RGDv2][%s][%s][%s]",m_symbol,side,role);  // Legacy format
      }
 
    string         DirectionLabel() const
@@ -80,6 +85,25 @@ private:
       if(m_direction==DIR_BUY)
          return (type==ORDER_TYPE_BUY_LIMIT || type==ORDER_TYPE_BUY_STOP);
       return (type==ORDER_TYPE_SELL_LIMIT || type==ORDER_TYPE_SELL_STOP);
+     }
+
+   // Multi-Job v3.0: Check if order belongs to this job (magic filter)
+   bool           IsMyOrder(ulong ticket) const
+     {
+      if(!PositionSelectByTicket(ticket))
+         return false;
+
+      long order_magic = PositionGetInteger(POSITION_MAGIC);
+      return order_magic == m_magic;
+     }
+
+   // Multi-Job v3.0: Build order comment with job_id
+   string         BuildComment(const string type) const
+     {
+      if(m_job_id > 0)
+         return StringFormat("RGDv2_J%d_%s", m_job_id, type);
+      else
+         return StringFormat("RGDv2_%s", type);  // Legacy format
      }
 
    void           LogDynamic(const string action,const int level,const double price)
@@ -234,7 +258,7 @@ private:
          
          // Place seed
          double seed_lot=LevelLot(0);
-         ulong market_ticket=m_executor.Market(m_direction,seed_lot,"RGDv2_Seed");
+         ulong market_ticket=m_executor.Market(m_direction,seed_lot,BuildComment("Seed"));
          if(market_ticket>0)
            {
             m_levels[0].price=anchor;
@@ -287,7 +311,7 @@ private:
          double seed_lot=m_levels[0].lot;
          if(seed_lot<=0.0)
             return;
-         ulong market_ticket=m_executor.Market(m_direction,seed_lot,"RGDv2_Seed");
+         ulong market_ticket=m_executor.Market(m_direction,seed_lot,BuildComment("Seed"));
          if(market_ticket>0)
            {
             m_levels[0].ticket=market_ticket;
@@ -329,12 +353,13 @@ private:
          ulong ticket=PositionGetTicket(i);
          if(ticket==0)
             continue;
-         if(!PositionSelectByTicket(ticket))
+
+         // Multi-Job v3.0: Filter by job magic (critical for isolation)
+         if(!IsMyOrder(ticket))
             continue;
          if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
             continue;
-         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
-            continue;
+
          long type=PositionGetInteger(POSITION_TYPE);
          if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
             (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
@@ -813,7 +838,7 @@ public:
          return;
 
       // Deploy single market order
-      ulong ticket=m_executor.Market(m_direction,normalized_lot,"RGDv2_RescueSeed");
+      ulong ticket=m_executor.Market(m_direction,normalized_lot,BuildComment("RescueSeed"));
 
       RefreshState();
       if(m_log!=NULL)
@@ -827,7 +852,8 @@ public:
                                  CSpacingEngine *spacing,
                                  COrderExecutor *executor,
                                  CLogger *logger,
-                                 const long magic)
+                                 const long magic,
+                                 const int job_id = 0)  // Multi-Job v3.0: Job ID (0 = legacy)
                        : m_symbol(symbol),
                          m_direction(direction),
                          m_kind(kind),
@@ -836,6 +862,7 @@ public:
                          m_executor(executor),
                          m_log(logger),
                          m_magic(magic),
+                         m_job_id(job_id),
                          m_active(false),
                          m_closed_recently(false),
                          m_cycles_done(0),
@@ -942,8 +969,8 @@ public:
          if(lot<=0.0)
             continue;
          
-         ulong pending=(m_direction==DIR_BUY)?m_executor.Limit(DIR_BUY,price,lot,"RGDv2_GridRefill")
-                                             :m_executor.Limit(DIR_SELL,price,lot,"RGDv2_GridRefill");
+         ulong pending=(m_direction==DIR_BUY)?m_executor.Limit(DIR_BUY,price,lot,BuildComment("GridRefill"))
+                                             :m_executor.Limit(DIR_SELL,price,lot,BuildComment("GridRefill"));
          if(pending>0)
            {
             m_levels[idx].price=price;
@@ -1114,12 +1141,13 @@ public:
          ulong ticket = PositionGetTicket(i);
          if(ticket==0)
             continue;
-         if(!PositionSelectByTicket(ticket))
+
+         // Multi-Job v3.0: Filter by job magic
+         if(!IsMyOrder(ticket))
             continue;
          if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
             continue;
-         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
-            continue;
+
          long type = PositionGetInteger(POSITION_TYPE);
          if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
             (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))

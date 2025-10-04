@@ -29,6 +29,7 @@ private:
    CPortfolioLedger *m_ledger;
    CLogger          *m_log;
    long              m_magic;
+   int               m_job_id;        // Multi-Job v3.0: Job identifier
 
    CGridBasket      *m_buy;
    CGridBasket      *m_sell;
@@ -44,7 +45,14 @@ private:
    // ADC (anti-drawdown cushion)
    bool              m_adc_cushion_active;  // State tracking for cushion mode
 
-   string            Tag() const { return StringFormat("[RGDv2][%s][LC]",m_symbol); }
+   string            Tag() const
+     {
+      // Multi-Job v3.0: Include job_id in tag
+      if(m_job_id > 0)
+         return StringFormat("[RGDv2][%s][J%d][LC]",m_symbol,m_job_id);
+      else
+         return StringFormat("[RGDv2][%s][LC]",m_symbol);  // Legacy format
+     }
 
    double           CurrentPrice(const EDirection dir) const
      {
@@ -619,7 +627,8 @@ public:
                                           CRescueEngine *rescue,
                                           CPortfolioLedger *ledger,
                                           CLogger *log,
-                                          const long magic)
+                                          const long magic,
+                                          const int job_id = 0)  // Multi-Job v3.0: Job ID (0 = legacy)
                        : m_symbol(symbol),
                          m_params(params),
                          m_spacing(spacing),
@@ -628,6 +637,7 @@ public:
                          m_ledger(ledger),
                          m_log(log),
                          m_magic(magic),
+                         m_job_id(job_id),
                          m_buy(NULL),
                          m_sell(NULL),
                          m_halted(false),
@@ -668,8 +678,8 @@ public:
          if(m_log!=NULL)
             m_log.Event(Tag(),"[TF-Preserve] Existing positions detected, reconstructing baskets");
 
-         m_buy=new CGridBasket(m_symbol,DIR_BUY,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic);
-         m_sell=new CGridBasket(m_symbol,DIR_SELL,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic);
+         m_buy=new CGridBasket(m_symbol,DIR_BUY,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic,m_job_id);
+         m_sell=new CGridBasket(m_symbol,DIR_SELL,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic,m_job_id);
 
          // Mark baskets active without seeding
          m_buy.SetActive(true);
@@ -699,7 +709,7 @@ public:
          return false;
         }
 
-      m_buy=new CGridBasket(m_symbol,DIR_BUY,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic);
+      m_buy=new CGridBasket(m_symbol,DIR_BUY,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic,m_job_id);
       if(!m_buy.Init(ask))
         {
          if(m_log!=NULL)
@@ -724,7 +734,7 @@ public:
          return false;
         }
 
-      m_sell=new CGridBasket(m_symbol,DIR_SELL,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic);
+      m_sell=new CGridBasket(m_symbol,DIR_SELL,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic,m_job_id);
       if(!m_sell.Init(bid))
         {
          if(m_log!=NULL)
