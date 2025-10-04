@@ -55,6 +55,12 @@ struct SJob
    double                   lot_size_mult;        // Lot size multiplier
    int                      optimal_grid_levels; // Optimal levels for market
 
+   // Profit acceleration (Phase 4)
+   bool                     acceleration_active;  // Booster mode active
+   int                      booster_count;        // Current booster positions
+   double                   last_booster_price;   // Last booster price
+   datetime                 last_booster_time;    // Last booster timestamp
+
    // Constructor
    SJob() : job_id(0),
             magic(0),
@@ -76,7 +82,11 @@ struct SJob
             market_condition(MARKET_UNKNOWN),
             grid_spacing_mult(1.0),
             lot_size_mult(1.0),
-            optimal_grid_levels(10)
+            optimal_grid_levels(10),
+            acceleration_active(false),
+            booster_count(0),
+            last_booster_price(0),
+            last_booster_time(0)
      {
      }
   };
@@ -116,6 +126,12 @@ private:
    double            m_job_trail_start;     // Start trailing at
    double            m_job_trail_step;      // Trail step size
 
+   // Profit acceleration (Phase 4)
+   bool              m_profit_accel_enabled; // Enable booster positions
+   double            m_booster_threshold;    // Profit threshold to trigger
+   double            m_booster_lot_mult;     // Booster lot multiplier
+   int               m_max_boosters;         // Max boosters per job
+
    // Dependencies
    CPortfolioLedger *m_ledger;              // Global ledger
    CLogger          *m_log;                 // Logger
@@ -147,6 +163,10 @@ public:
                const double job_tp_usd,
                const double job_trail_start,
                const double job_trail_step,
+               const bool profit_accel_enabled,
+               const double booster_threshold,
+               const double booster_lot_mult,
+               const int max_boosters,
                CSpacingEngine *spacing,
                COrderExecutor *executor,
                CRescueEngine *rescue,
@@ -170,6 +190,10 @@ public:
         m_job_tp_usd(job_tp_usd),
         m_job_trail_start(job_trail_start),
         m_job_trail_step(job_trail_step),
+        m_profit_accel_enabled(profit_accel_enabled),
+        m_booster_threshold(booster_threshold),
+        m_booster_lot_mult(booster_lot_mult),
+        m_max_boosters(max_boosters),
         m_spacing(spacing),
         m_executor(executor),
         m_rescue(rescue),
@@ -474,6 +498,58 @@ public:
          m_log.Event(Tag(), StringFormat("Job %d abandoned (DD too high, positions kept open)", job_id));
      }
 
+   void CheckProfitAcceleration(int job_index)
+     {
+      if(job_index < 0 || job_index >= ArraySize(m_jobs))
+         return;
+
+      if(m_jobs[job_index].status != JOB_ACTIVE || m_jobs[job_index].controller == NULL)
+         return;
+
+      // Check if already at max boosters
+      if(m_jobs[job_index].booster_count >= m_max_boosters)
+         return;
+
+      // Check cooldown (don't add boosters too fast)
+      if(m_jobs[job_index].last_booster_time > 0 && TimeCurrent() - m_jobs[job_index].last_booster_time < 60)
+         return;
+
+      // Get winning direction from controller
+      double buy_pnl = 0, sell_pnl = 0;
+      if(!m_jobs[job_index].controller.GetBasketPnL(buy_pnl, sell_pnl))
+         return;
+
+      EDirection winning_dir = (buy_pnl > sell_pnl) ? DIR_BUY : DIR_SELL;
+
+      // Calculate booster lot
+      double booster_lot = m_params.lot_base * m_booster_lot_mult * m_jobs[job_index].lot_size_mult;
+
+      // Get current price
+      double price = (winning_dir == DIR_BUY) ?
+                     SymbolInfoDouble(m_symbol, SYMBOL_ASK) :
+                     SymbolInfoDouble(m_symbol, SYMBOL_BID);
+
+      // Deploy booster position
+      string comment = StringFormat("RGDv3_J%d_Booster%d", m_jobs[job_index].job_id, m_jobs[job_index].booster_count + 1);
+
+      if(m_jobs[job_index].controller.AddBoosterPosition(winning_dir, booster_lot, comment))
+        {
+         m_jobs[job_index].booster_count++;
+         m_jobs[job_index].last_booster_price = price;
+         m_jobs[job_index].last_booster_time = TimeCurrent();
+         m_jobs[job_index].acceleration_active = true;
+
+         // Tighten TP for quicker profit
+         m_jobs[job_index].profit_target_usd *= 0.7;
+
+         if(m_log != NULL)
+            m_log.Info(Tag(), StringFormat("[ACCEL] Job %d added booster #%d: %s %.2f lot at %.5f (PnL=%.2f)",
+                                        m_jobs[job_index].job_id, m_jobs[job_index].booster_count,
+                                        (winning_dir == DIR_BUY) ? "BUY" : "SELL",
+                                        booster_lot, price, m_jobs[job_index].unrealized_pnl));
+        }
+     }
+
    void StopJob(int job_id, const string reason)
      {
       int idx = GetJobIndex(job_id);
@@ -628,7 +704,13 @@ public:
               }
            }
 
-         // 6. Check risk conditions (Phase 3) - Job SL protection
+         // 6. Phase 4: Check Profit Acceleration (BOOSTER)
+         if(m_profit_accel_enabled && m_jobs[i].unrealized_pnl >= m_booster_threshold)
+           {
+            CheckProfitAcceleration(i);
+           }
+
+         // 7. Check risk conditions (Phase 3) - Job SL protection
          if(ShouldStopJob(i))
            {
             StopJob(m_jobs[i].job_id, StringFormat("SL hit: %.2f USD", m_jobs[i].unrealized_pnl));

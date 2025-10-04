@@ -1056,6 +1056,51 @@ public:
       FlattenAll(reason);
      }
 
+   // Phase 4: Support for profit acceleration
+   bool GetBasketPnL(double &buy_pnl, double &sell_pnl) const
+     {
+      buy_pnl = 0;
+      sell_pnl = 0;
+
+      if(m_buy != NULL)
+         buy_pnl = m_buy.BasketPnL();
+      if(m_sell != NULL)
+         sell_pnl = m_sell.BasketPnL();
+
+      return true;
+     }
+
+   bool AddBoosterPosition(EDirection dir, double lot, string comment)
+     {
+      if(m_executor == NULL)
+         return false;
+
+      // Place market order in winning direction
+      double price = (dir == DIR_BUY) ?
+                     SymbolInfoDouble(m_symbol, SYMBOL_ASK) :
+                     SymbolInfoDouble(m_symbol, SYMBOL_BID);
+
+      m_executor.SetMagic(m_magic);
+      ulong ticket = m_executor.OpenPosition(dir, lot, 0, 0, comment);
+
+      if(ticket > 0)
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("Booster deployed: %s %.2f lot, ticket=%d",
+                                         (dir == DIR_BUY) ? "BUY" : "SELL", lot, ticket));
+
+         // Force basket refresh to include new position
+         if(dir == DIR_BUY && m_buy != NULL)
+            m_buy.RefreshState();
+         else if(dir == DIR_SELL && m_sell != NULL)
+            m_sell.RefreshState();
+
+         return true;
+        }
+
+      return false;
+     }
+
    void              Shutdown()
      {
       if(m_buy!=NULL)

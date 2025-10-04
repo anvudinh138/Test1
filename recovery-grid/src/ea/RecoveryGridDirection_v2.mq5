@@ -172,6 +172,12 @@ input double            InpRangeTightSpacing       = 0.5;    // Grid spacing mul
 input double            InpRangeLotMultiplier      = 2.0;    // Lot multiplier in range
 input double            InpRangeTPMultiplier       = 0.3;    // TP multiplier in range (quick profit)
 
+input group "=== Profit Acceleration (Phase 4) ==="
+input bool              InpProfitAccelEnabled      = true;   // ✅ Enable profit acceleration
+input double            InpBoosterThreshold        = 5.0;    // Trigger booster at profit (USD)
+input double            InpBoosterLotMultiplier    = 2.0;    // Booster lot multiplier
+input int               InpMaxBoosters             = 3;      // Max booster positions per job
+
 input group "=== Magic Number (Job Isolation) ==="
 input long              InpMagicStart              = 1000;   // Starting magic number (e.g., 1000)
 input long              InpMagicOffset             = 421;    // Magic offset between jobs (e.g., 421)
@@ -590,6 +596,10 @@ int OnInit()
          InpJobTPUSD,               // Phase 4: Job take profit
          InpJobTrailStartUSD,       // Phase 4: Start trailing at
          InpJobTrailStepUSD,        // Phase 4: Trail step
+         InpProfitAccelEnabled,     // Phase 4: Profit acceleration
+         InpBoosterThreshold,       // Phase 4: Booster threshold
+         InpBoosterLotMultiplier,   // Phase 4: Booster lot mult
+         InpMaxBoosters,            // Phase 4: Max boosters
          g_spacing,
          g_executor,
          g_rescue,
