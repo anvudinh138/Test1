@@ -291,7 +291,9 @@ public:
          return false;
         }
 
-      // Trigger 1: Grid full
+      // Trigger: Grid full (ONLY trigger - simplified logic)
+      // Reason: TSL adds rescue to existing job (no need to spawn)
+      //         DD threshold not needed yet (testing phase)
       if(m_jobs[job_index].controller != NULL && m_jobs[job_index].controller.IsGridFull())
         {
          if(m_log != NULL)
@@ -299,15 +301,18 @@ public:
          return true;
         }
 
-      // Trigger 2: TSL active
+      /* DISABLED: TSL active trigger
+      // TSL adds rescue orders to EXISTING job, no need to spawn new job
       if(m_jobs[job_index].controller != NULL && m_jobs[job_index].controller.IsTSLActive())
         {
          if(m_log != NULL)
             m_log.Event(Tag(), StringFormat("[Spawn] Job %d TSL active, spawning new job", m_jobs[job_index].job_id));
          return true;
         }
+      */
 
-      // Trigger 3: Job DD threshold breached
+      /* DISABLED: Job DD threshold trigger
+      // Temporarily disabled - testing grid full trigger only first
       double job_dd_pct = 0.0;
       if(m_jobs[job_index].peak_equity > 0)
         {
@@ -320,6 +325,7 @@ public:
                                           m_jobs[job_index].job_id, job_dd_pct, m_jobs[job_index].job_dd_threshold));
          return true;
         }
+      */
 
       return false;
      }
