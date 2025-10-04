@@ -24,9 +24,9 @@ private:
      }
 
 public:
-            COrderValidator(const string symbol,const bool respect_stops)
+            COrderValidator(const string symbol)
               : m_symbol(symbol),
-                m_respect_stops(respect_stops)
+                m_respect_stops(MQLInfoInteger(MQL_TESTER) ? false : true)  // Auto-detect
      {
      }
 

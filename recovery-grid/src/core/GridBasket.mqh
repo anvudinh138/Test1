@@ -111,8 +111,9 @@ private:
          double point_value = SymbolInfoDouble(m_symbol, SYMBOL_TRADE_TICK_VALUE) / SymbolInfoDouble(m_symbol, SYMBOL_TRADE_TICK_SIZE) * _Point;
 
          // Use stored spacing (pips to points conversion)
-         // If not initialized yet, fall back to params
-         double spacing_points = (m_initial_spacing_pips > 0) ? m_initial_spacing_pips * 10.0 : m_params.spacing_pips * 10.0;
+         // If not initialized yet, calculate from spacing engine
+         double spacing_pips = (m_initial_spacing_pips > 0) ? m_initial_spacing_pips : m_spacing.SpacingPips();
+         double spacing_points = spacing_pips * 10.0;
 
          if(point_value > 0 && spacing_points > 0)
            {
@@ -478,9 +479,14 @@ private:
       double move_points=(m_direction==DIR_BUY)?((price-m_avg_price)/point)
                                               :((m_avg_price-price)/point);
 
+      // TSL spacing-based: start = spacing × multiplier
+      double spacing_px=m_spacing.ToPrice(m_initial_spacing_pips);
+      double tsl_start_px=spacing_px*m_params.tsl_start_multiplier;
+      double tsl_start_points=(spacing_px>0.0 && point>0.0)?tsl_start_px/point:0.0;
+
       if(!m_trailing_on)
         {
-         if(move_points>=m_params.tsl_start_points)
+         if(move_points>=tsl_start_points)
            {
             m_trailing_on=true;
             m_trail_anchor=price;
@@ -490,7 +496,9 @@ private:
          return;
         }
 
-      double step=m_params.tsl_step_points*point;
+      // TSL step = spacing × step multiplier
+      double tsl_step_px=spacing_px*m_params.tsl_step_multiplier;
+      double step=tsl_step_px;
       if(step<=0.0)
          return;
 
@@ -960,7 +968,7 @@ public:
          m_log.Event(Tag(),StringFormat("Refill +%d placed=%d/%d pending=%d",added,m_levels_placed,m_max_levels,m_pending_count));
      }
 
-   void           Update()
+   void           Update(bool margin_pause = false)  // Add margin_pause parameter
      {
       if(!m_active)
          return;
@@ -994,9 +1002,20 @@ public:
                                              m_mcd_last_total_lot,m_mcd_last_pnl));
            }
         }
-      
-      // Dynamic grid refill
-      if(m_params.grid_dynamic_enabled)
+
+      // Dynamic grid refill (skip if margin pause active)
+      if(margin_pause && m_log!=NULL)
+        {
+         static datetime last_log_time=0;
+         datetime now=TimeCurrent();
+         if(now-last_log_time>=60)  // Log once per minute
+           {
+            m_log.Event(Tag(),"[DD-PAUSE] Grid refill skipped - drawdown protection active");
+            last_log_time=now;
+           }
+        }
+
+      if(m_params.grid_dynamic_enabled && !margin_pause)
         {
          // Update pending count by direction
          m_pending_count=0;
@@ -1084,6 +1103,34 @@ public:
    double         AveragePrice() const { return m_avg_price; }
    double         AvgPrice() const { return m_avg_price; }
    double         TotalLot() const { return m_total_lot; }
+
+   double         RescueLot() const
+     {
+      // Count only rescue orders (identified by comment "RGDv2_RescueSeed")
+      double rescue_lot = 0.0;
+      int total = (int)PositionsTotal();
+      for(int i=0; i<total; i++)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket==0)
+            continue;
+         if(!PositionSelectByTicket(ticket))
+            continue;
+         if(PositionGetString(POSITION_SYMBOL)!=m_symbol)
+            continue;
+         if(PositionGetInteger(POSITION_MAGIC)!=m_magic)
+            continue;
+         long type = PositionGetInteger(POSITION_TYPE);
+         if((m_direction==DIR_BUY && type!=POSITION_TYPE_BUY) ||
+            (m_direction==DIR_SELL && type!=POSITION_TYPE_SELL))
+            continue;
+
+         string comment = PositionGetString(POSITION_COMMENT);
+         if(StringFind(comment, "RescueSeed") >= 0)  // Rescue order
+            rescue_lot += PositionGetDouble(POSITION_VOLUME);
+        }
+      return rescue_lot;
+     }
    double         GroupTPPrice() const { return m_tp_price; }
    void           SetKind(const EBasketKind kind) { m_kind=kind; }
    int            PendingCount() const { return m_pending_count; }

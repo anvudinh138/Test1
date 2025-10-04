@@ -51,54 +51,43 @@ input SymbolPresetEnum  InpSymbolPreset     = PRESET_CUSTOM;  // Preset Mode (0=
 input int               InpStatusInterval   = 60;
 input bool              InpLogEvents        = true;
 
-input group "=== Grid Configuration ==="
-enum InpSpacingModeEnum { InpSpacingPips=0, InpSpacingATR=1, InpSpacingHybrid=2 };
-input InpSpacingModeEnum InpSpacingMode     = InpSpacingHybrid;  // Grid spacing method
-input double            InpSpacingStepPips  = 8.0;   // PIPS mode: Fixed step
-input double            InpSpacingAtrMult   = 0.8;   // ATR/HYBRID: ATR multiplier
-input double            InpMinSpacingPips   = 5.0;   // ATR/HYBRID: Min spacing floor
-
-input ENUM_TIMEFRAMES InpAtrTimeframe       = PERIOD_M15;  // ATR calculation timeframe
+input group "=== Grid Configuration (ATR-Based Auto-Spacing) ==="
+input ENUM_TIMEFRAMES InpAtrTimeframe       = PERIOD_H4;   // ATR timeframe (H4 recommended for stability)
 input int             InpAtrPeriod          = 14;          // ATR period
+input double          InpSpacingAtrMult     = 1;         // Spacing = ATR × this multiplier
 
-input int               InpGridLevels       = 1000;  // Max grid levels (high = infinite)
-input bool              InpDynamicGrid      = true;  // ✅ Dynamic refill (recommended)
-input int               InpWarmLevels       = 5;     // Initial pendings per basket
-input int               InpRefillThreshold  = 2;     // Refill when pendings drop to this
-input int               InpRefillBatch      = 3;     // Add this many pendings per refill
-input int               InpMaxPendings      = 15;    // Max pending orders per basket
+input int             InpGridLevels         = 100000;      // Max grid levels (high = infinite, no lag with dynamic mode)
 
 input group "=== Lot Sizing ==="
 input double            InpLotBase          = 0.01;  // First grid level lot
-input double            InpLotOffset        = 0.02;  // Linear increment per level
+input double            InpLotOffset        = 0;  // Linear increment per level
 
 input group "=== Lot % Risk (Auto Lot Sizing) ==="
 input bool              InpLotPercentEnabled = false;  // ✅ Enable lot % risk calculation
 input double            InpLotPercentRisk    = 1.0;    // % of account balance to risk per level
 input double            InpLotPercentMaxLot  = 1.0;    // Max lot size cap for % risk
 
-input group "=== Take Profit & TSL ==="
-input double            InpTargetCycleUSD   = 5.0;   // Group TP target (USD)
-input bool              InpTSLEnabled       = true;  // ✅ Enable TSL on rescue hedge
-input int               InpTSLStartPoints   = 1000;  // TSL activation threshold
-input int               InpTSLStepPoints    = 200;   // TSL step size
+input group "=== Take Profit & TSL (Spacing-Based, Auto-Adaptive) ==="
+input double            InpTargetCycleUSD      = 5.0;   // Group TP target (USD)
+input bool              InpTSLEnabled          = true;  // ✅ Enable TSL on rescue hedge
+input double            InpTSLStartMultiplier  = 2.0;   // TSL activates after profit = spacing × this
+input double            InpTSLStepMultiplier   = 0.5;   // TSL trails by spacing × this
 
-input group "=== Rescue/Hedge System v3 (Delta + Cooldown) ==="
+input group "=== Rescue/Hedge System v3 (Delta-Based Rebalancing) ==="
 input bool              InpRescueAdaptiveLot   = true;   // ✅ Enable delta-based rescue
-input double            InpMinDeltaTrigger     = 0.02;   // Min imbalance to trigger (lot)
-input double            InpRescueLotMultiplier = 1;    // Delta multiplier (1.0 = 100%)
-input double            InpRescueMaxLot        = 0.1;   // Max per rescue deployment
+input double            InpMinDeltaTrigger     = 0.01;   // Min imbalance to trigger (lot) - lowered for early rescue
+input double            InpRescueLotMultiplier = 1.0;    // Delta multiplier (1.0 = 100%)
+input double            InpRescueMaxLot        = 0.5;    // Max per rescue deployment - increased for larger baskets
 input int               InpRescueCooldownBars  = 3;      // Bars between rescues (anti-spam)
 
 input group "=== Risk Management ==="
-input double            InpExposureCapLots  = 2.0;     // Max total lot exposure
-input double            InpSessionSL_USD    = 100000;  // Session stop loss (USD)
-
-input int               InpOrderCooldownSec = 5;
-input int               InpSlippagePips     = 1;
-input bool              InpRespectStops     = false;  // Set false for backtest
-
-input double            InpCommissionPerLot = 0.0;
+input double            InpExposureCapLots      = 0;     // Max total lot exposure
+input double            InpSessionSL_USD        = 100000;  // Session stop loss (USD)
+input bool              InpMarginKillEnabled    = true;    // ✅ Enable margin kill switch
+input double            InpMarginKillThreshold  = 80.0;    // Kill all if margin level < this % (e.g. 80%)
+input double            InpDDPauseGridThreshold = 0;       // Pause grid expansion if equity DD% >= this (0=disabled, e.g. 20%)
+input int               InpSlippagePips         = 1;       // Slippage tolerance
+input double            InpCommissionPerLot     = 0.0;     // Commission per lot (for calculation)
 
 input group "=== Dynamic Target Scaling ==="
 input bool              InpDtsEnabled           = false;  // ENABLED for production
@@ -129,7 +118,7 @@ input string            InpTrmImpactFilter         = "High"; // API filter: High
 input int               InpTrmBufferMinutes        = 30;     // Minutes before/after news event
 input string            InpTrmNewsWindows          = "08:30-09:00,14:00-14:30";  // CSV format HH:MM-HH:MM (UTC) - FALLBACK ONLY
 input bool              InpTrmPauseOrders          = true;   // Pause new orders during news
-input bool              InpTrmTightenSL            = false;  // Tighten SSL during news (requires SSL)
+input bool              InpTrmTightenSL            = true;  // Tighten SSL during news (requires SSL)
 input int               InpTrmTightenSLBuffer      = 5;      // Tighten SL only N minutes before news (not full buffer)
 input double            InpTrmSLMultiplier         = 0.5;    // SL tightening factor (0.5 = half distance)
 input bool              InpTrmCloseOnNews          = false;  // Close all positions before news window (legacy)
@@ -159,13 +148,10 @@ COrderValidator     *g_validator     = NULL;
 COrderExecutor      *g_executor      = NULL;
 CPortfolioLedger    *g_ledger        = NULL;
 CRescueEngine       *g_rescue        = NULL;
-CLifecycleController*g_controller    = NULL;
+CLifecycleController *g_controller   = NULL;
 
 //--- Preset override variables (non-const)
-InpSpacingModeEnum   g_spacing_mode;
-double               g_spacing_pips;
 double               g_spacing_atr_mult;
-double               g_min_spacing_pips;
 double               g_lot_base;
 double               g_lot_offset;
 double               g_target_cycle_usd;
@@ -213,10 +199,7 @@ SymbolPresetEnum DetectSymbolPreset(const string symbol)
 void ApplySymbolPreset()
   {
    // First, copy inputs to globals
-   g_spacing_mode = InpSpacingMode;
-   g_spacing_pips = InpSpacingStepPips;
    g_spacing_atr_mult = InpSpacingAtrMult;
-   g_min_spacing_pips = InpMinSpacingPips;
    g_lot_base = InpLotBase;
    g_lot_offset = InpLotOffset;
    g_target_cycle_usd = InpTargetCycleUSD;
@@ -413,46 +396,49 @@ void BuildParams()
    // Apply preset BEFORE building params (fills global vars)
    ApplySymbolPreset();
 
-   // Use global vars instead of input constants
-   g_params.spacing_mode       =(ESpacingMode)g_spacing_mode;
-   g_params.spacing_pips       =g_spacing_pips;
-   g_params.spacing_atr_mult   =g_spacing_atr_mult;
-   g_params.min_spacing_pips   =g_min_spacing_pips;
-   g_params.atr_period         =InpAtrPeriod;
-   g_params.atr_timeframe      =InpAtrTimeframe;
+   // Spacing (ATR-based only, simplified)
+   g_params.spacing_atr_mult   = InpSpacingAtrMult;
+   g_params.atr_period         = InpAtrPeriod;
+   g_params.atr_timeframe      = InpAtrTimeframe;
 
-   g_params.grid_levels        =InpGridLevels;
-   g_params.lot_base           =g_lot_base;
-   g_params.lot_offset         =g_lot_offset;
+   // Grid (dynamic mode always ON with hardcoded optimal values)
+   g_params.grid_levels           = InpGridLevels;
+   g_params.grid_dynamic_enabled  = true;   // Always ON
+   g_params.grid_warm_levels      = 5;      // Optimal value
+   g_params.grid_refill_threshold = 2;      // Optimal value
+   g_params.grid_refill_batch     = 3;      // Optimal value
+   g_params.grid_max_pendings     = 15;     // Optimal value
+   g_params.lot_base              = g_lot_base;
+   g_params.lot_offset            = g_lot_offset;
 
-   g_params.lot_percent_enabled =InpLotPercentEnabled;
-   g_params.lot_percent_risk    =InpLotPercentRisk;
-   g_params.lot_percent_max_lot =InpLotPercentMaxLot;
+   // Lot % Risk
+   g_params.lot_percent_enabled = InpLotPercentEnabled;
+   g_params.lot_percent_risk    = InpLotPercentRisk;
+   g_params.lot_percent_max_lot = InpLotPercentMaxLot;
 
-   g_params.grid_dynamic_enabled=InpDynamicGrid;
-   g_params.grid_warm_levels   =InpWarmLevels;
-   g_params.grid_refill_threshold=InpRefillThreshold;
-   g_params.grid_refill_batch  =InpRefillBatch;
-   g_params.grid_max_pendings  =InpMaxPendings;
+   // Take Profit & TSL (spacing-based)
+   g_params.target_cycle_usd      = g_target_cycle_usd;
+   g_params.tsl_enabled           = InpTSLEnabled;
+   g_params.tsl_start_multiplier  = InpTSLStartMultiplier;
+   g_params.tsl_step_multiplier   = InpTSLStepMultiplier;
 
-   g_params.target_cycle_usd   =g_target_cycle_usd;
+   // Rescue v3 (delta-based)
+   g_params.rescue_adaptive_lot    = InpRescueAdaptiveLot;
+   g_params.min_delta_trigger      = g_min_delta_trigger;
+   g_params.rescue_lot_multiplier  = g_rescue_lot_multiplier;
+   g_params.rescue_max_lot         = g_rescue_max_lot;
+   g_params.rescue_cooldown_bars   = g_rescue_cooldown_bars;
 
-   g_params.tsl_enabled        =InpTSLEnabled;
-   g_params.tsl_start_points   =InpTSLStartPoints;
-   g_params.tsl_step_points    =InpTSLStepPoints;
+   // Risk Management
+   g_params.exposure_cap_lots      = InpExposureCapLots;
+   g_params.session_sl_usd         = InpSessionSL_USD;
+   g_params.margin_kill_enabled    = InpMarginKillEnabled;
+   g_params.margin_kill_threshold  = InpMarginKillThreshold;
+   g_params.dd_pause_grid_threshold = InpDDPauseGridThreshold;
 
-   g_params.rescue_adaptive_lot    =InpRescueAdaptiveLot;
-   g_params.min_delta_trigger      =g_min_delta_trigger;
-   g_params.rescue_lot_multiplier  =g_rescue_lot_multiplier;
-   g_params.rescue_max_lot         =g_rescue_max_lot;
-   g_params.rescue_cooldown_bars   =g_rescue_cooldown_bars;
-   g_params.exposure_cap_lots      =InpExposureCapLots;
-   g_params.session_sl_usd         =InpSessionSL_USD;
-
-   g_params.slippage_pips      =InpSlippagePips;
-   g_params.order_cooldown_sec =InpOrderCooldownSec;
-   g_params.respect_stops_level=InpRespectStops;
-   g_params.commission_per_lot =InpCommissionPerLot;
+   // Execution (optimized/auto-detect)
+   g_params.slippage_pips      = InpSlippagePips;
+   g_params.commission_per_lot = InpCommissionPerLot;
 
    g_params.magic              =InpMagic;
 
@@ -513,9 +499,9 @@ int OnInit()
      }
 
    g_logger   = new CLogger(InpStatusInterval,InpLogEvents);
-   g_spacing  = new CSpacingEngine(trading_symbol,g_params.spacing_mode,g_params.atr_period,g_params.atr_timeframe,g_params.spacing_atr_mult,g_params.spacing_pips,g_params.min_spacing_pips);
-   g_validator= new COrderValidator(trading_symbol,g_params.respect_stops_level);
-   g_executor = new COrderExecutor(trading_symbol,g_validator,g_params.slippage_pips,g_params.order_cooldown_sec);
+   g_spacing  = new CSpacingEngine(trading_symbol,g_params.atr_period,g_params.atr_timeframe,g_params.spacing_atr_mult);
+   g_validator= new COrderValidator(trading_symbol);
+   g_executor = new COrderExecutor(trading_symbol,g_validator,g_params.slippage_pips);
    if(g_executor!=NULL)
       g_executor.SetMagic(g_params.magic);
    g_ledger   = new CPortfolioLedger(g_params.exposure_cap_lots,g_params.session_sl_usd);

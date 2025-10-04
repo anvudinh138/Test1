@@ -37,28 +37,27 @@ private:
 
 public:
                      CSpacingEngine(const string symbol,
-                                    const ESpacingMode mode,
                                     const int atr_period,
                                     const ENUM_TIMEFRAMES atr_tf,
-                                    const double atr_mult,
-                                    const double fixed_pips,
-                                    const double min_pips)
+                                    const double atr_mult)
                        : m_symbol(symbol),
-                         m_mode(mode),
+                         m_mode(SPACING_ATR),  // Always ATR mode
                          m_atr_period(atr_period),
                          m_atr_tf(atr_tf),
                          m_atr_mult(atr_mult),
-                         m_fixed_pips(fixed_pips),
-                         m_min_pips(min_pips),
+                         m_fixed_pips(0.0),    // Not used (ATR only)
+                         m_min_pips(0.0),      // Not used (trust ATR)
                          m_digits((int)SymbolInfoInteger(symbol,SYMBOL_DIGITS)),
                          m_atr_handle(INVALID_HANDLE),
                          m_cache_time(0),
                          m_cache_value(0.0),
                          m_last_atr_points(0.0)
      {
-      if(mode!=SPACING_PIPS)
+      // Always initialize ATR (forced ATR mode)
+      m_atr_handle=iATR(symbol,atr_tf,atr_period);
+      if(m_atr_handle==INVALID_HANDLE)
         {
-         m_atr_handle=iATR(symbol,atr_tf,atr_period);
+         Print("[SpacingEngine] ERROR: Failed to create ATR indicator for ",symbol," TF=",atr_tf," period=",atr_period," error=",GetLastError());
         }
      }
 
@@ -68,24 +67,39 @@ public:
       if(now==m_cache_time && m_cache_value>0.0)
          return m_cache_value;
 
-      double result=m_fixed_pips;
-      if(m_mode==SPACING_ATR || m_mode==SPACING_HYBRID)
+      // ATR-only mode (simplified logic)
+      double result=0.0;
+      double pip_points=PipPoints(m_symbol);
+
+      // Retry ATR fetch with timeout (for visual mode compatibility)
+      double atr_points=0.0;
+      int retry_count=0;
+      int max_retries=10;
+
+      while(atr_points<=0.0 && retry_count<max_retries)
         {
-         double atr_points=FetchATR();
-         double pip_points=PipPoints(m_symbol);
-         if(atr_points>0.0) m_last_atr_points=atr_points;
-         if(pip_points>0.0)
-           {
-            double atr_pips=atr_points/pip_points;
-            double atr_spacing=MathMax(m_min_pips,atr_pips*m_atr_mult);
-            if(m_mode==SPACING_ATR)
-               result=atr_spacing;
-            else
-               result=MathMax(m_fixed_pips,atr_spacing);
-           }
+         atr_points=FetchATR();
+         if(atr_points>0.0)
+            break;
+         Sleep(100);  // Wait 100ms for indicator to init
+         retry_count++;
         }
 
-      result=MathMax(result,m_min_pips);
+      if(atr_points>0.0)
+         m_last_atr_points=atr_points;
+
+      if(pip_points>0.0 && m_last_atr_points>0.0)
+        {
+         double atr_pips=m_last_atr_points/pip_points;
+         result=atr_pips*m_atr_mult;  // No floor, trust ATR
+        }
+      else if(pip_points>0.0 && m_atr_mult>0.0)
+        {
+         // Fallback: If ATR still not ready after retries
+         result=10.0*m_atr_mult;
+         Print("[SpacingEngine] ATR not ready after ",retry_count," retries, using fallback: ",result," pips");
+        }
+
       m_cache_time=now;
       m_cache_value=result;
       return result;
@@ -99,8 +113,7 @@ public:
 
    double            AtrPoints()
      {
-      if(m_mode==SPACING_PIPS)
-         return 0.0;
+      // Always return ATR (forced ATR mode)
       double atr_points=FetchATR();
       if(atr_points>0.0)
          m_last_atr_points=atr_points;

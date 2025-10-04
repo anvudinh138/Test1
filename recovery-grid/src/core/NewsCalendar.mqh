@@ -35,6 +35,10 @@ private:
    bool           m_enabled;               // API enabled
    CLogger       *m_log;
 
+   // Error rate limiting
+   datetime       m_last_error_log;        // Last time error was logged
+   int            m_error_log_interval;    // Seconds between error logs (anti-spam)
+
    //+------------------------------------------------------------------+
    //| Load historical news from CSV string (resource or file)           |
    //+------------------------------------------------------------------+
@@ -125,16 +129,27 @@ private:
       if(res==-1)
         {
          int error=GetLastError();
-         if(m_log!=NULL)
+         // Rate-limit error logs (only log once per interval to avoid spam)
+         // Use TimeGMT() instead of TimeCurrent() for backtest compatibility
+         datetime now = TimeGMT();
+         if(m_log != NULL && (now - m_last_error_log >= m_error_log_interval))
+           {
             m_log.Event("[NewsCalendar]",StringFormat("WebRequest failed: error %d - Check Tools->Options->Expert Advisors->Allow WebRequest for URL: %s",
                                                      error,url));
+            m_last_error_log = now;
+           }
          return false;
         }
 
       if(res!=200)
         {
-         if(m_log!=NULL)
+         // Rate-limit error logs
+         datetime now = TimeGMT();
+         if(m_log != NULL && (now - m_last_error_log >= m_error_log_interval))
+           {
             m_log.Event("[NewsCalendar]",StringFormat("HTTP error: %d",res));
+            m_last_error_log = now;
+           }
          return false;
         }
 
@@ -319,7 +334,9 @@ public:
                          m_buffer_minutes(buffer_minutes),
                          m_log(logger),
                          m_last_fetch(0),
-                         m_fetch_interval_sec(3600)  // Fetch every 1 hour
+                         m_fetch_interval_sec(3600),  // Fetch every 1 hour
+                         m_last_error_log(0),
+                         m_error_log_interval(3600)    // Log error max once per 1 hour (anti-spam)
      {
       ArrayResize(m_events,0);
 

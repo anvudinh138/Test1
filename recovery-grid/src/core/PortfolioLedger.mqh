@@ -89,12 +89,21 @@ public:
       return ((m_peak_equity-equity)/m_peak_equity)*100.0;
      }
 
-   bool     IsDrawdownCushionActive(const double threshold_pct)
+   bool     IsDrawdownCushionActive(const double threshold_pct, const bool currently_active)
      {
       if(threshold_pct<=0.0)
          return false;
       double dd_pct=GetEquityDrawdownPercent();
-      return dd_pct>=threshold_pct;
+
+      // Hysteresis: Add 1% dead zone to prevent spam
+      // Activate:   DD >= threshold
+      // Deactivate: DD < threshold - 1%
+      double deactivate_threshold = threshold_pct - 1.0;
+
+      if(currently_active)
+         return dd_pct >= deactivate_threshold;  // Stay active until DD < threshold-1%
+      else
+         return dd_pct >= threshold_pct;         // Activate when DD >= threshold
      }
   };
 
