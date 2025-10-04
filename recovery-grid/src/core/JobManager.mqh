@@ -402,6 +402,43 @@ public:
    void UpdateJobs()
      {
       // Phase 2 & 3: Full job management loop
+
+      // FIRST: Check spawn trigger and close OLD job BEFORE it accumulates too much loss
+      int newest_idx = GetNewestJobIndex();
+      if(newest_idx >= 0 && m_jobs[newest_idx].status == JOB_ACTIVE)
+        {
+         // Update stats for newest job to check grid full
+         if(m_jobs[newest_idx].controller != NULL)
+           {
+            m_jobs[newest_idx].unrealized_pnl = m_jobs[newest_idx].controller.GetUnrealizedPnL();
+            m_jobs[newest_idx].realized_pnl = m_jobs[newest_idx].controller.GetRealizedPnL();
+           }
+
+         // CRITICAL: Check Job SL FIRST before allowing spawn
+         // Grid full + losing = don't spawn, just close with SL
+         if(ShouldStopJob(newest_idx))
+           {
+            StopJob(m_jobs[newest_idx].job_id, StringFormat("Job SL hit: %.2f USD (grid full)", m_jobs[newest_idx].unrealized_pnl));
+            // Don't spawn new job if SL hit (losing scenario)
+           }
+         else if(ShouldSpawnNew(newest_idx))
+           {
+            // Grid full + NOT losing = DCA successful, close and spawn new
+            int old_job_id = m_jobs[newest_idx].job_id;
+            if(m_log != NULL)
+               m_log.Event(Tag(), StringFormat("Closing Job %d (grid full, DCA successful, PnL %.2f)",
+                                             old_job_id, m_jobs[newest_idx].unrealized_pnl));
+
+            StopJob(old_job_id, "Grid full, spawning new job");
+
+            // Spawn new job
+            int new_job_id = SpawnJob();
+            if(new_job_id > 0 && m_log != NULL)
+               m_log.Event(Tag(), StringFormat("Auto-spawned Job %d after closing Job %d", new_job_id, old_job_id));
+           }
+        }
+
+      // SECOND: Update all active jobs
       for(int i = 0; i < ArraySize(m_jobs); i++)
         {
          if(m_jobs[i].status != JOB_ACTIVE)
@@ -423,7 +460,7 @@ public:
          if(current_equity > m_jobs[i].peak_equity)
             m_jobs[i].peak_equity = current_equity;
 
-         // 4. Check risk conditions (Phase 3)
+         // 4. Check risk conditions (Phase 3) - Job SL protection
          if(ShouldStopJob(i))
            {
             StopJob(m_jobs[i].job_id, StringFormat("SL hit: %.2f USD", m_jobs[i].unrealized_pnl));
@@ -434,27 +471,6 @@ public:
            {
             AbandonJob(m_jobs[i].job_id);
             continue;
-           }
-        }
-
-      // 5. Check spawn trigger (Phase 2) - only newest job can spawn
-      int newest_idx = GetNewestJobIndex();
-      if(newest_idx >= 0 && m_jobs[newest_idx].status == JOB_ACTIVE)
-        {
-         if(ShouldSpawnNew(newest_idx))
-           {
-            // Close all orders of OLD job before spawning new job
-            // "DCA thành công" - Grid full means we reached max capacity, close out
-            int old_job_id = m_jobs[newest_idx].job_id;
-            if(m_log != NULL)
-               m_log.Event(Tag(), StringFormat("Closing Job %d (grid full, DCA successful)", old_job_id));
-
-            StopJob(old_job_id, "Grid full, spawning new job");
-
-            // Spawn new job
-            int new_job_id = SpawnJob();
-            if(new_job_id > 0 && m_log != NULL)
-               m_log.Event(Tag(), StringFormat("Auto-spawned Job %d after closing Job %d", new_job_id, old_job_id));
            }
         }
      }
