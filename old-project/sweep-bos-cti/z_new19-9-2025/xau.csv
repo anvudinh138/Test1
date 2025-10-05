@@ -1,6 +1,0 @@
-Case,Symbol,K_swing,N_bos,LookbackInternal,M_retest,EqTol_ATR_Mult,BOSBuffer_ATR_Mult,UseKillzones,UseRoundNumber,UseVSA,RNDelta_ATR_Mult,L_percentile,RiskPerTradePct,SL_ATR_Mult,TP1_R,TP2_R,BE_Activate_R,PartialClosePct,TimeStopMinutes,MinProgressR,MaxSpread_ATR_Mult,MaxOpenPositions,UsePendingRetest,RetestOffset_ATR_Mult,PendingExpirySec,UseTrailing,TrailMode,TrailATRPeriod,TrailATRMult,TrailStep_ATR_Mult,TrailStartRR,UsePyramid,MaxAdds,AddSpacing_ATR_Mult,AddSizeFactor,CooldownSec,ATRScalingPeriod
-3001,XAUUSD,50,6,12,3,0.25,0.25,TRUE,TRUE,FALSE,0.38,150,0.5,0.63,1.0,2.0,0.8,50,5,0.5,0.63,1,TRUE,0.09,60,FALSE,1,14,2.0,0.38,1.0,FALSE,0,0.5,0.6,0,14
-3002,XAUUSD,48,7,14,4,0.31,0.25,TRUE,TRUE,FALSE,0.44,140,0.4,0.81,1.1,2.2,0.8,40,8,0.6,0.75,2,TRUE,0.10,90,TRUE,1,14,1.8,0.5,1.2,FALSE,0,0.5,0.6,30,14
-3003,XAUUSD,55,5,10,3,0.25,0.31,TRUE,TRUE,FALSE,0.38,160,0.5,0.69,1.0,2.5,0.9,50,10,0.7,0.63,1,TRUE,0.09,120,TRUE,2,14,2.0,0.44,1.0,FALSE,0,0.5,0.6,60,14
-3004,XAUUSD,52,6,14,3,0.38,0.38,TRUE,TRUE,TRUE,0.5,150,0.5,0.75,1.2,2.0,0.8,50,8,0.7,0.63,3,FALSE,0.1,90,TRUE,1,21,1.6,0.5,1.0,TRUE,2,0.5,0.55,30,14
-3005,XAUUSD,45,8,12,4,0.25,0.31,TRUE,TRUE,FALSE,0.38,120,0.6,0.75,1.1,2.1,0.8,40,12,0.6,0.69,2,TRUE,0.13,120,TRUE,1,18,1.8,0.44,1.1,FALSE,0,0.5,0.6,45,14
