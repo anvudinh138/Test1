@@ -15,7 +15,7 @@
 ### 1. Add to EA (RecoveryGridDirection_v2.mq5)
 
 ```cpp
-#include <RECOVERY-GRID-DIRECTION_v2/core/NewsFilter.mqh>
+#include <recovery-grid/src/core/NewsFilter.mqh>
 
 input group "=== News Filter ==="
 input bool   InpNewsFilterEnabled = true;   // Enable news avoidance
@@ -73,16 +73,15 @@ void OnTick()
 
 ## Integration with JobManager
 
-If using Multi-Job system, add check in `JobManager.mqh`:
+Add check in `JobManager::UpdateJobs()`:
 
 ```cpp
-bool CJobManager::UpdateJobs()
+bool CJobManager::UpdateJobs(CNewsFilter* p_news_filter)
 {
-   // News filter check BEFORE job updates
-   if(m_params.news_filter_enabled && g_news_filter.IsNewsTime(TimeCurrent()))
+   // News filter check BEFORE spawning new jobs
+   if(p_news_filter != NULL && p_news_filter.IsNewsTime(TimeCurrent()))
    {
-      // Skip spawning new jobs during news
-      // Existing jobs continue managing positions
+      // Skip spawning during news, existing jobs continue
       return true;
    }
 
@@ -199,25 +198,6 @@ g_news_filter.LoadNews(start, end);
 **Fix**:
 - Set `InpNewsHighOnly = true` (HIGH only)
 - Reduce `InpNewsPreMinutes` (e.g., 30 → 15)
-
----
-
-## Advanced: Custom Impact Filter
-
-To add specific event filtering (e.g., only NFP, CPI, FOMC):
-
-```cpp
-// In NewsFilter.mqh::LoadNewsForPeriod()
-// Add after importance filter:
-
-string title = evt.name;  // Event title
-
-// Only filter specific events
-if(StringFind(title, "Non-Farm") == -1 &&  // NFP
-   StringFind(title, "CPI") == -1 &&        // Inflation
-   StringFind(title, "FOMC") == -1)         // Fed meeting
-   continue;  // Skip other events
-```
 
 ---
 

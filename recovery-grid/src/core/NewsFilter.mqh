@@ -5,6 +5,12 @@
 //+------------------------------------------------------------------+
 #property strict
 
+#ifndef CALENDAR_IMPORTANCE_HIGH
+#define CALENDAR_IMPORTANCE_HIGH   3
+#define CALENDAR_IMPORTANCE_MEDIUM 2
+#define CALENDAR_IMPORTANCE_LOW    1
+#endif
+
 struct NewsEvent
 {
    datetime time;
@@ -54,16 +60,19 @@ private:
          if(!CalendarEventById(vals[i].event_id, evt)) continue;
 
          // Filter by importance
-         if(m_high_only && evt.importance != CALENDAR_IMPORTANCE_HIGH) continue;
-         if(!m_high_only && evt.importance < CALENDAR_IMPORTANCE_MEDIUM) continue;
+         if(m_high_only && (int)evt.importance != CALENDAR_IMPORTANCE_HIGH) continue;
+         if(!m_high_only && (int)evt.importance < CALENDAR_IMPORTANCE_MEDIUM) continue;
 
-         // Filter by currency (base OR profit currency)
-         string curr = evt.currency;
+         // Get currency from country (EUR, USD, GBP, etc.)
+         MqlCalendarCountry country;
+         if(!CalendarCountryById(evt.country_id, country)) continue;
+
+         string curr = country.currency;
          if(curr != base && curr != profit) continue;
 
          m_events[m_count].time = vals[i].time;
          m_events[m_count].currency = curr;
-         m_events[m_count].importance = evt.importance;
+         m_events[m_count].importance = (int)evt.importance;
          m_count++;
       }
 

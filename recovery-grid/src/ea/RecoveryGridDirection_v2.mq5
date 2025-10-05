@@ -21,6 +21,7 @@
 #include <RECOVERY-GRID-DIRECTION_v2/core/Params.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/Logger.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/NewsCalendar.mqh>
+#include <RECOVERY-GRID-DIRECTION_v2/core/NewsFilter.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/SpacingEngine.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/OrderValidator.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/OrderExecutor.mqh>
@@ -115,8 +116,8 @@ input int               InpSslTrailOffsetPoints    = 100;    // Trail offset in 
 input bool              InpSslRespectMinStop       = true;   // Respect broker min stop level
 
 input group "=== Time-based Risk Management (TRM) ==="
-input bool              InpTrmEnabled              = true;  // Master switch (DEFAULT OFF)
-input bool              InpTrmUseApiNews           = true;   // Use ForexFactory API (if false, use static windows)
+input bool              InpTrmEnabled              = false;  // Master switch (DEFAULT OFF)
+input bool              InpTrmUseApiNews           = false;   // Use ForexFactory API (if false, use static windows)
 input string            InpTrmImpactFilter         = "High"; // API filter: High, Medium+, All
 input int               InpTrmBufferMinutes        = 30;     // Minutes before/after news event
 input string            InpTrmNewsWindows          = "08:30-09:00,14:00-14:30";  // CSV format HH:MM-HH:MM (UTC) - FALLBACK ONLY
@@ -125,6 +126,12 @@ input bool              InpTrmTightenSL            = true;  // Tighten SSL durin
 input int               InpTrmTightenSLBuffer      = 5;      // Tighten SL only N minutes before news (not full buffer)
 input double            InpTrmSLMultiplier         = 0.5;    // SL tightening factor (0.5 = half distance)
 input bool              InpTrmCloseOnNews          = false;  // Close all positions before news window (legacy)
+
+input group "=== News Filter (Simple Alternative to TRM) ==="
+input bool              InpNewsFilterEnabled       = true;  // ✅ Enable MT5 Calendar-based filter
+input int               InpNewsPreMinutes          = 30;     // Minutes before news to pause trading
+input int               InpNewsPostMinutes         = 15;     // Minutes after news to pause trading
+input bool              InpNewsHighOnly            = true;   // Filter only HIGH impact (false = MEDIUM+)
 
 input group "=== TRM Partial Close (Simple & Smart) ==="
 input bool              InpTrmPartialCloseEnabled  = false;  // ✅ Enable partial close (per-order logic)
@@ -196,6 +203,9 @@ CLifecycleController *g_controller   = NULL;
 // Multi-Job v3.0
 CJobManager         *g_job_manager   = NULL;
 CRangeDetector      *g_range_detector = NULL;  // Phase 4: Range detection
+
+// News Filter (Simple alternative to TRM)
+CNewsFilter         *g_news_filter   = NULL;
 
 //--- Preset override variables (non-const)
 double               g_spacing_atr_mult;
@@ -577,6 +587,34 @@ int OnInit()
         }
      }
 
+   // News Filter: Initialize and load historical news
+   if(InpNewsFilterEnabled)
+     {
+      g_news_filter = new CNewsFilter();
+      if(g_news_filter != NULL)
+        {
+         g_news_filter.Init(trading_symbol, InpNewsPreMinutes, InpNewsPostMinutes, InpNewsHighOnly);
+
+         // For backtest: Load 1 year of historical news (adjust range as needed)
+         datetime start = TimeCurrent() - 365*86400;  // 1 year back
+         datetime end   = TimeCurrent() + 30*86400;   // 30 days forward
+
+         if(!g_news_filter.LoadNews(start, end))
+           {
+            if(g_logger) g_logger.Event("[NewsFilter]", "Warning: No calendar data available");
+           }
+         else
+           {
+            if(g_logger) g_logger.Event("[NewsFilter]",
+               StringFormat("Loaded %d events (±%d/%dmin, %s impact only)",
+                           g_news_filter.GetEventCount(),
+                           InpNewsPreMinutes,
+                           InpNewsPostMinutes,
+                           InpNewsHighOnly ? "HIGH" : "MED+"));
+           }
+        }
+     }
+
    // Multi-Job v3.0: Choose between JobManager (multi-job) or LifecycleController (legacy)
    if(InpMultiJobEnabled)
      {
@@ -671,6 +709,17 @@ void OnTick()
    if(!SymbolInfoInteger(trading_symbol,SYMBOL_TRADE_MODE))
       return;
 
+   // News Filter: Skip trading during news windows
+   if(InpNewsFilterEnabled && g_news_filter != NULL)
+     {
+      if(g_news_filter.IsNewsTime(TimeCurrent()))
+        {
+         // Do NOT open new positions during news
+         // Existing positions continue managing (TSL, TP checks)
+         return;
+        }
+     }
+
    // Multi-Job v3.0: Update jobs or controller
    if(InpMultiJobEnabled && g_job_manager != NULL)
      {
@@ -700,6 +749,7 @@ void OnDeinit(const int reason)
 
    // Cleanup shared resources
    if(g_range_detector != NULL) { delete g_range_detector; g_range_detector = NULL; }  // Phase 4
+   if(g_news_filter != NULL) { delete g_news_filter; g_news_filter = NULL; }  // News Filter
    if(g_rescue != NULL) { delete g_rescue; g_rescue = NULL; }
    if(g_ledger != NULL) { delete g_ledger; g_ledger = NULL; }
    if(g_executor != NULL) { delete g_executor; g_executor = NULL; }
