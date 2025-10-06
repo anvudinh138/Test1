@@ -1,17 +1,19 @@
 //+------------------------------------------------------------------+
-//| Recovery Grid Direction v2.7                                     |
-//| Two-sided recovery grid with DTS + SSL + TRM + ADC + Rescue v3  |
+//| Recovery Grid Direction v3.0 (Multi-Job System)                  |
+//| Two-sided recovery grid with Multi-Job + DTS + SSL + TRM + ADC  |
 //+------------------------------------------------------------------+
-//| PRODUCTION DEFAULTS: Rescue v3 Delta-Based (PC removed)          |
+//| v3.0 FEATURES: Multi-Job Portfolio System (EXPERIMENTAL)         |
+//| - Multi-Job: Independent jobs with limited risk per job          |
+//| - Job Isolation: Magic number isolation (start + offset)         |
+//| - Auto-spawn: New job when grid full or TSL active               |
 //| - Rescue v3: Delta-based continuous rebalancing                  |
-//| - Symbol Presets: 10 presets for easy optimization (NEW)         |
-//| - Features: Conservative DTS + SSL Protection                    |
+//| - Symbol Presets: 10 presets for easy optimization              |
 //| - TRM: Time-based Risk Management (DEFAULT OFF, enable for NFP)  |
 //| - ADC: Anti-Drawdown Cushion (DEFAULT OFF, target sub-10% DD)   |
-//| - PC: Partial Close REMOVED (incompatible with Grid DCA)         |
+//| - LEGACY: v2.x mode available (InpMultiJobEnabled=false)         |
 //+------------------------------------------------------------------+
 #property strict
-#property version "2.70"
+#property version "3.00"
 
 #include <Trade/Trade.mqh>
 
@@ -19,6 +21,7 @@
 #include <RECOVERY-GRID-DIRECTION_v2/core/Params.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/Logger.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/NewsCalendar.mqh>
+#include <RECOVERY-GRID-DIRECTION_v2/core/NewsFilter.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/SpacingEngine.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/OrderValidator.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/OrderExecutor.mqh>
@@ -26,6 +29,7 @@
 #include <RECOVERY-GRID-DIRECTION_v2/core/RescueEngine.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/GridBasket.mqh>
 #include <RECOVERY-GRID-DIRECTION_v2/core/LifecycleController.mqh>
+#include <RECOVERY-GRID-DIRECTION_v2/core/JobManager.mqh>
 
 //--- Inputs
 input group "=== IMPORTANT: Set Unique Magic Number ==="
@@ -52,11 +56,11 @@ input int               InpStatusInterval   = 60;
 input bool              InpLogEvents        = true;
 
 input group "=== Grid Configuration (ATR-Based Auto-Spacing) ==="
-input ENUM_TIMEFRAMES InpAtrTimeframe       = PERIOD_H4;   // ATR timeframe (H4 recommended for stability)
+input ENUM_TIMEFRAMES InpAtrTimeframe       = PERIOD_M1;   // ATR timeframe (H4 recommended for stability)
 input int             InpAtrPeriod          = 14;          // ATR period
 input double          InpSpacingAtrMult     = 1;         // Spacing = ATR × this multiplier
 
-input int             InpGridLevels         = 100000;      // Max grid levels (high = infinite, no lag with dynamic mode)
+input int             InpGridLevels         = 6;      // Max grid levels (high = infinite, no lag with dynamic mode)
 
 input group "=== Lot Sizing ==="
 input double            InpLotBase          = 0.01;  // First grid level lot
@@ -71,13 +75,13 @@ input group "=== Take Profit & TSL (Spacing-Based, Auto-Adaptive) ==="
 input double            InpTargetCycleUSD      = 5.0;   // Group TP target (USD)
 input bool              InpTSLEnabled          = true;  // ✅ Enable TSL on rescue hedge
 input double            InpTSLStartMultiplier  = 2.0;   // TSL activates after profit = spacing × this
-input double            InpTSLStepMultiplier   = 0.5;   // TSL trails by spacing × this
+input double            InpTSLStepMultiplier   = 1;   // TSL trails by spacing × this
 
 input group "=== Rescue/Hedge System v3 (Delta-Based Rebalancing) ==="
 input bool              InpRescueAdaptiveLot   = true;   // ✅ Enable delta-based rescue
 input double            InpMinDeltaTrigger     = 0.01;   // Min imbalance to trigger (lot) - lowered for early rescue
 input double            InpRescueLotMultiplier = 1.0;    // Delta multiplier (1.0 = 100%)
-input double            InpRescueMaxLot        = 0.5;    // Max per rescue deployment - increased for larger baskets
+input double            InpRescueMaxLot        = 0.1;    // Max per rescue deployment - increased for larger baskets
 input int               InpRescueCooldownBars  = 3;      // Bars between rescues (anti-spam)
 
 input group "=== Risk Management ==="
@@ -112,8 +116,8 @@ input int               InpSslTrailOffsetPoints    = 100;    // Trail offset in 
 input bool              InpSslRespectMinStop       = true;   // Respect broker min stop level
 
 input group "=== Time-based Risk Management (TRM) ==="
-input bool              InpTrmEnabled              = true;  // Master switch (DEFAULT OFF)
-input bool              InpTrmUseApiNews           = true;   // Use ForexFactory API (if false, use static windows)
+input bool              InpTrmEnabled              = false;  // Master switch (DEFAULT OFF)
+input bool              InpTrmUseApiNews           = false;   // Use ForexFactory API (if false, use static windows)
 input string            InpTrmImpactFilter         = "High"; // API filter: High, Medium+, All
 input int               InpTrmBufferMinutes        = 30;     // Minutes before/after news event
 input string            InpTrmNewsWindows          = "08:30-09:00,14:00-14:30";  // CSV format HH:MM-HH:MM (UTC) - FALLBACK ONLY
@@ -123,13 +127,19 @@ input int               InpTrmTightenSLBuffer      = 5;      // Tighten SL only 
 input double            InpTrmSLMultiplier         = 0.5;    // SL tightening factor (0.5 = half distance)
 input bool              InpTrmCloseOnNews          = false;  // Close all positions before news window (legacy)
 
+input group "=== News Filter (Simple Alternative to TRM) ==="
+input bool              InpNewsFilterEnabled       = true;  // ✅ Enable MT5 Calendar-based filter
+input int               InpNewsPreMinutes          = 30;     // Minutes before news to pause trading
+input int               InpNewsPostMinutes         = 15;     // Minutes after news to pause trading
+input bool              InpNewsHighOnly            = true;   // Filter only HIGH impact (false = MEDIUM+)
+
 input group "=== TRM Partial Close (Simple & Smart) ==="
 input bool              InpTrmPartialCloseEnabled  = false;  // ✅ Enable partial close (per-order logic)
 input double            InpTrmCloseThreshold       = 3.0;    // Close if |PnL| > this (USD, both profit/loss)
 input double            InpTrmKeepSLDistance       = 6.0;    // SL distance for kept losing orders (USD)
 
 input group "=== Anti-Drawdown Cushion (ADC) ==="
-input bool              InpAdcEnabled              = true;  // Master switch (DEFAULT OFF)
+input bool              InpAdcEnabled              = false;  // Master switch (DEFAULT OFF)
 input double            InpAdcEquityDdThreshold    = 10.0;   // Equity DD % threshold to activate cushion
 input bool              InpAdcPauseNewGrids        = true;   // Pause grid reseeding during cushion
 input bool              InpAdcPauseRescue          = true;   // Pause rescue hedge deployment during cushion
@@ -140,6 +150,46 @@ input bool              InpPreserveOnTfSwitch      = true;   // Preserve positio
 input group "=== Manual Close Detection ==="
 input bool              InpMcdEnabled              = true;   // Enable manual close detection & profit transfer
 
+input group "=== Multi-Job System v3.0 (EXPERIMENTAL) ==="
+input bool              InpMultiJobEnabled         = false;  // ✅ Enable multi-job system (OFF by default)
+input int               InpMaxJobs                 = 5;      // Max concurrent jobs (5-10 recommended)
+input double            InpGlobalDDLimit           = 50.0;   // Stop spawning if global DD >= this % (e.g., 50%)
+
+input group "=== Spawn Triggers (Phase 2) ==="
+input int               InpSpawnCooldownSec        = 30;     // Cooldown between spawns (seconds)
+
+input group "=== Job Risk Management (Phase 3) ==="
+input double            InpJobSL_USD               = 50.0;   // Per-job stop loss in USD (0 = disabled)
+input double            InpJobDDThreshold          = 30.0;   // Abandon job if DD >= this % (e.g., 30%)
+
+input group "=== Profit Optimization (Phase 4) ==="
+input bool              InpSmartCloseEnabled       = true;   // ✅ Only close profitable jobs at grid full
+input double            InpMinProfitToClose        = 1.0;    // Min profit to allow close (USD)
+input double            InpJobTPUSD                = 10.0;   // Job take profit target (USD)
+input double            InpJobTrailStartUSD        = 5.0;    // Start trailing at profit (USD)
+input double            InpJobTrailStepUSD         = 2.0;    // Trail step size (USD)
+
+input group "=== Range Detection (Phase 4) ==="
+input bool              InpRangeDetectEnabled      = true;   // ✅ Enable range detection
+input int               InpRangeATRPeriod          = 14;     // ATR period for volatility
+input double            InpRangeThreshold          = 0.5;    // ATR ratio to classify as range
+input double            InpTrendThreshold          = 1.5;    // ATR ratio to classify as trend
+input int               InpRangeLookbackBars       = 50;     // Bars to analyze for range
+input double            InpRangeTightSpacing       = 0.5;    // Grid spacing mult in range
+input double            InpRangeLotMultiplier      = 2.0;    // Lot multiplier in range
+input double            InpRangeTPMultiplier       = 0.3;    // TP multiplier in range (quick profit)
+
+input group "=== Profit Acceleration (Phase 4) ==="
+input bool              InpProfitAccelEnabled      = true;   // ✅ Enable profit acceleration
+input double            InpBoosterThreshold        = 5.0;    // Trigger booster at profit (USD)
+input double            InpBoosterLotMultiplier    = 2.0;    // Booster lot multiplier
+input int               InpMaxBoosters             = 3;      // Max booster positions per job
+
+input group "=== Magic Number (Job Isolation) ==="
+input long              InpMagicStart              = 1000;   // Starting magic number (e.g., 1000)
+input long              InpMagicOffset             = 421;    // Magic offset between jobs (e.g., 421)
+// Job A: 1000, Job B: 1421, Job C: 1842...
+
 //--- Globals
 SParams              g_params;
 CLogger             *g_logger        = NULL;
@@ -149,6 +199,13 @@ COrderExecutor      *g_executor      = NULL;
 CPortfolioLedger    *g_ledger        = NULL;
 CRescueEngine       *g_rescue        = NULL;
 CLifecycleController *g_controller   = NULL;
+
+// Multi-Job v3.0
+CJobManager         *g_job_manager   = NULL;
+CRangeDetector      *g_range_detector = NULL;  // Phase 4: Range detection
+
+// News Filter (Simple alternative to TRM)
+CNewsFilter         *g_news_filter   = NULL;
 
 //--- Preset override variables (non-const)
 double               g_spacing_atr_mult;
@@ -506,13 +563,120 @@ int OnInit()
       g_executor.SetMagic(g_params.magic);
    g_ledger   = new CPortfolioLedger(g_params.exposure_cap_lots,g_params.session_sl_usd);
    g_rescue   = new CRescueEngine(trading_symbol,g_params,g_logger);
-   g_controller = new CLifecycleController(trading_symbol,g_params,g_spacing,g_executor,g_rescue,g_ledger,g_logger,g_params.magic);
 
-   if(g_controller==NULL || !g_controller.Init())
+   // Phase 4: Range detection
+   if(InpRangeDetectEnabled && InpMultiJobEnabled)
      {
-      if(g_logger!=NULL)
-         g_logger.Event("[RGDv2]","Controller init failed");
-      return(INIT_FAILED);
+      g_range_detector = new CRangeDetector();
+      if(g_range_detector != NULL)
+        {
+         SRangeParams range_params;
+         range_params.atr_period = InpRangeATRPeriod;
+         range_params.range_threshold = InpRangeThreshold;
+         range_params.trend_threshold = InpTrendThreshold;
+         range_params.lookback_bars = InpRangeLookbackBars;
+         range_params.min_bounces = 3;  // Min bounces for range confirmation
+         range_params.bounce_tolerance = 10;  // Points tolerance
+
+         if(!g_range_detector.Init(trading_symbol, PERIOD_M15, range_params, g_logger))
+           {
+            delete g_range_detector;
+            g_range_detector = NULL;
+            if(g_logger) g_logger.Event("[RGDv2]", "Failed to initialize range detector");
+           }
+        }
+     }
+
+   // News Filter: Initialize and load historical news
+   if(InpNewsFilterEnabled)
+     {
+      g_news_filter = new CNewsFilter();
+      if(g_news_filter != NULL)
+        {
+         g_news_filter.Init(trading_symbol, InpNewsPreMinutes, InpNewsPostMinutes, InpNewsHighOnly);
+
+         // For backtest: Load 1 year of historical news (adjust range as needed)
+         datetime start = TimeCurrent() - 365*86400;  // 1 year back
+         datetime end   = TimeCurrent() + 30*86400;   // 30 days forward
+
+         if(!g_news_filter.LoadNews(start, end))
+           {
+            if(g_logger) g_logger.Event("[NewsFilter]", "Warning: No calendar data available");
+           }
+         else
+           {
+            if(g_logger) g_logger.Event("[NewsFilter]",
+               StringFormat("Loaded %d events (±%d/%dmin, %s impact only)",
+                           g_news_filter.GetEventCount(),
+                           InpNewsPreMinutes,
+                           InpNewsPostMinutes,
+                           InpNewsHighOnly ? "HIGH" : "MED+"));
+           }
+        }
+     }
+
+   // Multi-Job v3.0: Choose between JobManager (multi-job) or LifecycleController (legacy)
+   if(InpMultiJobEnabled)
+     {
+      // Multi-job mode (v3.0)
+      g_job_manager = new CJobManager(
+         trading_symbol,
+         g_params,
+         InpMagicStart,
+         InpMagicOffset,
+         InpMaxJobs,
+         InpGlobalDDLimit,
+         InpSpawnCooldownSec,
+         InpJobSL_USD,
+         InpJobDDThreshold,
+         InpSmartCloseEnabled,      // Phase 4: Smart close logic
+         InpMinProfitToClose,       // Phase 4: Min profit to allow close
+         InpJobTPUSD,               // Phase 4: Job take profit
+         InpJobTrailStartUSD,       // Phase 4: Start trailing at
+         InpJobTrailStepUSD,        // Phase 4: Trail step
+         InpProfitAccelEnabled,     // Phase 4: Profit acceleration
+         InpBoosterThreshold,       // Phase 4: Booster threshold
+         InpBoosterLotMultiplier,   // Phase 4: Booster lot mult
+         InpMaxBoosters,            // Phase 4: Max boosters
+         g_spacing,
+         g_executor,
+         g_rescue,
+         g_range_detector,       // Phase 4: Range detector
+         g_ledger,
+         g_logger
+      );
+
+      if(g_job_manager == NULL)
+        {
+         if(g_logger != NULL)
+            g_logger.Event("[RGDv3]","JobManager creation failed");
+         return(INIT_FAILED);
+        }
+
+      // Spawn first job
+      int first_job = g_job_manager.SpawnJob();
+      if(first_job < 0)
+        {
+         if(g_logger != NULL)
+            g_logger.Event("[RGDv3]","First job spawn failed");
+         return(INIT_FAILED);
+        }
+
+      if(g_logger != NULL)
+         g_logger.Event("[RGDv3]",StringFormat("Multi-job mode enabled (Job 1 spawned, Magic %d)",
+                                             InpMagicStart));
+     }
+   else
+     {
+      // Legacy mode (v2.x)
+      g_controller = new CLifecycleController(trading_symbol,g_params,g_spacing,g_executor,g_rescue,g_ledger,g_logger,g_params.magic);
+
+      if(g_controller==NULL || !g_controller.Init())
+        {
+         if(g_logger!=NULL)
+            g_logger.Event("[RGDv2]","Controller init failed");
+         return(INIT_FAILED);
+        }
      }
 
    // Debug info
@@ -545,17 +709,51 @@ void OnTick()
    if(!SymbolInfoInteger(trading_symbol,SYMBOL_TRADE_MODE))
       return;
 
-   if(g_controller!=NULL)
+   // News Filter: Skip trading during news windows
+   if(InpNewsFilterEnabled && g_news_filter != NULL)
+     {
+      if(g_news_filter.IsNewsTime(TimeCurrent()))
+        {
+         // Do NOT open new positions during news
+         // Existing positions continue managing (TSL, TP checks)
+         return;
+        }
+     }
+
+   // Multi-Job v3.0: Update jobs or controller
+   if(InpMultiJobEnabled && g_job_manager != NULL)
+     {
+      g_job_manager.UpdateJobs();
+     }
+   else if(g_controller != NULL)
+     {
       g_controller.Update();
+     }
   }
 
 void OnDeinit(const int reason)
   {
-   if(g_controller!=NULL){ g_controller.Shutdown(); delete g_controller; g_controller=NULL; }
-   if(g_rescue!=NULL){ delete g_rescue; g_rescue=NULL; }
-   if(g_ledger!=NULL){ delete g_ledger; g_ledger=NULL; }
-   if(g_executor!=NULL){ delete g_executor; g_executor=NULL; }
-   if(g_validator!=NULL){ delete g_validator; g_validator=NULL; }
-   if(g_spacing!=NULL){ delete g_spacing; g_spacing=NULL; }
-   if(g_logger!=NULL){ delete g_logger; g_logger=NULL; }
+   // Multi-Job v3.0: Cleanup job manager or controller
+   if(g_job_manager != NULL)
+     {
+      delete g_job_manager;
+      g_job_manager = NULL;
+     }
+
+   if(g_controller != NULL)
+     {
+      g_controller.Shutdown();
+      delete g_controller;
+      g_controller = NULL;
+     }
+
+   // Cleanup shared resources
+   if(g_range_detector != NULL) { delete g_range_detector; g_range_detector = NULL; }  // Phase 4
+   if(g_news_filter != NULL) { delete g_news_filter; g_news_filter = NULL; }  // News Filter
+   if(g_rescue != NULL) { delete g_rescue; g_rescue = NULL; }
+   if(g_ledger != NULL) { delete g_ledger; g_ledger = NULL; }
+   if(g_executor != NULL) { delete g_executor; g_executor = NULL; }
+   if(g_validator != NULL) { delete g_validator; g_validator = NULL; }
+   if(g_spacing != NULL) { delete g_spacing; g_spacing = NULL; }
+   if(g_logger != NULL) { delete g_logger; g_logger = NULL; }
   }

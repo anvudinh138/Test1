@@ -29,6 +29,7 @@ private:
    CPortfolioLedger *m_ledger;
    CLogger          *m_log;
    long              m_magic;
+   int               m_job_id;        // Multi-Job v3.0: Job identifier
 
    CGridBasket      *m_buy;
    CGridBasket      *m_sell;
@@ -44,7 +45,14 @@ private:
    // ADC (anti-drawdown cushion)
    bool              m_adc_cushion_active;  // State tracking for cushion mode
 
-   string            Tag() const { return StringFormat("[RGDv2][%s][LC]",m_symbol); }
+   string            Tag() const
+     {
+      // Multi-Job v3.0: Include job_id in tag
+      if(m_job_id > 0)
+         return StringFormat("[RGDv2][%s][J%d][LC]",m_symbol,m_job_id);
+      else
+         return StringFormat("[RGDv2][%s][LC]",m_symbol);  // Legacy format
+     }
 
    double           CurrentPrice(const EDirection dir) const
      {
@@ -619,7 +627,8 @@ public:
                                           CRescueEngine *rescue,
                                           CPortfolioLedger *ledger,
                                           CLogger *log,
-                                          const long magic)
+                                          const long magic,
+                                          const int job_id = 0)  // Multi-Job v3.0: Job ID (0 = legacy)
                        : m_symbol(symbol),
                          m_params(params),
                          m_spacing(spacing),
@@ -628,6 +637,7 @@ public:
                          m_ledger(ledger),
                          m_log(log),
                          m_magic(magic),
+                         m_job_id(job_id),
                          m_buy(NULL),
                          m_sell(NULL),
                          m_halted(false),
@@ -668,8 +678,8 @@ public:
          if(m_log!=NULL)
             m_log.Event(Tag(),"[TF-Preserve] Existing positions detected, reconstructing baskets");
 
-         m_buy=new CGridBasket(m_symbol,DIR_BUY,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic);
-         m_sell=new CGridBasket(m_symbol,DIR_SELL,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic);
+         m_buy=new CGridBasket(m_symbol,DIR_BUY,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic,m_job_id);
+         m_sell=new CGridBasket(m_symbol,DIR_SELL,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic,m_job_id);
 
          // Mark baskets active without seeding
          m_buy.SetActive(true);
@@ -699,7 +709,7 @@ public:
          return false;
         }
 
-      m_buy=new CGridBasket(m_symbol,DIR_BUY,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic);
+      m_buy=new CGridBasket(m_symbol,DIR_BUY,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic,m_job_id);
       if(!m_buy.Init(ask))
         {
          if(m_log!=NULL)
@@ -724,7 +734,7 @@ public:
          return false;
         }
 
-      m_sell=new CGridBasket(m_symbol,DIR_SELL,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic);
+      m_sell=new CGridBasket(m_symbol,DIR_SELL,BASKET_PRIMARY,m_params,m_spacing,m_executor,m_log,m_magic,m_job_id);
       if(!m_sell.Init(bid))
         {
          if(m_log!=NULL)
@@ -793,11 +803,16 @@ public:
          m_adc_cushion_active=is_cushion;
         }
 
+      // Multi-Job v3.0: Session SL moved to JobManager level
+      // Each job calling this would cause duplicate flatten → DISABLED here
+      // JobManager now handles global Session SL check
+      /*
       if(m_ledger!=NULL && m_ledger.SessionRiskBreached())
         {
          FlattenAll("Session SL");
          return;
         }
+      */
 
       // Check equity DD for grid pause (BEFORE basket updates)
       // Pause grid expansion when DD reaches threshold (similar to ADC but for grid only)
@@ -993,6 +1008,102 @@ public:
         }
 
       EnsureRescueReset();
+     }
+
+   // Multi-Job v3.0: P&L tracking for JobManager
+   double GetUnrealizedPnL() const
+     {
+      double pnl = 0.0;
+      if(m_buy != NULL)
+         pnl += m_buy.BasketPnL();
+      if(m_sell != NULL)
+         pnl += m_sell.BasketPnL();
+      return pnl;
+     }
+
+   double GetRealizedPnL() const
+     {
+      // Note: Realized PnL is transferred and consumed by opposite basket
+      // This method returns cumulative cycles profit
+      // For accurate tracking, would need to add m_total_realized member
+      // For now, return 0 (TODO: implement if needed)
+      return 0.0;
+     }
+
+   double GetTotalPnL() const
+     {
+      return GetUnrealizedPnL() + GetRealizedPnL();
+     }
+
+   bool IsTSLActive() const
+     {
+      bool tsl_active = false;
+      if(m_buy != NULL && m_buy.IsTSLActive())
+         tsl_active = true;
+      if(m_sell != NULL && m_sell.IsTSLActive())
+         tsl_active = true;
+      return tsl_active;
+     }
+
+   bool IsGridFull() const
+     {
+      bool grid_full = false;
+      if(m_buy != NULL && m_buy.IsGridFull())
+         grid_full = true;
+      if(m_sell != NULL && m_sell.IsGridFull())
+         grid_full = true;
+      return grid_full;
+     }
+
+   // Multi-Job v3.0: Public wrapper for FlattenAll (JobManager needs access)
+   void FlattenAllPublic(const string reason)
+     {
+      FlattenAll(reason);
+     }
+
+   // Phase 4: Support for profit acceleration
+   bool GetBasketPnL(double &buy_pnl, double &sell_pnl) const
+     {
+      buy_pnl = 0;
+      sell_pnl = 0;
+
+      if(m_buy != NULL)
+         buy_pnl = m_buy.BasketPnL();
+      if(m_sell != NULL)
+         sell_pnl = m_sell.BasketPnL();
+
+      return true;
+     }
+
+   bool AddBoosterPosition(EDirection dir, double lot, string comment)
+     {
+      if(m_executor == NULL)
+         return false;
+
+      // Place market order in winning direction
+      double price = (dir == DIR_BUY) ?
+                     SymbolInfoDouble(m_symbol, SYMBOL_ASK) :
+                     SymbolInfoDouble(m_symbol, SYMBOL_BID);
+
+      m_executor.SetMagic(m_magic);
+      ulong ticket = m_executor.Market(dir, lot, comment);
+
+      if(ticket > 0)
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), StringFormat("Booster deployed: %s %.2f lot, ticket=%d",
+                                         (dir == DIR_BUY) ? "BUY" : "SELL", lot, ticket));
+
+         // Force basket refresh to include new position
+         if(dir == DIR_BUY && m_buy != NULL)
+            m_buy.RefreshStatePublic();
+         else if(dir == DIR_SELL && m_sell != NULL)
+            m_sell.RefreshStatePublic();
+
+         return true;
+        }
+
+      return false;
      }
 
    void              Shutdown()

@@ -1,0 +1,112 @@
+; Multi-Job System v3.0 + Profit Optimization Phase 4
+; Preset: Aggressive Profit Hunter
+; Target: PF 2.0+, Max DD <20%
+; Symbol: EURUSD
+; Timeframe: M5 or M15
+
+; === Symbol Preset ===
+InpSymbolPreset=9||0||9||PRESET_CUSTOM||N
+InpSpacingAtrMult=0.5||0.1||0.5||Spacing ATR Multiplier||N
+InpLotBase=0.01||0.01||0.01||Base lot size||N
+InpLotOffset=0.0||0.0||0.0||Lot offset for levels||N
+InpTargetCycleUSD=5.0||0.1||5.0||Target cycle profit (USD)||N
+InpMinDeltaTrigger=0.02||0.01||0.02||Min delta to trigger rescue||N
+InpRescueLotMultiplier=1.0||0.1||1.0||Rescue lot multiplier||N
+InpRescueMaxLot=0.1||0.01||0.1||Max rescue lot||N
+InpRescueCooldownBars=5||1||5||Rescue cooldown bars||N
+
+; === Grid Settings ===
+InpGridLevels=10||1||10||Grid levels per job||N
+InpSpacingMode=2||0||2||SPACING_HYBRID||N
+InpSpacingPips=20||1||20||Spacing in pips||N
+InpATRPeriod=14||1||14||ATR period||N
+InpATRTimeframe=16388||0||16388||PERIOD_M15||N
+
+; === Lot Settings ===
+InpLotScale=1.0||0.1||1.0||Flat lot (no martingale)||N
+
+; === Multi-Job v3.0 ===
+InpMultiJobEnabled=true||0||1||Enable multi-job system||N
+InpMaxJobs=3||1||3||Max concurrent jobs||N
+InpSpawnCooldownSec=60||1||60||Cooldown between spawns||N
+InpGlobalDDLimit=25.0||1.0||25.0||Global DD limit %||N
+
+; === Job Risk Management ===
+InpJobSL_USD=50.0||1.0||50.0||Per-job stop loss (USD)||N
+InpJobDDThreshold=30.0||1.0||30.0||Abandon job at DD %||N
+
+; === Profit Optimization Phase 4 ===
+; Smart Close Logic
+InpSmartCloseEnabled=true||0||1||Only close profitable jobs||N
+InpMinProfitToClose=1.0||0.1||1.0||Min profit to allow close||N
+InpJobTPUSD=10.0||1.0||10.0||Job TP target (USD)||N
+InpJobTrailStartUSD=5.0||0.5||5.0||Start trailing at (USD)||N
+InpJobTrailStepUSD=2.0||0.5||2.0||Trail step (USD)||N
+
+; Range Detection
+InpRangeDetectEnabled=true||0||1||Enable range detection||N
+InpRangeATRPeriod=14||1||14||ATR period for range||N
+InpRangeThreshold=0.5||0.1||0.5||Range threshold (ATR ratio)||N
+InpTrendThreshold=1.5||0.1||1.5||Trend threshold (ATR ratio)||N
+InpRangeLookbackBars=50||10||50||Bars to analyze||N
+InpRangeTightSpacing=0.5||0.1||0.5||Grid spacing in range||N
+InpRangeLotMultiplier=2.0||0.5||2.0||Lot mult in range||N
+InpRangeTPMultiplier=0.3||0.1||0.3||Quick TP in range||N
+
+; Profit Acceleration
+InpProfitAccelEnabled=true||0||1||Enable profit acceleration||N
+InpBoosterThreshold=5.0||1.0||5.0||Trigger booster at (USD)||N
+InpBoosterLotMultiplier=2.0||0.5||2.0||Booster lot multiplier||N
+InpMaxBoosters=3||1||3||Max boosters per job||N
+
+; === Magic Numbers (Job Isolation) ===
+InpMagicStart=1000||1000||1000||Starting magic||N
+InpMagicOffset=421||1||421||Magic offset between jobs||N
+
+; === Risk Management ===
+InpExposureCapLots=2.0||0.1||2.0||Max total exposure||N
+InpSessionSL_USD=300.0||10.0||300.0||Session SL (3% of $10k balance)||N
+InpDDPauseGridThreshold=15.0||1.0||15.0||Pause grid at DD %||N
+
+; === Group TP & TSL ===
+InpTPEnabled=true||0||1||Enable Group TP||N
+InpTSLEnabled=true||0||1||Enable TSL||N
+InpTSLStartPoints=1000||100||1000||TSL start (points)||N
+InpTSLStepPoints=500||50||500||TSL step (points)||N
+
+; === SSL Protection ===
+InpSSLEnabled=false||0||0||Disable SSL for multi-job||N
+
+; === ADC (Anti-Drawdown Cushion) ===
+InpADCEnabled=false||0||0||Disable ADC for multi-job||N
+
+; === TRM (Time-Risk Management) ===
+InpTRMEnabled=true||0||1||Enable TRM||N
+InpTRMUseAPINews=false||0||0||Use ForexFactory API||N
+InpTRMImpactFilter=2||1||2||IMPACT_MEDIUM||N
+InpTRMBufferMinutes=30||5||30||Buffer before/after news||N
+
+; === Partial Close ===
+InpPCEnabled=false||0||0||Disable PC for grid DCA||N
+
+; === Dynamic Grid ===
+InpDynamicGrid=true||0||1||Enable dynamic grid||N
+InpWarmLevels=5||1||5||Initial warm levels||N
+
+; === Rescue v3 ===
+InpRescueEnabled=true||0||1||Enable rescue v3||N
+InpRescueMaxDeployments=10||1||10||Max rescue deployments||N
+
+; === Advanced ===
+InpSlippagePips=3||1||3||Slippage tolerance||N
+InpRespectStops=false||0||0||Respect broker stops||N
+
+; === Logging ===
+InpLogEvents=true||0||1||Enable event logging||N
+InpStatusInterval=30||5||30||Status log interval (sec)||N
+
+; === Timeframe Preservation ===
+InpPreserveOnTfSwitch=true||0||1||Preserve positions on TF switch||N
+
+; === Manual Close Detection ===
+InpMcdEnabled=true||0||1||Detect manual closes||N

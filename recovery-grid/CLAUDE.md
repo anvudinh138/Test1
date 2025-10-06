@@ -193,11 +193,99 @@ if(had_positions && now_no_positions) {
 
 ---
 
+### Session: 2025-10-04 (Profit Optimization Phase 4) - COMPLETE
+
+**Problem**: System losing money with PF 0.66 despite 83% win rate
+- Average Win: $8 (too small)
+- Average Loss: $25 (3x average win!)
+- Closing jobs at worst time (grid full = max drawdown)
+
+**Solution**: Comprehensive Profit Optimization System
+1. **Smart Close Logic** - Only close profitable jobs at grid full
+2. **Job TP & Trailing** - Profit targets and trailing stops per job
+3. **Range Detection** - Adapt to market conditions dynamically
+4. **Profit Acceleration** - Add booster positions when winning
+5. **Testing Guide** - Systematic validation approach
+
+**Implementation Complete**:
+- [x] Smart Close Logic - Don't close losing jobs
+- [x] Job TP System - $10 target with $5/$2 trailing
+- [x] Range Detector - ATR-based market classification
+- [x] Market Adaptation - Dynamic spacing/lots/levels per job
+- [x] Profit Acceleration - Booster positions on winners
+- [x] Comprehensive testing guide with 6 configurations
+
+**Files Modified**:
+- JobManager.mqh (smart close, TP, trailing, acceleration)
+- LifecycleController.mqh (booster support)
+- RangeDetector.mqh (NEW - market analysis)
+- Types.mqh (EMarketCondition enum)
+- RecoveryGridDirection_v2.mq5 (20+ new inputs)
+
+**Documents Created**:
+- PROFIT_OPTIMIZATION_SYSTEM.md (full design)
+- TESTING_PROFIT_OPTIMIZATION.md (testing guide)
+
+**Expected Results**:
+- Profit Factor: 0.66 → **2.0+**
+- Average Win: $8 → **$20+**
+- Average Loss: $25 → **<$15**
+- Recovery Factor: -0.91 → **3.0+**
+
+---
+
+### Session: 2025-10-04 (Multi-Job System v3.0) - PHASE 1 + 2 + 3 COMPLETE
+
+**Problem**: Strong trends cause "slow bubble burst"
+- Single lifecycle waits for losing basket to break even
+- Unlimited DCA → 0.3-0.4 lot accumulated on losing side
+- Rescue can't save forever → account blow-up
+
+**Solution**: Multi-Job Portfolio System
+- Each job = independent lifecycle with limited grid levels (5-10)
+- Job full/TSL → spawn new job at current price
+- Job SL limit per job (e.g., -$50 max loss)
+- Always active trading (don't wait for old job breakeven)
+
+**Phase 1 Progress (Foundation - COMPLETE)**:
+- [x] Create SJob struct with job_id, magic, status, P&L
+- [x] Create CJobManager class (spawn, update, stop jobs)
+- [x] Magic isolation: start + offset (1000, 1421, 1842...)
+- [x] Job-aware position filtering (RefreshState by job magic)
+- [x] Order comments: RGDv2_J1_Seed, RGDv2_J2_RescueSeed
+- [x] EA integration: OnInit/OnTick/OnDeinit wired up
+
+**Phase 2 Progress (Spawn Triggers - COMPLETE)**:
+- [x] IsGridFull() - Detects grid at max capacity
+- [x] IsTSLActive() - Detects TSL activation
+- [x] ShouldSpawnNew() - 3 triggers + 3 guards
+  - Grid full, TSL active, Job DD threshold
+  - Cooldown, max spawns, global DD guards
+- [x] Auto-spawn integration in UpdateJobs()
+
+**Phase 3 Progress (Risk Management - COMPLETE)**:
+- [x] GetUnrealizedPnL(), GetRealizedPnL(), GetTotalPnL()
+- [x] ShouldStopJob() - Job SL enforcement
+- [x] ShouldAbandonJob() - Job DD abandon logic
+- [x] AbandonJob() - Mark unsaveable, keep positions
+- [x] Risk enforcement in UpdateJobs() loop
+
+**Branch**: `feature/multi-job-v3.0` (from `feature/lot-percent-risk`)
+
+**Documents**:
+- DESIGN_MULTI_JOB_SYSTEM.md (architecture)
+- TODO_MULTI_JOB_PHASE_1.md (Phase 1 checklist)
+- TODO_MULTI_JOB_PHASE_2_3.md (Phase 2 & 3 checklist)
+- TESTING_MULTI_JOB_PHASE_1.md (Phase 1 tests)
+- TESTING_MULTI_JOB_PHASE_2_3.md (Phase 2 & 3 tests - 10 scenarios)
+
+---
+
 ## Quick Reference
 
 ### Current EA Version
-- **Version**: 2.4 → 2.5 (after TF fix merge)
-- **Features**: PC + DTS + SSL + TRM + ADC + TF-Preserve
+- **Version**: 2.5 → 3.0 (Multi-Job System - IN PROGRESS)
+- **Features**: Multi-Job + PC + DTS + SSL + TRM + ADC + TF-Preserve
 - **Next**: Manual Close Detection (MCD)
 
 ### File Structure
