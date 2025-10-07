@@ -39,6 +39,7 @@ private:
    SNewsWindow       m_news_windows[];      // Static fallback windows
    bool              m_trm_initialized;
    bool              m_trm_in_news_window;  // State tracking to reduce log spam
+   bool              m_trm_already_closed;  // Flag to prevent close loop during news
 
    // ADC (anti-drawdown cushion)
    bool              m_adc_cushion_active;  // State tracking for cushion mode
@@ -95,8 +96,9 @@ private:
          m_buy.SetKind(BASKET_PRIMARY);
       if(m_sell!=NULL)
          m_sell.SetKind(BASKET_PRIMARY);
-      if(winner!=NULL)
-         winner.SetKind(BASKET_HEDGE);
+      // v3: REMOVED - Both baskets stay PRIMARY, rescue orders identified by comment only
+      // if(winner!=NULL)
+      //    winner.SetKind(BASKET_HEDGE);
      }
 
    void              EnsureRescueReset()
@@ -196,18 +198,28 @@ private:
       // TRM: Block reseeding during news
       if(m_params.trm_enabled && m_params.trm_pause_orders && IsNewsTime())
          return false;
-      // ADC: Block reseeding during equity drawdown cushion
-      if(m_params.adc_enabled && m_params.adc_pause_new_grids && m_ledger!=NULL)
+      // ADC: Block reseeding during equity drawdown cushion (use cached state)
+      // EXCEPTION: Allow reseed if opposite basket is orphaned (only 1 basket active)
+      CGridBasket *opposite_basket = (dir==DIR_BUY) ? m_sell : m_buy;
+      bool opposite_active = (opposite_basket != NULL && opposite_basket.IsActive());
+      bool should_block_adc = (m_params.adc_enabled && m_params.adc_pause_new_grids && m_adc_cushion_active && opposite_active);
+
+      if(should_block_adc)
         {
-         if(m_ledger.IsDrawdownCushionActive(m_params.adc_equity_dd_threshold))
-           {
-            if(m_log!=NULL)
-               m_log.Event(Tag(),StringFormat("[ADC] BLOCKED reseed %s (equity DD %.2f%% > %.2f%%)",
-                                            dir==DIR_BUY?"BUY":"SELL",
-                                            m_ledger.GetEquityDrawdownPercent(),
-                                            m_params.adc_equity_dd_threshold));
-            return false;
-           }
+         if(m_log!=NULL)
+            m_log.Event(Tag(),StringFormat("[ADC] BLOCKED reseed %s (equity DD %.2f%% >= %.2f%%)",
+                                         dir==DIR_BUY?"BUY":"SELL",
+                                         m_ledger.GetEquityDrawdownPercent(),
+                                         m_params.adc_equity_dd_threshold));
+         return false;
+        }
+
+      // ADC: Allow reseed if opposite basket is orphaned (anti-deadlock)
+      if(m_params.adc_enabled && m_adc_cushion_active && !opposite_active && m_log!=NULL)
+        {
+         m_log.Event(Tag(),StringFormat("[ADC] ALLOW reseed %s (opposite orphaned, DD %.2f%%)",
+                                      dir==DIR_BUY?"BUY":"SELL",
+                                      m_ledger.GetEquityDrawdownPercent()));
         }
       if(basket==NULL)
          return false;
@@ -390,29 +402,213 @@ private:
       if(m_trm_in_news_window && m_log!=NULL)
          m_log.Event(Tag(),"[TRM-Static] News window EXITED - trading resumed");
       m_trm_in_news_window=false;
+      m_trm_already_closed=false;  // Reset close flag when exiting news
       return false;
      }
 
    void              HandleNewsWindow()
      {
-      if(!IsNewsTime())
-         return;
-      if(m_params.trm_close_on_news)
+      bool in_news_window = IsNewsTime();
+
+      // Resume trading when news window exits
+      if(!in_news_window && m_halted)
         {
-         if(m_log!=NULL)
-            m_log.Event(Tag(),"[TRM] Closing all positions (close_on_news=true)");
-         if(m_buy!=NULL && m_buy.IsActive())
-            m_buy.CloseBasket("TRM close_on_news");
-         if(m_sell!=NULL && m_sell.IsActive())
-            m_sell.CloseBasket("TRM close_on_news");
-         m_halted=true;
+         m_halted = false;
+         m_trm_already_closed = false;  // Reset flag when exiting news window
+         if(m_log != NULL)
+            m_log.Event(Tag(), "[TRM] News window ended - EA resumed");
+
+         // Reseed baskets if no positions remain (like fresh start)
+         bool buy_has_positions = (m_buy != NULL && m_buy.TotalLot() > 0);
+         bool sell_has_positions = (m_sell != NULL && m_sell.TotalLot() > 0);
+
+         if(!buy_has_positions && !sell_has_positions)
+           {
+            // Both baskets empty → reseed like OnInit()
+            if(m_log != NULL)
+               m_log.Event(Tag(), "[TRM] No positions after news → Reseeding baskets");
+
+            double ask = SymbolInfoDouble(m_symbol, SYMBOL_ASK);
+            double bid = SymbolInfoDouble(m_symbol, SYMBOL_BID);
+
+            if(m_buy != NULL)
+              {
+               m_buy.SetActive(true);
+               bool buy_ok = m_buy.Init(ask);
+               if(!buy_ok && m_log != NULL)
+                  m_log.Event(Tag(), "[TRM] WARNING: Failed to reseed BUY basket (ATR may not be ready)");
+              }
+
+            if(m_sell != NULL)
+              {
+               m_sell.SetActive(true);
+               bool sell_ok = m_sell.Init(bid);
+               if(!sell_ok && m_log != NULL)
+                  m_log.Event(Tag(), "[TRM] WARNING: Failed to reseed SELL basket (ATR may not be ready)");
+              }
+           }
+
          return;
         }
+
+      if(!in_news_window)
+         return;
+
+      // === Partial Close (Simple Strategy) ===
+      if(m_params.trm_partial_close_enabled)
+        {
+         TrmPartialClose();
+         // Note: Don't halt EA, let remaining positions run
+         return;
+        }
+
+      // === Legacy: Close on news ===
+      if(m_params.trm_close_on_news && !m_trm_already_closed)
+        {
+         if(m_log != NULL)
+            m_log.Event(Tag(), "[TRM] Closing all positions (legacy close_on_news=true)");
+
+         if(m_buy != NULL && m_buy.IsActive())
+            m_buy.CloseBasket("TRM close_on_news");
+         if(m_sell != NULL && m_sell.IsActive())
+            m_sell.CloseBasket("TRM close_on_news");
+
+         // Set flag to prevent re-closing during same news window
+         m_trm_already_closed = true;
+
+         // Reseed baskets immediately after close (don't wait for news window to end)
+         // This prevents EA from stopping during long news windows
+         if(m_log != NULL)
+            m_log.Event(Tag(), "[TRM] Reseeding baskets immediately after close_on_news");
+
+         double ask = SymbolInfoDouble(m_symbol, SYMBOL_ASK);
+         double bid = SymbolInfoDouble(m_symbol, SYMBOL_BID);
+
+         if(m_buy != NULL)
+           {
+            m_buy.SetActive(true);
+            bool buy_ok = m_buy.Init(ask);
+            if(!buy_ok && m_log != NULL)
+               m_log.Event(Tag(), "[TRM] WARNING: Failed to reseed BUY basket");
+           }
+
+         if(m_sell != NULL)
+           {
+            m_sell.SetActive(true);
+            bool sell_ok = m_sell.Init(bid);
+            if(!sell_ok && m_log != NULL)
+               m_log.Event(Tag(), "[TRM] WARNING: Failed to reseed SELL basket");
+           }
+
+         // DON'T set m_halted = true (baskets reseeded, continue trading)
+         return;
+        }
+
+      // === Tighten SL ===
       if(m_params.trm_tighten_sl && m_params.ssl_enabled)
         {
-         if(m_log!=NULL)
-            m_log.Event(Tag(),"[TRM] Tightening SL during news");
+         if(m_log != NULL)
+            m_log.Event(Tag(), "[TRM] Tightening SL during news window");
         }
+     }
+
+   void              TrmPartialClose()
+     {
+      // Per-order logic: Close big winners/losers, keep small ones with SL protection
+      // Logic:
+      //   PnL > $3 → Close (lock profit)
+      //   0 < PnL <= $3 → Keep + SL breakeven
+      //   -$3 <= PnL < 0 → Keep + SL -$6
+      //   PnL < -$3 → Close (cut loss)
+
+      if(m_executor == NULL)
+         return;
+
+      int total = PositionsTotal();
+      int closed_count = 0;
+      int kept_with_sl = 0;
+
+      for(int i = total - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+
+         if(PositionGetString(POSITION_SYMBOL) != m_symbol) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != m_magic) continue;
+
+         double pnl = PositionGetDouble(POSITION_PROFIT);
+         double entry_price = PositionGetDouble(POSITION_PRICE_OPEN);
+         double lot = PositionGetDouble(POSITION_VOLUME);
+         ENUM_POSITION_TYPE pos_type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+
+         // Decision tree
+         if(pnl > m_params.trm_close_threshold)
+           {
+            // Close big winner
+            m_executor.ClosePosition(ticket, "TRM-Partial big profit");
+            closed_count++;
+            if(m_log != NULL)
+               m_log.Event(Tag(), StringFormat("[TRM-Partial] Closed #%I64u (profit $%.2f > $%.2f)",
+                                              ticket, pnl, m_params.trm_close_threshold));
+           }
+         else if(pnl < -m_params.trm_close_threshold)
+           {
+            // Close big loser
+            m_executor.ClosePosition(ticket, "TRM-Partial big loss");
+            closed_count++;
+            if(m_log != NULL)
+               m_log.Event(Tag(), StringFormat("[TRM-Partial] Closed #%I64u (loss $%.2f < -$%.2f)",
+                                              ticket, pnl, m_params.trm_close_threshold));
+           }
+         else
+           {
+            // Keep position, set protective SL
+            double sl_price = 0.0;
+
+            if(pnl >= 0.0)
+              {
+               // Small profit → SL at breakeven
+               sl_price = entry_price;
+              }
+            else
+              {
+               // Small loss → SL at -$6
+               // Calculate SL price from USD distance
+               double point = SymbolInfoDouble(m_symbol, SYMBOL_POINT);
+               double tick_value = SymbolInfoDouble(m_symbol, SYMBOL_TRADE_TICK_VALUE);
+               double tick_size = SymbolInfoDouble(m_symbol, SYMBOL_TRADE_TICK_SIZE);
+
+               if(tick_value > 0 && lot > 0)
+                 {
+                  double point_value = (tick_value / tick_size) * point;
+                  double sl_distance_points = m_params.trm_keep_sl_distance / (point_value * lot);
+
+                  if(pos_type == POSITION_TYPE_BUY)
+                     sl_price = entry_price - sl_distance_points * point;
+                  else
+                     sl_price = entry_price + sl_distance_points * point;
+                 }
+               else
+                 {
+                  sl_price = entry_price;  // Fallback to breakeven
+                 }
+              }
+
+            // Modify SL
+            if(sl_price > 0)
+              {
+               m_executor.ModifyPosition(ticket, sl_price, 0.0);
+               kept_with_sl++;
+               if(m_log != NULL)
+                  m_log.Event(Tag(), StringFormat("[TRM-Partial] Keep #%I64u (PnL=$%.2f) SL=%.5f",
+                                                 ticket, pnl, sl_price));
+              }
+           }
+        }
+
+      if(m_log != NULL)
+         m_log.Event(Tag(), StringFormat("[TRM-Partial] Summary: Closed=%d, Kept+SL=%d",
+                                        closed_count, kept_with_sl));
      }
 
 public:
@@ -438,6 +634,7 @@ public:
                          m_news_calendar(NULL),
                          m_trm_initialized(false),
                          m_trm_in_news_window(false),
+                         m_trm_already_closed(false),
                          m_adc_cushion_active(false)
      {
       ArrayResize(m_news_windows,0);
@@ -565,17 +762,34 @@ public:
       if(m_ledger!=NULL)
          m_ledger.UpdateEquitySnapshot();
 
-      // ADC: Check and log cushion state transitions
+      // Margin Kill Switch: Emergency close all if margin level too low
+      if(m_params.margin_kill_enabled)
+        {
+         double margin = AccountInfoDouble(ACCOUNT_MARGIN);
+         double equity = AccountInfoDouble(ACCOUNT_EQUITY);
+         double margin_level = (margin > 0) ? (equity / margin) * 100.0 : 999.0;
+
+         if(margin_level < m_params.margin_kill_threshold)
+           {
+            if(m_log != NULL)
+               m_log.Event(Tag(), StringFormat("[MARGIN-KILL] EMERGENCY: Margin level %.2f%% < %.2f%% threshold → Closing all positions",
+                                              margin_level, m_params.margin_kill_threshold));
+            FlattenAll("Margin Kill");
+            return;
+           }
+        }
+
+      // ADC: Check and log cushion state transitions (with hysteresis)
       if(m_params.adc_enabled && m_ledger!=NULL)
         {
-         bool is_cushion=m_ledger.IsDrawdownCushionActive(m_params.adc_equity_dd_threshold);
+         bool is_cushion=m_ledger.IsDrawdownCushionActive(m_params.adc_equity_dd_threshold, m_adc_cushion_active);
          double dd_pct=m_ledger.GetEquityDrawdownPercent();
          if(is_cushion && !m_adc_cushion_active && m_log!=NULL)
-            m_log.Event(Tag(),StringFormat("[ADC] CUSHION ACTIVATED: Equity DD %.2f%% > %.2f%% - pausing risky operations",
+            m_log.Event(Tag(),StringFormat("[ADC] CUSHION ACTIVATED: Equity DD %.2f%% >= %.2f%% - pausing risky operations",
                                          dd_pct,m_params.adc_equity_dd_threshold));
          if(!is_cushion && m_adc_cushion_active && m_log!=NULL)
             m_log.Event(Tag(),StringFormat("[ADC] CUSHION DEACTIVATED: Equity DD %.2f%% < %.2f%% - resuming normal operations",
-                                         dd_pct,m_params.adc_equity_dd_threshold));
+                                         dd_pct,m_params.adc_equity_dd_threshold-1.0));
          m_adc_cushion_active=is_cushion;
         }
 
@@ -585,10 +799,31 @@ public:
          return;
         }
 
+      // Check equity DD for grid pause (BEFORE basket updates)
+      // Pause grid expansion when DD reaches threshold (similar to ADC but for grid only)
+      bool dd_grid_pause = false;
+      if(m_params.dd_pause_grid_threshold > 0 && m_ledger != NULL)
+        {
+         double dd_pct = m_ledger.GetEquityDrawdownPercent();
+         dd_grid_pause = (dd_pct >= m_params.dd_pause_grid_threshold);
+
+         if(dd_grid_pause && m_log != NULL)
+           {
+            static datetime last_pause_log = 0;
+            datetime now = TimeCurrent();
+            if(now - last_pause_log >= 60)  // Log once per minute
+              {
+               m_log.Event(Tag(), StringFormat("[DD-PAUSE] Grid expansion paused (DD %.2f%% >= %.2f%%)",
+                                            dd_pct, m_params.dd_pause_grid_threshold));
+               last_pause_log = now;
+              }
+           }
+        }
+
       if(m_buy!=NULL)
-         m_buy.Update();
+         m_buy.Update(dd_grid_pause);  // Pass DD pause flag
       if(m_sell!=NULL)
-         m_sell.Update();
+         m_sell.Update(dd_grid_pause);
 
       // Check for orphaned baskets (pendings only, no positions)
       CheckOrphanedBasket(m_buy,m_sell);
@@ -635,60 +870,56 @@ public:
         {
          // TRM: Block rescue during news
          bool news_active=(m_params.trm_enabled && m_params.trm_pause_orders && IsNewsTime());
-         // ADC: Block rescue during equity drawdown cushion
-         bool cushion_active=false;
-         if(m_params.adc_enabled && m_params.adc_pause_rescue && m_ledger!=NULL)
+         // ADC: Block rescue during equity drawdown cushion (use cached state)
+         bool cushion_active = (m_params.adc_enabled && m_params.adc_pause_rescue && m_adc_cushion_active);
+         if(cushion_active && m_log!=NULL)
            {
-            cushion_active=m_ledger.IsDrawdownCushionActive(m_params.adc_equity_dd_threshold);
-            if(cushion_active && m_log!=NULL)
-               m_log.Event(Tag(),StringFormat("[ADC] BLOCKED rescue (equity DD %.2f%% > %.2f%%)",
+            static datetime last_log_time=0;
+            datetime now=TimeCurrent();
+            if(now-last_log_time>=60)  // Log once per minute
+              {
+               m_log.Event(Tag(),StringFormat("[ADC] BLOCKED rescue (equity DD %.2f%% >= %.2f%%)",
                                             m_ledger.GetEquityDrawdownPercent(),
                                             m_params.adc_equity_dd_threshold));
+               last_log_time=now;
+              }
            }
          if(!news_active && !cushion_active)
            {
-            double price_winner=CurrentPrice(winner.Direction());
-            double dd=-MathMin(0.0,loser.BasketPnL());
+            // v3: Delta-based continuous rebalancing (FIX: absolute volume balance to prevent flip-flop)
+            double buy_lot = m_buy.TotalLot();
+            double sell_lot = m_sell.TotalLot();
+            double delta = MathAbs(buy_lot - sell_lot);
 
-            // v3: Delta-based continuous rebalancing
-            double loser_lot = loser.TotalLot();
-            double rescue_lot_current = winner.TotalLot();  // Current rescue size
-            double delta = loser_lot - rescue_lot_current;
+            // Determine lighter basket (deploy rescue on lighter side for balance)
+            CGridBasket *lighter = (buy_lot < sell_lot) ? m_buy : m_sell;
+            CGridBasket *heavier = (buy_lot < sell_lot) ? m_sell : m_buy;
+            double price_lighter = CurrentPrice(lighter.Direction());
 
             // Check delta threshold: Only rescue if imbalance >= trigger
             if(delta >= m_params.min_delta_trigger)
               {
-               // Calculate delta-based rescue lot
-               double rescue_lot;
-               if(m_params.rescue_adaptive_lot)
+               // v3: Deploy EXACT delta (no multiplier), cap at max
+               double rescue_lot = delta;
+
+               // Apply max cap
+               if(m_params.rescue_max_lot > 0 && rescue_lot > m_params.rescue_max_lot)
                  {
-                  // Adaptive mode: Rescue delta amount
-                  rescue_lot = delta * m_params.rescue_lot_multiplier;
-
-                  // Apply max cap
-                  if(rescue_lot > m_params.rescue_max_lot)
-                    {
-                     if(m_log!=NULL)
-                        m_log.Event(Tag(),StringFormat("[RESCUE-DELTA] Loser=%.2f Rescue=%.2f Delta=%.2f → Deploy %.2f lot (capped from %.2f)",
-                                                        loser_lot, rescue_lot_current, delta, m_params.rescue_max_lot, rescue_lot));
-                     rescue_lot = m_params.rescue_max_lot;
-                    }
-                  else
-                    {
-                     if(m_log!=NULL)
-                        m_log.Event(Tag(),StringFormat("[RESCUE-DELTA] Loser=%.2f Rescue=%.2f Delta=%.2f → Deploy %.2f lot (mult=%.2f)",
-                                                        loser_lot, rescue_lot_current, delta, rescue_lot, m_params.rescue_lot_multiplier));
-                    }
-
-                  rescue_lot = winner.NormalizeLot(rescue_lot);
+                  if(m_log!=NULL)
+                     m_log.Event(Tag(),StringFormat("[RESCUE-DELTA] Heavy=%.2f Light=%.2f Delta=%.2f → Deploy %.2f lot on %s (CAPPED from %.2f)",
+                                                     heavier.TotalLot(), lighter.TotalLot(), delta,
+                                                     m_params.rescue_max_lot, lighter.Direction()==DIR_BUY?"BUY":"SELL", rescue_lot));
+                  rescue_lot = m_params.rescue_max_lot;
                  }
                else
                  {
-                  // Disabled: Match delta exactly (no multiplier)
-                  rescue_lot = winner.NormalizeLot(delta);
-                  if(rescue_lot > m_params.rescue_max_lot)
-                     rescue_lot = m_params.rescue_max_lot;
+                  if(m_log!=NULL)
+                     m_log.Event(Tag(),StringFormat("[RESCUE-DELTA] Heavy=%.2f Light=%.2f Delta=%.2f → Deploy %.2f lot on %s (EXACT)",
+                                                     heavier.TotalLot(), lighter.TotalLot(), delta,
+                                                     rescue_lot, lighter.Direction()==DIR_BUY?"BUY":"SELL"));
                  }
+
+               rescue_lot = lighter.NormalizeLot(rescue_lot);
 
                // Deploy rescue (delta trigger + cooldown anti-spam)
                if(rescue_lot>0.0 && m_rescue.CooldownOk())
@@ -696,10 +927,12 @@ public:
                   bool exposure_ok=(m_ledger==NULL) || m_ledger.ExposureAllowed(rescue_lot,m_magic,m_symbol);
                   if(exposure_ok)
                     {
-                     winner.DeployRecovery(price_winner,rescue_lot);
+                     lighter.DeployRecovery(price_lighter,rescue_lot);
                      m_rescue.RecordRescue();
                      if(m_log!=NULL)
-                        m_log.Event(Tag(),StringFormat("Rescue deployed: %.2f lot (cooldown: %d bars)",rescue_lot,m_params.rescue_cooldown_bars));
+                        m_log.Event(Tag(),StringFormat("Rescue deployed: %.2f lot on %s (cooldown: %d bars)",
+                                                     rescue_lot, lighter.Direction()==DIR_BUY?"BUY":"SELL",
+                                                     m_params.rescue_cooldown_bars));
                     }
                   else
                     {
@@ -709,16 +942,28 @@ public:
                  }
               else if(rescue_lot>0.0 && !m_rescue.CooldownOk())
                  {
-                  if(m_log!=NULL)
+                  // Rate limit: Log once per minute to prevent spam
+                  static datetime last_cooldown_log=0;
+                  datetime now=TimeCurrent();
+                  if(m_log!=NULL && (now-last_cooldown_log>=60))
+                    {
                      m_log.Event(Tag(),StringFormat("[RESCUE-COOLDOWN] Delta=%.2f ready but cooldown active (%d bars)",delta,m_params.rescue_cooldown_bars));
+                     last_cooldown_log=now;
+                    }
                  }
               }
             else
               {
                // Balanced: delta too small, skip rescue
-               if(m_log!=NULL)
-                  m_log.Event(Tag(),StringFormat("[RESCUE-BALANCED] Loser=%.2f Rescue=%.2f Delta=%.2f < %.2f (skip, balanced)",
-                                                  loser_lot, rescue_lot_current, delta, m_params.min_delta_trigger));
+               // Rate limit: Log once per minute to prevent spam
+               static datetime last_balanced_log=0;
+               datetime now=TimeCurrent();
+               if(m_log!=NULL && (now-last_balanced_log>=60))
+                 {
+                  m_log.Event(Tag(),StringFormat("[RESCUE-BALANCED] BUY=%.2f SELL=%.2f Delta=%.2f < %.2f (skip, balanced)",
+                                                  buy_lot, sell_lot, delta, m_params.min_delta_trigger));
+                  last_balanced_log=now;
+                 }
               }
            }
         }

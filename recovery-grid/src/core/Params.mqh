@@ -9,36 +9,35 @@
 
 struct SParams
   {
-   // spacing
-   ESpacingMode spacing_mode;
-   double       spacing_pips;
+   // spacing (ATR-based only, PIPS mode removed)
    double       spacing_atr_mult;
-   double       min_spacing_pips;
    int          atr_period;
    ENUM_TIMEFRAMES atr_timeframe;
 
-   // grid
+   // grid (dynamic mode always ON with hardcoded optimal values)
    int          grid_levels;        // number of levels including market seed
+   bool         grid_dynamic_enabled;   // always true (hardcoded in BuildParams)
+   int          grid_warm_levels;       // hardcoded optimal value
+   int          grid_refill_threshold;  // hardcoded optimal value
+   int          grid_refill_batch;      // hardcoded optimal value
+   int          grid_max_pendings;      // hardcoded optimal value
    double       lot_base;
    double       lot_offset;         // linear lot increment (e.g., 0.01)
-   
-   // dynamic grid
-   bool         grid_dynamic_enabled;
-   int          grid_warm_levels;      // initial pending count
-   int          grid_refill_threshold; // refill when pending <= this
-   int          grid_refill_batch;     // add this many per refill
-   int          grid_max_pendings;     // hard limit for safety
+
+   // lot % risk
+   bool         lot_percent_enabled;     // enable lot % risk calculation
+   double       lot_percent_risk;        // % of account balance to risk per grid level
+   double       lot_percent_max_lot;     // max lot size when using % risk
 
    // profit target
    double       target_cycle_usd;
 
-   // trailing stop for hedge basket
+   // trailing stop for hedge basket (spacing-based, auto-adaptive)
    bool         tsl_enabled;
-   int          tsl_start_points;
-   int          tsl_step_points;
+   double       tsl_start_multiplier;   // TSL activates at profit = spacing × this
+   double       tsl_step_multiplier;    // TSL trails by spacing × this
 
-   // rescue (v3: delta-based continuous rebalancing with cooldown)
-   int          recovery_steps[];        // points offsets for staged pending orders
+   // rescue (v3: delta-based continuous rebalancing)
    bool         rescue_adaptive_lot;     // enable delta-based rescue
    double       min_delta_trigger;       // min imbalance to trigger rescue (lot)
    double       rescue_lot_multiplier;   // delta multiplier (1.0 = 100% of delta)
@@ -46,11 +45,12 @@ struct SParams
    int          rescue_cooldown_bars;    // bars between rescue deployments (anti-spam)
    double       exposure_cap_lots;       // global lot exposure limit
    double       session_sl_usd;          // session stop loss (USD)
+   bool         margin_kill_enabled;     // enable margin kill switch
+   double       margin_kill_threshold;   // margin level % to trigger kill (e.g. 80%)
+   double       dd_pause_grid_threshold; // equity DD % to pause grid expansion (e.g. 20%)
 
-   // execution
+   // execution (optimized defaults, auto-detect where possible)
    int          slippage_pips;
-   int          order_cooldown_sec;
-   bool         respect_stops_level;
    double       commission_per_lot;
 
    // misc
@@ -85,9 +85,15 @@ struct SParams
    int          trm_buffer_minutes;       // minutes before/after news event
    bool         trm_pause_orders;         // pause new orders during news
    bool         trm_tighten_sl;           // tighten SSL during news (requires ssl_enabled)
+   int          trm_tighten_sl_buffer;    // tighten SL only N minutes before news (not full buffer)
    double       trm_sl_multiplier;        // SL tightening factor (e.g. 0.5 = half distance)
-   bool         trm_close_on_news;        // close all positions before news window
+   bool         trm_close_on_news;        // close all positions before news window (legacy)
    string       trm_news_windows;         // CSV format: "HH:MM-HH:MM,HH:MM-HH:MM" (UTC) - FALLBACK ONLY
+
+   // TRM partial close
+   bool         trm_partial_close_enabled; // enable partial close (per-order logic)
+   double       trm_close_threshold;       // close if |PnL| > this (USD)
+   double       trm_keep_sl_distance;      // SL distance for kept losing orders (USD)
 
    // anti-drawdown cushion (ADC)
    bool         adc_enabled;              // master switch

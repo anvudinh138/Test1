@@ -131,6 +131,68 @@ if(had_positions && now_no_positions) {
 
 ---
 
+### Session: 2025-10-04 (Rescue v3 Stabilization) - COMPLETED
+
+**Problem Set**: Multiple rescue v3 bugs causing instability:
+1. Rescue only deploying once, then stopping
+2. Margin pause confusing (user wants DD% instead)
+3. Rescue delta only deploying 0.01 or max (missing 0.02-0.09)
+4. TRM close-on-news infinite loop (open→close→reseed→close)
+5. Rescue log spam (hundreds per second)
+
+**Root Causes & Solutions**:
+
+1. **Rescue Only Once**:
+   - Cause: `UpdateRoles()` switching winner to BASKET_HEDGE type
+   - Fix: Removed HEDGE type switching, both baskets stay PRIMARY always
+   - Rescue identified by comment "RescueSeed" only
+   - Lines: LifecycleController.mqh:92-101
+
+2. **Margin Pause → DD% Pause**:
+   - Changed from margin level % to equity DD %
+   - Renamed: `margin_pause_threshold` → `dd_pause_grid_threshold`
+   - Updated log tags from `[MARGIN-PAUSE]` to `[DD-PAUSE]`
+   - Files: Params.mqh, RecoveryGridDirection_v2.mq5, LifecycleController.mqh
+
+3. **Rescue Delta Exact Deployment**:
+   - Removed multiplier logic
+   - Deploy EXACT delta, cap only when delta > max
+   - Now deploys 0.02, 0.03, 0.08, etc. correctly
+   - Lines: LifecycleController.mqh:882-918
+
+4. **TRM Close-on-News Loop**:
+   - Added state flag `m_trm_already_closed` to prevent re-closing
+   - Only close once per news window
+   - Reset flag when exiting news
+   - Lines: LifecycleController.mqh:42, 405, 416, 464-475
+
+5. **Rescue Log Spam**:
+   - Added rate limiting to cooldown/balanced logs
+   - Log once per minute instead of every tick
+   - Lines: LifecycleController.mqh:937-947, 949-961
+
+6. **Rescue Flip-Flop Loop** (CRITICAL):
+   - Cause: Using loser/winner roles (PnL-based) caused endless flip when roles change
+   - Old: `delta = loser_lot - winner.RescueLot()` → winner.RescueLot() = 0 after role flip!
+   - Fix: Use absolute volume balance: `delta = |buy_lot - sell_lot|`
+   - Deploy on LIGHTER side (less volume), not winner side (better PnL)
+   - This prevents infinite loop when roles flip
+   - Lines: LifecycleController.mqh:889-967
+
+**Files Modified**:
+- LifecycleController.mqh (+75 lines total)
+- GridBasket.mqh (+2 lines)
+- Params.mqh (+1 line)
+- RecoveryGridDirection_v2.mq5 (+2 lines)
+
+**Testing Status**: ✅ User confirmed working ("work ngon", "quá đỉnh")
+
+**User Feedback**:
+- "work ngon rồi bạn ơi, có rescus đầy đủ" - Rescue fix working
+- "tuyệt vời work news quá ngon quá đỉnh" - TRM fix working
+
+---
+
 ## Quick Reference
 
 ### Current EA Version

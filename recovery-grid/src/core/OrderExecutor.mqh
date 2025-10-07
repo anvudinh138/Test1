@@ -46,12 +46,11 @@ private:
 public:
                      COrderExecutor(const string symbol,
                                     COrderValidator *validator,
-                                    const int slippage_points,
-                                    const int cooldown_sec)
+                                    const int slippage_points)
                        : m_symbol(symbol),
                          m_validator(validator),
                          m_slippage_points(slippage_points),
-                         m_cooldown_sec(cooldown_sec),
+                         m_cooldown_sec(5),  // Hardcoded optimal value
                          m_last_order_time(0),
                          m_bypass(0)
      {
@@ -123,6 +122,18 @@ public:
       return false;
      }
 
+   bool              ModifyPosition(const ulong ticket, const double sl, const double tp)
+     {
+      if(!PositionSelectByTicket(ticket))
+         return false;
+      if(!Ready())
+         return false;
+      bool ok = m_trade.PositionModify(ticket, sl, tp);
+      if(ok && TrackResult())
+         return true;
+      return false;
+     }
+
    void              CloseAllByDirection(const EDirection dir,const long magic)
      {
       int total=(int)PositionsTotal();
@@ -147,8 +158,9 @@ public:
         }
      }
 
-   void              CancelPendingByDirection(const EDirection dir,const long magic)
+   int               CancelPendingByDirection(const EDirection dir,const long magic)
      {
+      int cancelled_count = 0;
       int total=(int)OrdersTotal();
       for(int i=total-1;i>=0;i--)
         {
@@ -171,9 +183,10 @@ public:
            {
             match=(type==ORDER_TYPE_SELL_LIMIT || type==ORDER_TYPE_SELL_STOP);
            }
-         if(match)
-            m_trade.OrderDelete(ticket);
+         if(match && m_trade.OrderDelete(ticket))
+            cancelled_count++;
         }
+      return cancelled_count;
      }
   };
 

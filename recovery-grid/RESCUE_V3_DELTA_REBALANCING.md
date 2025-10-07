@@ -130,12 +130,14 @@ Final State:
 
 ```cpp
 input group "=== Rescue/Hedge System v3 ==="
-input string InpRecoverySteps       = "1000,2000,3000";  // Staged limits
+input string InpRecoverySteps       = "1000,2000,3000";  // ⚠️ DEPRECATED (not used in v3)
 input bool   InpRescueAdaptiveLot   = true;   // Enable delta-based rescue
 input double InpMinDeltaTrigger     = 0.05;   // Min imbalance to trigger (lot)
 input double InpRescueLotMultiplier = 1.0;    // Delta multiplier (1.0 = 100%)
 input double InpRescueMaxLot        = 0.50;   // Max per rescue deployment
 ```
+
+**NOTE**: `InpRecoverySteps` is **deprecated** in Rescue v3. Delta-based rebalancing deploys only **market orders**, no staged limits.
 
 ### Parameter Descriptions
 
